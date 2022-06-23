@@ -23,8 +23,8 @@ dependencies {
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
 }
 
-group = 'com.example'
-version = '1.0.0'
+group = 'com.coxadditions'
+version = '1.0.1'
 sourceCompatibility = '1.8'
 
 tasks.withType(JavaCompile) {
