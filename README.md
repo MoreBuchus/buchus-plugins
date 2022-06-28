@@ -1,2 +1,2 @@
-# Example
-An example greeter plugin
+# Toggle Chat
+Uses a hotkey to open/close your chat box.
