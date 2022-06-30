@@ -38,6 +38,7 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import javax.inject.Inject;
 import java.awt.event.KeyEvent;
+import net.runelite.client.util.HotkeyListener;
 
 @Slf4j
 @PluginDescriptor(
@@ -46,7 +47,7 @@ import java.awt.event.KeyEvent;
 	tags = {"hotkey", "toggle", "chat"},
 	enabledByDefault = false
 )
-public class ToggleChatPlugin extends Plugin implements KeyListener
+public class ToggleChatPlugin extends Plugin
 {
 	@Inject
 	private Client client;
@@ -69,13 +70,13 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 	@Override
 	protected void startUp()
 	{
-		keyManager.registerKeyListener(this);
+		keyManager.registerKeyListener(hotkeyListener);
 	}
 
 	@Override
 	protected void shutDown()
 	{
-		keyManager.unregisterKeyListener(this);
+		keyManager.unregisterKeyListener(hotkeyListener);
 	}
 
 	@Subscribe
@@ -84,45 +85,23 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 		boolean hidden = client.getVarcIntValue(41) == 1337;
 		if (hidden && config.removeFlashingTabs())
 		{
-			client.getVarcMap().put(44, 0);
-			client.getVarcMap().put(45, 0);
-			client.getVarcMap().put(46, 0);
-			client.getVarcMap().put(438, 0);
-			client.getVarcMap().put(47, 0);
-			client.getVarcMap().put(48, 0);
+			client.setVarcIntValue(44, 0);
+			client.setVarcIntValue(45, 0);
+			client.setVarcIntValue(46, 0);
+			client.setVarcIntValue(438, 0);
+			client.setVarcIntValue(47, 0);
+			client.setVarcIntValue(48, 0);
 		}
 	}
 
-	private void removeHotkey() throws InterruptedException
+	private final HotkeyListener hotkeyListener = new HotkeyListener(() -> config.hotKey())
 	{
-		String typedText = client.getVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT);
-		if (typedText.length() > 0)
-		{
-			String subTypedText = typedText.substring(0, typedText.length() - 1);
-			char a = (char) KeyEvent.getExtendedKeyCodeForChar(typedText.substring(typedText.length() - 1).toCharArray()[0]);
-			char b = (char) config.hotKey().getKeyCode();
-			if (a == b)
-			{
-				client.setVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT, subTypedText);
-			}
-		}
-	}
-
-	@Override
-	public void keyTyped(KeyEvent e)
-	{
-	}
-
-	@Override
-	public void keyPressed(KeyEvent e)
-	{
-		if (config.hotKey().matches(e))
+		@Override
+		public void hotkeyPressed()
 		{
 			clientThread.invokeLater(() -> {
 				try
 				{
-					removeHotkey();
-					//Opens chatbox to the selected tab
 					client.runScript(175, 1, config.defaultTab().getTab());
 				}
 				catch (Exception ex)
@@ -131,12 +110,7 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 				}
 			});
 		}
-	}
-
-	@Override
-	public void keyReleased(KeyEvent e)
-	{
-	}
+	};
 }
 
 
