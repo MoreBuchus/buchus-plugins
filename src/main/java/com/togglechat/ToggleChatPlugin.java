@@ -38,7 +38,6 @@ import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import javax.inject.Inject;
 import java.awt.event.KeyEvent;
-import net.runelite.client.util.HotkeyListener;
 
 @Slf4j
 @PluginDescriptor(
@@ -47,7 +46,7 @@ import net.runelite.client.util.HotkeyListener;
 	tags = {"hotkey", "toggle", "chat"},
 	enabledByDefault = false
 )
-public class ToggleChatPlugin extends Plugin
+public class ToggleChatPlugin extends Plugin implements KeyListener
 {
 	@Inject
 	private Client client;
@@ -70,13 +69,13 @@ public class ToggleChatPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
-		keyManager.registerKeyListener(hotkeyListener);
+		keyManager.registerKeyListener(this);
 	}
 
 	@Override
 	protected void shutDown()
 	{
-		keyManager.unregisterKeyListener(hotkeyListener);
+		keyManager.unregisterKeyListener(this);
 	}
 
 	@Subscribe
@@ -94,14 +93,36 @@ public class ToggleChatPlugin extends Plugin
 		}
 	}
 
-	private final HotkeyListener hotkeyListener = new HotkeyListener(() -> config.hotKey())
+	private void removeHotkey() throws InterruptedException
 	{
-		@Override
-		public void hotkeyPressed()
+		String typedText = client.getVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT);
+		if (typedText.length() > 0)
+		{
+			String subTypedText = typedText.substring(0, typedText.length() - 1);
+			char a = (char) KeyEvent.getExtendedKeyCodeForChar(typedText.substring(typedText.length() - 1).toCharArray()[0]);
+			char b = (char) config.hotKey().getKeyCode();
+			if (a == b)
+			{
+				client.setVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT, subTypedText);
+			}
+		}
+	}
+
+	@Override
+	public void keyTyped(KeyEvent e)
+	{
+	}
+
+	@Override
+	public void keyPressed(KeyEvent e)
+	{
+		if (config.hotKey().matches(e))
 		{
 			clientThread.invokeLater(() -> {
 				try
 				{
+					removeHotkey();
+					//Opens chatbox to the selected tab
 					client.runScript(175, 1, config.defaultTab().getTab());
 				}
 				catch (Exception ex)
@@ -110,7 +131,12 @@ public class ToggleChatPlugin extends Plugin
 				}
 			});
 		}
-	};
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e)
+	{
+	}
 }
 
 
