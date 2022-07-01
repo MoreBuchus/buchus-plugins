@@ -3,6 +3,7 @@ package com.betternpchighlight;
 import net.runelite.api.Point;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.client.game.NpcUtil;
 import net.runelite.client.ui.overlay.*;
 import net.runelite.client.ui.overlay.outline.ModelOutlineRenderer;
 
@@ -22,13 +23,17 @@ public class BetterNpcHighlightOverlay extends Overlay
 
 	private final ModelOutlineRenderer modelOutlineRenderer;
 
+	private final NpcUtil npcUtil;
+
 	@Inject
-	private BetterNpcHighlightOverlay(Client client, BetterNpcHighlightPlugin plugin, BetterNpcHighlightConfig config, ModelOutlineRenderer modelOutlineRenderer)
+	private BetterNpcHighlightOverlay(Client client, BetterNpcHighlightPlugin plugin, BetterNpcHighlightConfig config,
+									  ModelOutlineRenderer modelOutlineRenderer, NpcUtil npcUtil)
 	{
 		this.client = client;
 		this.plugin = plugin;
 		this.config = config;
 		this.modelOutlineRenderer = modelOutlineRenderer;
+		this.npcUtil = npcUtil;
 		setPosition(OverlayPosition.DYNAMIC);
 		setPriority(OverlayPriority.HIGH);
 		setLayer(OverlayLayer.ABOVE_SCENE);
@@ -38,7 +43,8 @@ public class BetterNpcHighlightOverlay extends Overlay
 	{
 		for (NPC npc : client.getNpcs())
 		{
-			boolean showWhileDead = !config.ignoreDeadNpcs() || plugin.checkSpecificList(plugin.ignoreDeadExclusionList, new ArrayList<>(), npc);
+			boolean showWhileDead = !npcUtil.isDying(npc) || !config.ignoreDeadNpcs()
+				|| plugin.checkSpecificList(plugin.ignoreDeadExclusionList, new ArrayList<>(), npc);
 
 			if (npc.getHealthRatio() != 0 || showWhileDead)
 			{
