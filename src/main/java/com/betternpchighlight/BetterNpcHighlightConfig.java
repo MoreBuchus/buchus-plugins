@@ -98,7 +98,7 @@ public interface BetterNpcHighlightConfig extends Config
 	String clickboxSection = "clickbox";
 
 	@ConfigSection(
-		name = "<html><font color=#ff0000><i><b>TURBO MODE<b><i>",
+		name = "TURBO MODE",
 		description = "Full send",
 		position = 8,
 		closedByDefault = true
@@ -867,7 +867,7 @@ public interface BetterNpcHighlightConfig extends Config
 	//------------------------------------------------------------//
 	@ConfigItem(
 		position = 0,
-		name = "<html><p style=\"color:#e03c31\">—————— <b>Epilepsy Warning</b> ——————</p></html>",
+		name = "—————— Epilepsy Warning ——————",
 		keyName = "epilepsyWarning",
 		description = "A warning message will pop up if you try to enable Turbo Highlight. Turbo mode highlights NPCs switching between all styles and colors.",
 		section = turboSection
