@@ -167,7 +167,7 @@ public class DefenceTrackerPlugin extends Plugin
 				if (animation == 1816 && boss.equalsIgnoreCase("sotetseg") && (isInOverWorld() || isInUnderWorld()))
 				{
 					infoBoxManager.removeInfoBox(box);
-					bossDef = 250;
+					bossDef = 200;
 				}
 			}
 		}
@@ -227,26 +227,24 @@ public class DefenceTrackerPlugin extends Plugin
 
 		clientThread.invoke(() ->
 		{
-			if ((npc != null && npc.getName() != null) || bossIndex == index)
+			if ((npc != null && npc.getName() != null && bossList.contains(npc.getName())) || bossIndex == index)
 			{
 				if (bossIndex != index)
 				{
 					String bossName = npc.getName();
-					if (bossList.contains(bossName))
-					{
-						if (!boss.equals(bossName) || (bossName.contains("Tekton") && !boss.equals("Tekton")))
-						{
-							baseDefence(bossName, index);
-							calculateQueue(index);
-						}
 
-						if (((boss.equals("Tekton") || boss.contains("Great Olm")) && client.getVarbitValue(Varbits.IN_RAID) != 1)
-							|| ((boss.contains("The Maiden of Sugadinti") || boss.contains("Pestilent Bloat") || boss.contains("Nylocas Vasilias")
-							|| boss.contains("Sotetseg") || boss.contains("Xarpus")) && client.getVarbitValue(Varbits.THEATRE_OF_BLOOD) != 2)
-							|| world != client.getWorld())
-						{
-							return;
-						}
+					if (!boss.equals(bossName) || (bossName.contains("Tekton") && !boss.equals("Tekton")))
+					{
+						baseDefence(bossName, index);
+						calculateQueue(index);
+					}
+
+					if (((boss.equals("Tekton") || boss.contains("Great Olm")) && client.getVarbitValue(Varbits.IN_RAID) != 1)
+						|| ((boss.contains("The Maiden of Sugadinti") || boss.contains("Pestilent Bloat") || boss.contains("Nylocas Vasilias")
+						|| boss.contains("Sotetseg") || boss.contains("Xarpus")) && client.getVarbitValue(Varbits.THEATRE_OF_BLOOD) != 2)
+						|| world != client.getWorld())
+					{
+						return;
 					}
 				}
 				calculateDefence(weapon, hit);
@@ -337,7 +335,6 @@ public class DefenceTrackerPlugin extends Plugin
 		switch (boss)
 		{
 			case "Abyssal Sire":
-			case "Sotetseg":
 			case "General Graardor":
 				bossDef = 250;
 				break;
@@ -356,6 +353,7 @@ public class DefenceTrackerPlugin extends Plugin
 				break;
 			case "Giant Mole":
 			case "The Maiden of Sugadinti":
+			case "Sotetseg":
 				bossDef = 200;
 				break;
 			case "Kalphite Queen":
@@ -459,6 +457,14 @@ public class DefenceTrackerPlugin extends Plugin
 				bossDef -= bossDef * .05;
 			}
 		}
+		else if (weapon == SpecialWeapon.BARRELCHEST_ANCHOR)
+		{
+			bossDef -= hit * .10;
+		}
+		else if (weapon == SpecialWeapon.BONE_DAGGER || weapon == SpecialWeapon.DORGESHUUN_CROSSBOW)
+		{
+			bossDef -= hit;
+		}
 	}
 
 	private void calculateQueue(int index)
@@ -478,7 +484,11 @@ public class DefenceTrackerPlugin extends Plugin
 
 	private void updateDefInfobox()
 	{
-		if (bossDef < 0)
+		if (boss.equals("Sotetseg") && bossDef < 100)
+		{
+			bossDef = 100;
+		}
+		else if (bossDef < 0)
 		{
 			bossDef = 0;
 		}

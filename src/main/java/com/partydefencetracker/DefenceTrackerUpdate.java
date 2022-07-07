@@ -1,11 +1,12 @@
 package com.partydefencetracker;
 
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
-import net.runelite.api.NPC;
 import net.runelite.client.party.messages.PartyMemberMessage;
 
 @Value
+@AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class DefenceTrackerUpdate extends PartyMemberMessage
 {
@@ -14,13 +15,4 @@ public class DefenceTrackerUpdate extends PartyMemberMessage
 	boolean alive;
 	boolean bossSpawned;
 	int world;
-
-	public DefenceTrackerUpdate(String boss, int index, boolean alive, boolean bossSpawned, int world)
-	{
-		this.boss = boss;
-		this.index = index;
-		this.alive = alive;
-		this.bossSpawned = bossSpawned;
-		this.world = world;
-	}
 }
