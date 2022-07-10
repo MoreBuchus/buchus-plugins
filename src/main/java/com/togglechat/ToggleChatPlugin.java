@@ -84,6 +84,16 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 	{
 		if (event.getScriptId() == 179)
 		{
+			// If the user does not want to disable flashing.
+			if(!config.removeFlashingTabs())
+				return;
+
+			// Allows notifications to appear in chat if the chat box is open.
+			boolean hidden = client.getVarcIntValue(41) == 1337;
+			if(config.notifyWithOpenChat() && !hidden)
+				return;
+
+			// Disables the flashing of specified chats.
 			if (config.gameChat())
 				client.setVarcIntValue(44, 0);
 

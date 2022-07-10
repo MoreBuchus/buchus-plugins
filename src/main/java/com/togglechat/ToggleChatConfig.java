@@ -55,18 +55,42 @@ public interface ToggleChatConfig extends Config
 		return TabMode.ALL;
 	}
 
-	@ConfigSection(
-		position = 1,
+	@ConfigItem(
+		keyName = "removeFlashingTabs",
 		name = "Disable Notification Flash",
-		description = "For the chat-closed gamers - removes the annoying tab flashing. No blink blink"
+		description = "For the chat-closed gamers - removes the annoying tab flashing. No blink blink",
+		position = 2
+	)
+	default boolean removeFlashingTabs()
+	{
+		return false;
+	}
+
+	@ConfigSection(
+		position = 3,
+		name = "Notification Flash Settings",
+		description = "Customization for the flash settings.",
+		closedByDefault = true
 	)
 	String flashSection = "flashSection";
+
+	@ConfigItem(
+		keyName = "notifyWithOpenChat",
+		name = "Notify with chat open",
+		description = "Allows the categories to notify if chat box is opened.",
+		position = 1,
+		section = flashSection
+	)
+	default boolean notifyWithOpenChat()
+	{
+		return true;
+	}
 
 	@ConfigItem(
 		keyName = "gameChat",
 		name = "Game Chat",
 		description = "Stops game chat from flashing.",
-		position = 1,
+		position = 2,
 		section = flashSection
 	)
 	default boolean gameChat()
@@ -78,7 +102,7 @@ public interface ToggleChatConfig extends Config
 		keyName = "publicChat",
 		name = "Public Chat",
 		description = "Stops public chat from flashing.",
-		position = 2,
+		position = 3,
 		section = flashSection
 	)
 	default boolean publicChat()
@@ -90,7 +114,7 @@ public interface ToggleChatConfig extends Config
 		keyName = "privateChat",
 		name = "Private Chat",
 		description = "Stops private chat from flashing.",
-		position = 3,
+		position = 4,
 		section = flashSection
 	)
 	default boolean privateChat()
@@ -102,7 +126,7 @@ public interface ToggleChatConfig extends Config
 		keyName = "channelChat",
 		name = "Channel Chat",
 		description = "Stops channel chat from flashing.",
-		position = 4,
+		position = 5,
 		section = flashSection
 	)
 	default boolean channelChat()
@@ -114,7 +138,7 @@ public interface ToggleChatConfig extends Config
 		keyName = "clanChat",
 		name = "Clan Chat",
 		description = "Stops clan chat from flashing.",
-		position = 5,
+		position = 6,
 		section = flashSection
 	)
 	default boolean clanChat()
@@ -126,7 +150,7 @@ public interface ToggleChatConfig extends Config
 		keyName = "tradeChat",
 		name = "Trade Chat",
 		description = "Stops trade chat from flashing.",
-		position = 6,
+		position = 7,
 		section = flashSection
 	)
 	default boolean tradeChat()
