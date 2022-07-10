@@ -27,6 +27,7 @@ package com.togglechat;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Keybind;
 
 @ConfigGroup("ToggleChat")
@@ -54,14 +55,82 @@ public interface ToggleChatConfig extends Config
 		return TabMode.ALL;
 	}
 
-	@ConfigItem(
-		keyName = "removeFlashingTabs",
+	@ConfigSection(
+		position = 1,
 		name = "Disable Notification Flash",
-		description = "For the chat-closed gamers - removes the annoying tab flashing. No blink blink",
-		position = 2
+		description = "For the chat-closed gamers - removes the annoying tab flashing. No blink blink"
 	)
-	default boolean removeFlashingTabs()
+	String flashSection = "flashSection";
+
+	@ConfigItem(
+		keyName = "gameChat",
+		name = "Game Chat",
+		description = "Stops game chat from flashing.",
+		position = 1,
+		section = flashSection
+	)
+	default boolean gameChat()
 	{
-		return false;
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "publicChat",
+		name = "Public Chat",
+		description = "Stops public chat from flashing.",
+		position = 2,
+		section = flashSection
+	)
+	default boolean publicChat()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "privateChat",
+		name = "Private Chat",
+		description = "Stops private chat from flashing.",
+		position = 3,
+		section = flashSection
+	)
+	default boolean privateChat()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "channelChat",
+		name = "Channel Chat",
+		description = "Stops channel chat from flashing.",
+		position = 4,
+		section = flashSection
+	)
+	default boolean channelChat()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "clanChat",
+		name = "Clan Chat",
+		description = "Stops clan chat from flashing.",
+		position = 5,
+		section = flashSection
+	)
+	default boolean clanChat()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "tradeChat",
+		name = "Trade Chat",
+		description = "Stops trade chat from flashing.",
+		position = 6,
+		section = flashSection
+	)
+	default boolean tradeChat()
+	{
+		return true;
 	}
 }

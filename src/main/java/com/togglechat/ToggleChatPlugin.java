@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.VarClientStr;
 import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
@@ -79,17 +80,27 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 	}
 
 	@Subscribe
-	public void onClientTick(ClientTick event)
+	public void onScriptPreFired(ScriptPreFired event)
 	{
-		boolean hidden = client.getVarcIntValue(41) == 1337;
-		if (hidden && config.removeFlashingTabs())
+		if (event.getScriptId() == 179)
 		{
-			client.setVarcIntValue(44, 0);
-			client.setVarcIntValue(45, 0);
-			client.setVarcIntValue(46, 0);
-			client.setVarcIntValue(438, 0);
-			client.setVarcIntValue(47, 0);
-			client.setVarcIntValue(48, 0);
+			if (config.gameChat())
+				client.setVarcIntValue(44, 0);
+
+			if (config.publicChat())
+				client.setVarcIntValue(45, 0);
+
+			if (config.privateChat())
+				client.setVarcIntValue(46, 0);
+
+			if (config.clanChat())
+				client.setVarcIntValue(47, 0);
+
+			if (config.tradeChat())
+				client.setVarcIntValue(48, 0);
+
+			if (config.channelChat())
+				client.setVarcIntValue(438, 0);
 		}
 	}
 
