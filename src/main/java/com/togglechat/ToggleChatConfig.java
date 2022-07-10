@@ -27,6 +27,7 @@ package com.togglechat;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
+import net.runelite.client.config.ConfigSection;
 import net.runelite.client.config.Keybind;
 
 @ConfigGroup("ToggleChat")
@@ -63,5 +64,97 @@ public interface ToggleChatConfig extends Config
 	default boolean removeFlashingTabs()
 	{
 		return false;
+	}
+
+	@ConfigSection(
+		position = 3,
+		name = "Notification Flash Settings",
+		description = "Customization for the flash settings.",
+		closedByDefault = true
+	)
+	String flashSection = "flashSection";
+
+	@ConfigItem(
+		keyName = "notifyWithOpenChat",
+		name = "Notify with chat open",
+		description = "Allows the categories to notify if chat box is opened.",
+		position = 1,
+		section = flashSection
+	)
+	default boolean notifyWithOpenChat()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "gameChat",
+		name = "Game Chat",
+		description = "Stops game chat from flashing.",
+		position = 2,
+		section = flashSection
+	)
+	default boolean gameChat()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "publicChat",
+		name = "Public Chat",
+		description = "Stops public chat from flashing.",
+		position = 3,
+		section = flashSection
+	)
+	default boolean publicChat()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "privateChat",
+		name = "Private Chat",
+		description = "Stops private chat from flashing.",
+		position = 4,
+		section = flashSection
+	)
+	default boolean privateChat()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "channelChat",
+		name = "Channel Chat",
+		description = "Stops channel chat from flashing.",
+		position = 5,
+		section = flashSection
+	)
+	default boolean channelChat()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "clanChat",
+		name = "Clan Chat",
+		description = "Stops clan chat from flashing.",
+		position = 6,
+		section = flashSection
+	)
+	default boolean clanChat()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "tradeChat",
+		name = "Trade Chat",
+		description = "Stops trade chat from flashing.",
+		position = 7,
+		section = flashSection
+	)
+	default boolean tradeChat()
+	{
+		return true;
 	}
 }
