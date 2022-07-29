@@ -35,7 +35,6 @@ public class BetterNpcHighlightOverlay extends Overlay
 		this.modelOutlineRenderer = modelOutlineRenderer;
 		this.npcUtil = npcUtil;
 		setPosition(OverlayPosition.DYNAMIC);
-		setPriority(OverlayPriority.HIGH);
 		setLayer(OverlayLayer.ABOVE_SCENE);
 	}
 
@@ -46,7 +45,7 @@ public class BetterNpcHighlightOverlay extends Overlay
 			boolean showWhileDead = !npcUtil.isDying(npc) || !config.ignoreDeadNpcs()
 				|| plugin.checkSpecificList(plugin.ignoreDeadExclusionList, new ArrayList<>(), npc);
 
-			if (npc.getHealthRatio() != 0 || showWhileDead)
+			if (!npc.isDead() || showWhileDead)
 			{
 				Color outlineColor = Color.CYAN;
 				Color fillColor = new Color(0, 255, 255, 20);
