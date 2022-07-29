@@ -27,10 +27,10 @@ package com.togglechat;
 import com.google.inject.Provides;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
-import net.runelite.api.VarClientStr;
-import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.ScriptPreFired;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
+import net.runelite.client.config.Keybind;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
@@ -66,6 +66,8 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 		return configManager.getConfig(ToggleChatConfig.class);
 	}
 
+	private boolean consumeKeys = false;
+
 	@Override
 	protected void startUp()
 	{
@@ -79,31 +81,52 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 	}
 
 	@Subscribe
-	public void onClientTick(ClientTick event)
+	public void onScriptPreFired(ScriptPreFired event)
 	{
-		boolean hidden = client.getVarcIntValue(41) == 1337;
-		if (hidden && config.removeFlashingTabs())
+		if (event.getScriptId() == 179)
 		{
-			client.setVarcIntValue(44, 0);
-			client.setVarcIntValue(45, 0);
-			client.setVarcIntValue(46, 0);
-			client.setVarcIntValue(438, 0);
-			client.setVarcIntValue(47, 0);
-			client.setVarcIntValue(48, 0);
-		}
-	}
-
-	private void removeHotkey() throws InterruptedException
-	{
-		String typedText = client.getVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT);
-		if (typedText.length() > 0)
-		{
-			String subTypedText = typedText.substring(0, typedText.length() - 1);
-			char a = (char) KeyEvent.getExtendedKeyCodeForChar(typedText.substring(typedText.length() - 1).toCharArray()[0]);
-			char b = (char) config.hotKey().getKeyCode();
-			if (a == b)
+			// If the user does not want to disable flashing.
+			if (!config.removeFlashingTabs())
 			{
-				client.setVarcStrValue(VarClientStr.CHATBOX_TYPED_TEXT, subTypedText);
+				return;
+			}
+
+			// Allows notifications to appear in chat if the chat box is open.
+			boolean hidden = client.getVarcIntValue(41) == 1337;
+			if (config.notifyWithOpenChat() && !hidden)
+			{
+				return;
+			}
+
+			// Disables the flashing of specified chats.
+			if (config.gameChat())
+			{
+				client.setVarcIntValue(44, 0);
+			}
+
+			if (config.publicChat())
+			{
+				client.setVarcIntValue(45, 0);
+			}
+
+			if (config.privateChat())
+			{
+				client.setVarcIntValue(46, 0);
+			}
+
+			if (config.clanChat())
+			{
+				client.setVarcIntValue(47, 0);
+			}
+
+			if (config.tradeChat())
+			{
+				client.setVarcIntValue(48, 0);
+			}
+
+			if (config.channelChat())
+			{
+				client.setVarcIntValue(438, 0);
 			}
 		}
 	}
@@ -111,6 +134,10 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 	@Override
 	public void keyTyped(KeyEvent e)
 	{
+		if (consumeKeys)
+		{
+			e.consume();
+		}
 	}
 
 	@Override
@@ -118,17 +145,15 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 	{
 		if (config.hotKey().matches(e))
 		{
+			if (Keybind.getModifierForKeyCode(e.getKeyCode()) == null && e.getKeyCode() != KeyEvent.VK_ESCAPE)
+			{
+				consumeKeys = true;
+				e.consume();
+			}
+
 			clientThread.invokeLater(() -> {
-				try
-				{
-					removeHotkey();
-					//Opens chatbox to the selected tab
-					client.runScript(175, 1, config.defaultTab().getTab());
-				}
-				catch (Exception ex)
-				{
-					ex.printStackTrace();
-				}
+				//Opens chatbox to the selected tab
+				client.runScript(175, 1, config.defaultTab().getTab());
 			});
 		}
 	}
@@ -136,6 +161,10 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 	@Override
 	public void keyReleased(KeyEvent e)
 	{
+		if (config.hotKey().matches(e))
+		{
+			consumeKeys = false;
+		}
 	}
 }
 
