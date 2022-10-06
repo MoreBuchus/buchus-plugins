@@ -24,28 +24,66 @@
  */
 package com.coxadditions;
 
+import com.coxadditions.overlay.CoxAdditionsOverlay;
+import com.coxadditions.overlay.CoxHPOverlay;
+import com.coxadditions.overlay.CoxItemOverlay;
+import com.coxadditions.overlay.InstanceTimerOverlay;
+import com.coxadditions.overlay.OlmHpPanelOverlay;
+import com.coxadditions.overlay.OlmPhasePanel;
+import com.coxadditions.overlay.OlmSideOverlay;
+import com.coxadditions.overlay.VangPotsOverlay;
+import com.coxadditions.overlay.VanguardInfoBox;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
-import lombok.AccessLevel;
+import java.awt.Font;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.*;
+import net.runelite.api.ChatMessageType;
+import net.runelite.api.Client;
+import net.runelite.api.GameObject;
+import net.runelite.api.GameState;
+import net.runelite.api.InstanceTemplates;
+import net.runelite.api.ItemID;
+import net.runelite.api.MenuAction;
+import net.runelite.api.MenuEntry;
+import net.runelite.api.NPC;
+import net.runelite.api.NpcID;
+import net.runelite.api.Projectile;
+import net.runelite.api.VarPlayer;
+import net.runelite.api.Varbits;
 import net.runelite.api.coords.LocalPoint;
-import net.runelite.api.events.*;
+import net.runelite.api.events.ActorDeath;
+import net.runelite.api.events.ChatMessage;
+import net.runelite.api.events.ClientTick;
+import net.runelite.api.events.GameObjectDespawned;
+import net.runelite.api.events.GameObjectSpawned;
+import net.runelite.api.events.GameTick;
+import net.runelite.api.events.GraphicsObjectCreated;
+import net.runelite.api.events.NpcChanged;
+import net.runelite.api.events.NpcDespawned;
+import net.runelite.api.events.NpcSpawned;
+import net.runelite.api.events.ProjectileMoved;
+import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.EventBus;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
+import net.runelite.client.events.NpcLootReceived;
 import net.runelite.client.game.ItemManager;
+import net.runelite.client.game.ItemStack;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
+import net.runelite.client.party.PartyService;
+import net.runelite.client.party.WSClient;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.Text;
-
 import javax.inject.Inject;
 import java.awt.event.KeyEvent;
 import java.util.*;
@@ -91,6 +129,18 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	private VanguardInfoBox vanguardInfobox;
 
 	@Inject
+	private CoxHPOverlay coxHPOverlay;
+
+	@Inject
+	private OlmHpPanelOverlay olmHpPanelOverlay;
+
+	@Inject
+	private VangPotsOverlay vangPotsOverlay;
+
+	@Inject
+	private OlmPhasePanel phasePanel;
+
+	@Inject
 	private InfoBoxManager infoBoxManager;
 
 	@Inject
@@ -102,85 +152,147 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	@Inject
 	private KeyManager keyManager;
 
-	@Getter(AccessLevel.PACKAGE)
+	@Inject
+	private PartyService partyService;
+
+	@Inject
+	private WSClient wsClient;
+
+	@Getter
 	private final ArrayListMultimap<String, Integer> optionIndexes = ArrayListMultimap.create();
 
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private GameObject coxHerb1;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private int coxHerbTimer1;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private GameObject coxHerb2;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private int coxHerbTimer2;
 
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private boolean enhanceSipped;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private int enhanceTicks = -1;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private int totalEnhCycles = 0;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private EnhanceInfobox enhanceInfobox;
 
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private int instanceTimer = 3;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private boolean isInstanceTimerRunning = false;
 
-	@Getter(AccessLevel.PACKAGE)
+	//Olm
+	@Getter
 	private LocalPoint olmTile = null;
+	@Getter
+	private String olmPhase = "";
+	@Getter
+	private NPC olmHead = null;
+	@Getter
+	private boolean olmSpawned = false;
+	@Getter
+	private NPC meleeHand;
+	@Getter
+	private NPC mageHand;
+	@Getter
+	private int meleeHandHp = 600;
+	@Getter
+	private int mageHandHp = 600;
+	@Getter
+	@Setter
+	private int mageHandLastRatio = 100;
+	@Getter
+	@Setter
+	private int mageHandLastHealthScale = 100;
+	@Getter
+	@Setter
+	private int meleeHandLastRatio = 100;
+	@Getter
+	@Setter
+	private int meleeHandLastHealthScale = 100;
+	@Getter
+	private final Set<Integer> orbIDs = ImmutableSet.of(1341, 1343, 1345);
 
-	@Getter(AccessLevel.PACKAGE)
+	//Baby Muttadile
+	@Getter
+	private boolean smallMuttaAlive = false;
+	@Getter
+	private NPC smallMutta = null;
+	@Getter
+	@Setter
+	private int lastRatio = 100;
+	@Getter
+	@Setter
+	private int lastHealthScale = 100;
+
+	//True Tile
+	@Getter
 	private final List<String> tlList = new ArrayList<>();
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private final List<String> bossList = Arrays.asList(
 		"tekton", "jewelled crab", "scavenger beast", "ice demon", "lizardman shaman", "vanguard",
 		"vespula", "deathly ranger", "deathly mage", "vasa nistirio", "skeletal mystic", "muttadile");
 
 	//Vanguards
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private final int MAGE = 7529;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private final int RANGE = 7528;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private final int MELEE = 7527;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private final int DOWN = 7526;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private final ArrayList<Integer> ids = new ArrayList<>();
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private NPC ranger;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private NPC mager;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private NPC meleer;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private boolean inRaid;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private boolean magerFound;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private boolean rangerFound;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private boolean meleeFound;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private int mageHP = -1;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private int rangeHP = -1;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private int meleeHP = -1;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private float percent;
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private boolean inVangs;
+	@Getter
+	private int overloadsDropped = 0;
 
-	@Getter(AccessLevel.PACKAGE)
+	//Ice Demon
+	@Getter
+	private NPC iceDemon = null;
+	@Getter
+	private boolean iceDemonActive = false;
+
+	@Getter
 	private final ArrayList<Integer> chestHighlightIdList = new ArrayList<>();
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private final ArrayList<Integer> chestHighlightIdList2 = new ArrayList<>();
 
-	@Getter(AccessLevel.PACKAGE)
+	@Getter
 	private boolean hotkeyHeld;
+
+	@Getter
+	Font overlayFont;
+
+	@Getter
+	Font panelFont;
 
 	@Provides
 	CoxAdditionsConfig provideConfig(ConfigManager configManager)
@@ -196,6 +308,23 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		coxHerbTimer2 = 16;
 
 		olmTile = null;
+		olmPhase = "";
+		olmSpawned = false;
+		olmHead = null;
+
+		meleeHand = null;
+		mageHand = null;
+		meleeHandHp = 600;
+		mageHandHp = 600;
+		mageHandLastRatio = 100;
+		mageHandLastHealthScale = 100;
+		meleeHandLastRatio = 100;
+		meleeHandLastHealthScale = 100;
+
+		smallMuttaAlive = false;
+		smallMutta = null;
+		lastRatio = 100;
+		lastHealthScale = 100;
 
 		ids.add(MAGE);
 		ids.add(RANGE);
@@ -206,6 +335,14 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		meleeFound = false;
 		rangerFound = false;
 		magerFound = false;
+
+		iceDemon = null;
+		iceDemonActive = false;
+
+		overloadsDropped = 0;
+
+		overlayFont = null;
+		panelFont = null;
 	}
 
 	@Override
@@ -264,12 +401,16 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		}
 
 		keyManager.registerKeyListener(this);
-
+		wsClient.registerMessage(PartyOverloadUpdate.class);
 		overlayManager.add(overlay);
 		overlayManager.add(olmSideOverlay);
 		overlayManager.add(vanguardInfobox);
 		overlayManager.add(itemOverlay);
 		overlayManager.add(instanceTimerOverlay);
+		overlayManager.add(coxHPOverlay);
+		overlayManager.add(olmHpPanelOverlay);
+		overlayManager.add(vangPotsOverlay);
+		overlayManager.add(phasePanel);
 	}
 
 	@Override
@@ -278,11 +419,16 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		reset();
 		eventBus.unregister(this);
 		keyManager.unregisterKeyListener(this);
+		wsClient.unregisterMessage(PartyOverloadUpdate.class);
 		overlayManager.remove(overlay);
 		overlayManager.remove(olmSideOverlay);
 		overlayManager.remove(vanguardInfobox);
 		overlayManager.remove(itemOverlay);
 		overlayManager.remove(instanceTimerOverlay);
+		overlayManager.remove(coxHPOverlay);
+		overlayManager.remove(olmHpPanelOverlay);
+		overlayManager.remove(vangPotsOverlay);
+		overlayManager.remove(phasePanel);
 	}
 
 	@Subscribe
@@ -346,6 +492,18 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 						addInfobox();
 					}
 					break;
+				case "overlayFontType":
+				case "overlayFontName":
+				case "overlayFontSize":
+				case "overlayFontWeight":
+					loadFont(true);
+					break;
+				case "panelFontType":
+				case "panelFontName":
+				case "panelFontSize":
+				case "panelFontWeight":
+					loadFont(false);
+					break;
 			}
 		}
 	}
@@ -365,6 +523,23 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		{
 			instanceTimer = 5;
 			isInstanceTimerRunning = true;
+		}
+		else if (msg.equalsIgnoreCase("the great olm is giving its all. this is its final stand."))
+		{
+			mageHand = null;
+			meleeHand = null;
+		}
+		else if (msg.equalsIgnoreCase("the great olm rises with the power of crystal."))
+		{
+			olmPhase = "Crystal";
+		}
+		else if (msg.equalsIgnoreCase("the great olm rises with the power of acid."))
+		{
+			olmPhase = "Acid";
+		}
+		else if (msg.equalsIgnoreCase("the great olm rises with the power of flame."))
+		{
+			olmPhase = "Flame";
 		}
 	}
 
@@ -520,6 +695,19 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	}
 
 	@Subscribe
+	public void onGraphicsObjectCreated(GraphicsObjectCreated e)
+	{
+		if (inRaid)
+		{
+			//Ice Demon Pop
+			if (e.getGraphicsObject().getId() == 188)
+			{
+				iceDemonActive = true;
+			}
+		}
+	}
+
+	@Subscribe
 	private void onNpcSpawned(NpcSpawned e)
 	{
 		if (inRaid && e.getNpc() != null)
@@ -528,15 +716,36 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			int id = npc.getId();
 			String name = npc.getName();
 
+			switch (id)
+			{
+				case NpcID.GREAT_OLM_LEFT_CLAW:
+				case NpcID.GREAT_OLM_LEFT_CLAW_7555:
+					meleeHand = npc;
+					break;
+				case NpcID.GREAT_OLM_RIGHT_CLAW:
+				case NpcID.GREAT_OLM_RIGHT_CLAW_7553:
+					mageHand = npc;
+					break;
+				case NpcID.ICE_DEMON:
+					iceDemon = npc;
+					break;
+				case NpcID.MUTTADILE_7562: //Baby muttadile
+					smallMuttaAlive = true;
+					smallMutta = npc;
+					break;
+			}
+
 			if (name != null)
 			{
 				if (name.equalsIgnoreCase("great olm"))
 				{
-					if (id == 7551)
+					olmHead = npc;
+					olmSpawned = true;
+					if (id == NpcID.GREAT_OLM)
 					{
 						olmTile = npc.getLocalLocation();
 					}
-					else if (id == 7554)
+					else if (id == NpcID.GREAT_OLM_7554)
 					{
 						olmTile = null;
 					}
@@ -554,13 +763,61 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			int id = npc.getId();
 			String name = npc.getName();
 
+			switch (id)
+			{
+				case NpcID.GREAT_OLM_LEFT_CLAW:
+				case NpcID.GREAT_OLM_LEFT_CLAW_7555:
+					meleeHand = null;
+					if (npc.isDead())
+					{
+						if (mageHand == null)
+						{
+							olmPhase = "";
+						}
+						meleeHandHp = 600;
+						meleeHandLastHealthScale = 100;
+						meleeHandLastRatio = 100;
+					}
+					break;
+				case NpcID.GREAT_OLM_RIGHT_CLAW:
+				case NpcID.GREAT_OLM_RIGHT_CLAW_7553:
+					mageHand = null;
+					if (npc.isDead())
+					{
+						if (meleeHand == null)
+						{
+							olmPhase = "";
+						}
+						mageHandHp = 600;
+						mageHandLastHealthScale = 100;
+						mageHandLastRatio = 100;
+					}
+					break;
+				case NpcID.ICE_DEMON:
+					iceDemon = null;
+					break;
+				case NpcID.MUTTADILE_7562: //Baby muttadile
+					smallMuttaAlive = false;
+					smallMutta = null;
+					lastHealthScale = 0;
+					lastRatio = 0;
+					break;
+			}
+
 			if (name != null)
 			{
 				if (name.equalsIgnoreCase("great olm"))
 				{
-					if (id == 7551)
+					olmHead = null;
+					olmSpawned = false;
+					if (id == NpcID.GREAT_OLM)
 					{
 						olmTile = null;
+					}
+
+					if (npc.isDead())
+					{
+						olmPhase = "";
 					}
 				}
 			}
@@ -575,11 +832,83 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			NPC npc = e.getNpc();
 			int id = npc.getId();
 
-			if (id == 7554)
+			if (id == NpcID.GREAT_OLM_7554)
 			{
 				olmTile = null;
 			}
 		}
+	}
+
+	@Subscribe
+	private void onActorDeath(ActorDeath e)
+	{
+		if (inRaid && e.getActor() instanceof NPC)
+		{
+			NPC npc = (NPC) e.getActor();
+
+			if (npc.getName() != null)
+			{
+				if (npc.getName().toLowerCase().contains("great olm (left claw)"))
+				{
+					meleeHand = null;
+					meleeHandHp = 600;
+					meleeHandLastHealthScale = 100;
+					meleeHandLastRatio = 100;
+				}
+				else if (npc.getName().toLowerCase().contains("great olm (right claw)"))
+				{
+					mageHand = null;
+					mageHandHp = 600;
+					mageHandLastHealthScale = 100;
+					mageHandLastRatio = 100;
+				}
+			}
+		}
+	}
+
+	@Subscribe
+	public void onNpcLootReceived(NpcLootReceived e)
+	{
+		if (e.getNpc().getName() != null && e.getNpc().getName().equalsIgnoreCase("vanguard") && inRaid && client.getLocalPlayer() != null)
+		{
+			for (ItemStack item : e.getItems())
+			{
+				if (item.getId() == ItemID.OVERLOAD_4_20996)
+				{
+					if (partyService.isInParty())
+					{
+						partyService.send(new PartyOverloadUpdate(client.getLocalPlayer().getName(), client.getWorld()));
+					}
+					else
+					{
+						sendVanguardMessage(client.getLocalPlayer().getName(), client.getWorld());
+					}
+				}
+			}
+		}
+	}
+
+	@Subscribe
+	public void onPartyOverloadUpdate(PartyOverloadUpdate e)
+	{
+		sendVanguardMessage(e.getPlayer(), e.getWorld());
+	}
+
+	public void sendVanguardMessage(String player, int world)
+	{
+		clientThread.invoke(() ->
+		{
+			if (world == client.getWorld())
+			{
+				overloadsDropped++;
+
+				if (config.overloadChatMessage())
+				{
+					String msg = player + " has received: <col=ff0000>1</col> x <col=ff0000>Overload (+)(4)</col>.";
+					client.addChatMessage(ChatMessageType.GAMEMESSAGE, "", msg, null);
+				}
+			}
+		});
 	}
 
 	private final Predicate<MenuEntry> filterMenuEntries = entry ->
@@ -672,9 +1001,34 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				totalEnhCycles = client.getVarbitValue(5417);
 				addInfobox(); //Makes infobox persist after log out
 			}
+			else
+			{
+				if (client.getVarpValue(VarPlayer.HP_HUD_NPC_ID) == 7555)
+				{
+					meleeHandHp = client.getVarbitValue(6099);
+				}
+				else if (client.getVarpValue(VarPlayer.HP_HUD_NPC_ID) == 7553)
+				{
+					mageHandHp = client.getVarbitValue(6099);
+				}
+			}
 		}
 		else
 		{
+			meleeHand = null;
+			mageHand = null;
+			meleeHandHp = 600;
+			mageHandHp = 600;
+			mageHandLastRatio = 100;
+			mageHandLastHealthScale = 100;
+			meleeHandLastRatio = 100;
+			meleeHandLastHealthScale = 100;
+
+			smallMuttaAlive = false;
+			lastRatio = 100;
+			lastHealthScale = 100;
+			smallMutta = null;
+
 			coxHerb1 = null;
 			coxHerbTimer1 = 16;
 			coxHerb2 = null;
@@ -685,6 +1039,11 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			rangerFound = false;
 			magerFound = false;
 
+			iceDemon = null;
+			iceDemonActive = false;
+
+			overloadsDropped = 0;
+
 			enhanceSipped = false;
 			enhanceTicks = -1;
 			totalEnhCycles = 0;
@@ -692,6 +1051,56 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			{
 				infoBoxManager.removeInfoBox(enhanceInfobox);
 				enhanceInfobox = null;
+			}
+		}
+	}
+
+	@Subscribe
+	public void onProjectileMoved(ProjectileMoved projectileMoved)
+	{
+		if (inRaid)
+		{
+			Projectile p = projectileMoved.getProjectile();
+
+			if (config.replaceOrbs() && orbIDs.contains(p.getId()))
+			{
+				int newID = -1;
+
+				switch (p.getId())
+				{
+					case 1341: //Mage Orb
+					{
+						newID = 2208; //Warden Blue Orb
+						break;
+					}
+					case 1343: //Range Orb
+					{
+						newID = 2206; //Warden White Arrow
+						break;
+					}
+					case 1345: //Melee Orb
+					{
+						newID = 2204; //Warden Red Sword
+						break;
+					}
+				}
+
+				if (newID != -1)
+				{
+					Projectile orb = client.createProjectile(
+						newID,
+						p.getFloor(),
+						p.getX1(), p.getY1(),
+						p.getHeight(),
+						p.getStartCycle(), p.getEndCycle(),
+						p.getSlope(),
+						p.getStartHeight(), p.getEndHeight(),
+						p.getInteracting(),
+						p.getTarget().getX(), p.getTarget().getY());
+
+					client.getProjectiles().addLast(orb);
+					p.setEndCycle(0);
+				}
 			}
 		}
 	}
@@ -832,5 +1241,61 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		enhanceSipped = false;
 		infoBoxManager.removeInfoBox(enhanceInfobox);
 		enhanceInfobox = null;
+	}
+
+	public InstanceTemplates getCurrentRoom(int x, int y, int z)
+	{
+		if (client.getGameState() == GameState.LOGGED_IN && inRaid)
+		{
+			int chunkData = client.getInstanceTemplateChunks()[z][x / 8][y / 8];
+			return InstanceTemplates.findMatch(chunkData);
+		}
+		return null;
+	}
+
+	public void loadFont(boolean overlay)
+	{
+		if (overlay)
+		{
+			switch (config.overlayFontType())
+			{
+				case SMALL:
+					overlayFont = FontManager.getRunescapeSmallFont();
+					break;
+				case REGULAR:
+					overlayFont = FontManager.getRunescapeFont();
+					break;
+				case BOLD:
+					overlayFont = FontManager.getRunescapeBoldFont();
+					break;
+				case CUSTOM:
+					if (!config.overlayFontName().equals(""))
+					{
+						overlayFont = new Font(config.overlayFontName(), config.overlayFontWeight().getWeight(), config.overlayFontSize());
+					}
+					break;
+			}
+		}
+		else
+		{
+			switch (config.panelFontType())
+			{
+				case SMALL:
+					panelFont = FontManager.getRunescapeSmallFont();
+					break;
+				case REGULAR:
+					panelFont = FontManager.getRunescapeFont();
+					break;
+				case BOLD:
+					panelFont = FontManager.getRunescapeBoldFont();
+					break;
+				case CUSTOM:
+					if (!config.panelFontName().equals(""))
+					{
+						panelFont = new Font(config.panelFontName(), config.panelFontWeight().getWeight(), config.panelFontSize());
+					}
+					break;
+			}
+		}
 	}
 }

@@ -1,5 +1,7 @@
-package com.coxadditions;
+package com.coxadditions.overlay;
 
+import com.coxadditions.CoxAdditionsConfig;
+import com.coxadditions.CoxAdditionsPlugin;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import javax.inject.Inject;
@@ -26,9 +28,15 @@ public class InstanceTimerOverlay extends OverlayPanel
 
 	public Dimension render(Graphics2D graphics)
 	{
+		if (plugin.getPanelFont() == null)
+		{
+			plugin.loadFont(false);
+		}
+
 		panelComponent.getChildren().clear();
 		if (config.instanceTimer() == CoxAdditionsConfig.instanceTimerMode.INFOBOX && plugin.isInstanceTimerRunning() && client.getVarbitValue(Varbits.IN_RAID) == 1)
 		{
+			graphics.setFont(plugin.getPanelFont());
 			panelComponent.setPreferredSize(new Dimension(graphics.getFontMetrics().stringWidth("Tick:   ") + 15, 0));
 			panelComponent.getChildren().add(LineComponent.builder()
 				.left("Tick: ")

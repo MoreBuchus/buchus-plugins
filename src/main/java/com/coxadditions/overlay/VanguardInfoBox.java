@@ -1,5 +1,7 @@
-package com.coxadditions;
+package com.coxadditions.overlay;
 
+import com.coxadditions.CoxAdditionsConfig;
+import com.coxadditions.CoxAdditionsPlugin;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
@@ -36,10 +38,17 @@ public class VanguardInfoBox extends Overlay
 		{
 			return null;
 		}
+
+		if (plugin.getPanelFont() == null)
+		{
+			plugin.loadFont(false);
+		}
+
 		panelComponent.getChildren().clear();
 
 		if (config.vangInfobox())
 		{
+			graphics.setFont(plugin.getPanelFont());
 			panelComponent.getChildren().add(TitleComponent.builder()
 				.text("Vanguards")
 				.color(Color.pink)

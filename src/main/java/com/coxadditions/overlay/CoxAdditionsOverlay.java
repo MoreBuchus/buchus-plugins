@@ -1,5 +1,7 @@
-package com.coxadditions;
+package com.coxadditions.overlay;
 
+import com.coxadditions.CoxAdditionsConfig;
+import com.coxadditions.CoxAdditionsPlugin;
 import net.runelite.api.Point;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -32,10 +34,16 @@ public class CoxAdditionsOverlay extends Overlay
 	{
 		if (client.getVarbitValue(Varbits.IN_RAID) == 1)
 		{
+			if (plugin.getOverlayFont() == null)
+			{
+				plugin.loadFont(true);
+			}
+
 			if (config.coxHerbTimer() != CoxAdditionsConfig.CoXHerbTimerMode.OFF && (plugin.getCoxHerb1() != null || plugin.getCoxHerb2() != null))
 			{
 				if (config.coxHerbTimer() == CoxAdditionsConfig.CoXHerbTimerMode.TEXT)
 				{
+					graphics.setFont(plugin.getOverlayFont());
 					if (plugin.getCoxHerb1() != null)
 					{
 						GameObject herb = plugin.getCoxHerb1();
@@ -43,7 +51,7 @@ public class CoxAdditionsOverlay extends Overlay
 						Point textLoc = herb.getCanvasTextLocation(graphics, text, 50);
 						Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
 						Font oldFont = graphics.getFont();
-						graphics.setFont(new Font("Arial", Font.BOLD, config.coxHerbTimerSize()));
+						graphics.setFont(plugin.getOverlayFont());
 						OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
 						OverlayUtil.renderTextLocation(graphics, textLoc, text, config.coxHerbTimerColor());
 						graphics.setFont(oldFont);
@@ -56,7 +64,7 @@ public class CoxAdditionsOverlay extends Overlay
 						Point textLoc = herb.getCanvasTextLocation(graphics, text, 50);
 						Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
 						Font oldFont = graphics.getFont();
-						graphics.setFont(new Font("Arial", Font.BOLD, config.coxHerbTimerSize()));
+						graphics.setFont(plugin.getOverlayFont());
 						OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
 						OverlayUtil.renderTextLocation(graphics, textLoc, text, config.coxHerbTimerColor());
 						graphics.setFont(oldFont);
@@ -104,6 +112,7 @@ public class CoxAdditionsOverlay extends Overlay
 					Point point = player.getCanvasTextLocation(graphics, "#", player.getLogicalHeight() + 60);
 					if (point != null)
 					{
+						graphics.setFont(plugin.getOverlayFont());
 						OverlayUtil.renderTextLocation(graphics, point, String.valueOf(plugin.getInstanceTimer()), Color.CYAN);
 					}
 				}
@@ -142,6 +151,34 @@ public class CoxAdditionsOverlay extends Overlay
 								renderPoly(graphics, config.tlColor(), tilePoly, config.tlThiCC());
 							}
 						}
+					}
+				}
+			}
+
+			if (config.olmPhaseHighlight() && plugin.isOlmSpawned() && plugin.getOlmHead() != null)
+			{
+				NPCComposition comp = plugin.getOlmHead().getComposition();
+				int size = comp.getSize();
+				LocalPoint lp = plugin.getOlmHead().getLocalLocation();
+				if (lp != null)
+				{
+					Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
+					if (tilePoly != null)
+					{
+						Color color = config.olmHighlightColor();
+						switch (plugin.getOlmPhase())
+						{
+							case "Crystal":
+								color = Color.MAGENTA;
+								break;
+							case "Acid":
+								color = Color.GREEN;
+								break;
+							case "Flame":
+								color = Color.RED;
+								break;
+						}
+						renderPoly(graphics, color, tilePoly, config.olmWidth());
 					}
 				}
 			}

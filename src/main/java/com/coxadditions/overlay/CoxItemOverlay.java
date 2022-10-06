@@ -1,5 +1,7 @@
-package com.coxadditions;
+package com.coxadditions.overlay;
 
+import com.coxadditions.CoxAdditionsConfig;
+import com.coxadditions.CoxAdditionsPlugin;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
