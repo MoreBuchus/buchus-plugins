@@ -1,5 +1,6 @@
 package com.coxanalytics;
 
+import com.coxanalytics.config.CustomOverlayInfo;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
 import net.runelite.api.Varbits;
@@ -65,77 +66,86 @@ public class CoxAnalyticsOverlay extends OverlayPanel
 					break;
 			}
 
-			panelComponent.getChildren().add(LineComponent.builder()
-				.left("Total:")
-				.right(POINTS_FORMAT.format(totalPoints))
-				.build());
-
-			panelComponent.getChildren().add(LineComponent.builder()
-				.left(client.getLocalPlayer().getName() + ":")
-				.right(POINTS_FORMAT.format(personalPoints))
-				.build());
-
-			if (config.elapsedTime())
+			if (!config.overlayInfo().isEmpty())
 			{
-				panelComponent.getChildren().add(LineComponent.builder()
-					.left("Time:")
-					.rightColor(!plugin.getOlmTime().equals("") ? Color.GREEN : Color.WHITE)
-					.right(plugin.raidTime(plugin.coxTimeVar()))
-					.build());
-			}
-
-			if (config.showFloorSplits())
-			{
-				if (plugin.getUpperTicks() != -1)
+				if (config.overlayInfo().contains(CustomOverlayInfo.TOTAL))
 				{
 					panelComponent.getChildren().add(LineComponent.builder()
-						.left("Floor 1: ")
-						.right(plugin.getUpperFloorTime())
+						.left("Total:")
+						.right(POINTS_FORMAT.format(totalPoints))
 						.build());
 				}
 
-				if (plugin.getMiddleTicks() != -1)
+				if (config.overlayInfo().contains(CustomOverlayInfo.PERSONAL))
 				{
 					panelComponent.getChildren().add(LineComponent.builder()
-						.left("Floor 2: ")
-						.right(plugin.getMiddleFloorTime())
+						.left(client.getLocalPlayer().getName() + ":")
+						.right(POINTS_FORMAT.format(personalPoints))
 						.build());
 				}
 
-				if (plugin.getLowerTicks() != -1)
+				if (config.overlayInfo().contains(CustomOverlayInfo.ELAPSED))
 				{
+					panelComponent.getChildren().add(LineComponent.builder()
+						.left("Time:")
+						.rightColor(!plugin.getOlmTime().equals("") ? Color.GREEN : Color.WHITE)
+						.right(plugin.raidTime(plugin.coxTimeVar()))
+						.build());
+				}
+
+				if (config.overlayInfo().contains(CustomOverlayInfo.FLOOR))
+				{
+					if (plugin.getUpperTicks() != -1)
+					{
+						panelComponent.getChildren().add(LineComponent.builder()
+							.left("Floor 1: ")
+							.right(plugin.getUpperFloorTime())
+							.build());
+					}
+
 					if (plugin.getMiddleTicks() != -1)
 					{
 						panelComponent.getChildren().add(LineComponent.builder()
-							.left("Floor 3: ")
-							.right(plugin.getLowerFloorTime())
+							.left("Floor 2: ")
+							.right(plugin.getMiddleFloorTime())
 							.build());
 					}
-					else
+
+					if (plugin.getLowerTicks() != -1)
+					{
+						if (plugin.getMiddleTicks() != -1)
+						{
+							panelComponent.getChildren().add(LineComponent.builder()
+								.left("Floor 3: ")
+								.right(plugin.getLowerFloorTime())
+								.build());
+						}
+						else
+						{
+							panelComponent.getChildren().add(LineComponent.builder()
+								.left("Floor 2: ")
+								.right(plugin.getLowerFloorTime())
+								.build());
+						}
+					}
+
+					if (!plugin.getOlmTime().equals(""))
 					{
 						panelComponent.getChildren().add(LineComponent.builder()
-							.left("Floor 2: ")
-							.right(plugin.getLowerFloorTime())
+							.left("Olm: ")
+							.right(plugin.getOlmTime())
 							.build());
 					}
 				}
 
-				if (!plugin.getOlmTime().equals(""))
+				if (config.overlayInfo().contains(CustomOverlayInfo.CURRENT) && plugin.getOlmTime().equals(""))
 				{
 					panelComponent.getChildren().add(LineComponent.builder()
-						.left("Olm: ")
-						.right(plugin.getOlmTime())
+						.left("Current Split:")
+						.rightColor(Color.WHITE)
+						.right(plugin.raidTime(plugin.coxTimeVar() - plugin.getSplitTicks()))
 						.build());
 				}
-			}
-
-			if (config.displayCurrentSplit() && plugin.getOlmTime().equals(""))
-			{
-				panelComponent.getChildren().add(LineComponent.builder()
-					.left("Current Split:")
-					.rightColor(Color.WHITE)
-					.right(plugin.raidTime(plugin.coxTimeVar() - plugin.getSplitTicks()))
-					.build());
 			}
 
 			final Rectangle bounds = getBounds();

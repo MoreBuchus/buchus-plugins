@@ -245,7 +245,10 @@ public class CoxAnalyticsPlugin extends Plugin
 			.priority(config.panelPriority())
 			.panel(pointsPanel)
 			.build();
-		clientToolbar.addNavigation(button);
+		if (config.ptsPanel())
+		{
+			clientToolbar.addNavigation(button);
+		}
 	}
 
 	@Subscribe
@@ -628,6 +631,7 @@ public class CoxAnalyticsPlugin extends Plugin
 			pointsPanel.setAvgSoloPoints(totalSoloPoints, totalKC);
 
 			pointsPanel.setCompletions(regKC, cmKC);
+			pointsPanel.setAvgTime(raidTime(totalEndTicks / totalKC));
 			pointsPanel.setLastTime(raidTime(endTicks));
 			pointsPanel.setTimeDif(fastestTicks != -1 ? fastestTicks - endTicks : 0);
 		}

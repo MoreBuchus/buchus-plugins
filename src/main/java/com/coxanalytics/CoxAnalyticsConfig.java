@@ -27,8 +27,11 @@ package com.coxanalytics;
 import com.coxanalytics.config.BackgroundMode;
 import com.coxanalytics.config.FontType;
 import com.coxanalytics.config.FontWeight;
+import com.coxanalytics.config.CustomOverlayInfo;
 import com.coxanalytics.config.TimeStyle;
 import java.awt.Color;
+import java.util.Collections;
+import java.util.Set;
 import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
@@ -85,46 +88,22 @@ public interface CoxAnalyticsConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "elapsedTime",
-		name = "Display Elapsed Time",
-		description = "Displays the current raid time",
+		keyName = "overlayInfo",
+		name = "Display Options",
+		description = "Options that can be displayed in the custom overlay",
 		position = 2,
 		section = timerSection
 	)
-	default boolean elapsedTime()
+	default Set<CustomOverlayInfo> overlayInfo()
 	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "floorSplits",
-		name = "Display Floor Split Times",
-		description = "Displays the time for each floor and olm in the overlay",
-		position = 3,
-		section = timerSection
-	)
-	default boolean showFloorSplits()
-	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "displayCurrentSplit",
-		name = "Display Current Split",
-		description = "Displays how long the current split is taking",
-		position = 4,
-		section = timerSection
-	)
-	default boolean displayCurrentSplit()
-	{
-		return true;
+		return Collections.emptySet();
 	}
 
 	@ConfigItem(
 		keyName = "splitsTooltip",
 		name = "Splits Tooltip",
 		description = "Displays the floor splits when hovering the overlay or widget",
-		position = 5,
+		position = 3,
 		section = timerSection
 	)
 	default boolean splitsTooltip()
@@ -136,7 +115,7 @@ public interface CoxAnalyticsConfig extends Config
 		keyName = "showOlmMageHand",
 		name = "Olm Mage Hand Message",
 		description = "Prints a chat message displaying how long the mage hand took to kill <br> De0's CoX Timers must be installed and enabled",
-		position = 6,
+		position = 4,
 		section = timerSection
 	)
 	default boolean showOlmMageHand()
@@ -148,7 +127,7 @@ public interface CoxAnalyticsConfig extends Config
 		keyName = "ptsHr",
 		name = "Points Per Hour Message",
 		description = "Displays a pts/hr chat message after the raid has ended",
-		position = 7,
+		position = 5,
 		section = timerSection
 	)
 	default boolean ptsHr()
@@ -160,7 +139,7 @@ public interface CoxAnalyticsConfig extends Config
 		keyName = "exportTimes",
 		name = "Export Times",
 		description = "Exports times to a file in the 'cox-analytics' folder in .runelite",
-		position = 8,
+		position = 6,
 		section = timerSection
 	)
 	default boolean exportTimes()

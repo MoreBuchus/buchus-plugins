@@ -83,6 +83,7 @@ public class CoxPointsPanel extends PluginPanel
 	private final JLabel avgSoloPointsLabel = new JLabel("Avg. Points: 0");
 
 	private final JLabel raidsCompletedLabel = new JLabel("Total: 0");
+	private final JLabel avgTimeLabel = new JLabel("Avg. Time: 00:00.0");
 	private final JLabel fastestTimeLabel = new JLabel("Fastest Time: 00:00.0");
 	private final JLabel lastTimeLabel = new JLabel("Last Time: 00:00.0");
 	private final JLabel timeDifLabel = new JLabel("Difference: ");
@@ -251,7 +252,7 @@ public class CoxPointsPanel extends PluginPanel
 		pointsContainer.setBorder(new EmptyBorder(4, 10, 4, 10));
 		pointsContainer.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 		JPanel pointsInfobox = new JPanel(new GridBagLayout());
-		pointsInfobox.setLayout(new GridLayout(14, 1, 0, 10));
+		pointsInfobox.setLayout(new GridLayout(15, 1, 0, 10));
 		pointsInfobox.setBorder(new EmptyBorder(4, 0, 4, 0));
 		pointsInfobox.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
@@ -268,6 +269,7 @@ public class CoxPointsPanel extends PluginPanel
 		blankline1.setFont(FontManager.getRunescapeSmallFont());
 
 		raidsCompletedLabel.setFont(FontManager.getRunescapeSmallFont());
+		avgTimeLabel.setFont(FontManager.getRunescapeSmallFont());
 		fastestTimeLabel.setFont(FontManager.getRunescapeSmallFont());
 		lastTimeLabel.setFont(FontManager.getRunescapeSmallFont());
 		timeDifLabel.setFont(FontManager.getRunescapeSmallFont());
@@ -285,6 +287,7 @@ public class CoxPointsPanel extends PluginPanel
 		pointsInfobox.add(blankline1);
 
 		pointsInfobox.add(raidsCompletedLabel);
+		pointsInfobox.add(avgTimeLabel);
 		pointsInfobox.add(fastestTimeLabel);
 		pointsInfobox.add(lastTimeLabel);
 		pointsInfobox.add(timeDifLabel);
@@ -409,7 +412,7 @@ public class CoxPointsPanel extends PluginPanel
 		return teamPointsLabel.getText() + "\r\n" + teamVirtualPointsHourLabel.getText() + "\r\n" + teamPointsHourLabel.getText() + "\r\n" +
 			avgTeamPointsLabel.getText() + "\r\n" + soloPointsLabel.getText() + "\r\n" + soloVirtualPointsHourLabel.getText() + "\r\n" +
 			soloPointsHourLabel.getText() + "\r\n" + avgSoloPointsLabel.getText() + "\r\n" + raidsCompletedLabel.getText() + "\r\n" +
-			fastestTimeLabel.getText() + "\r\n" + lastTimeLabel.getText() + "\r\n" + timeDifString;
+			avgTimeLabel.getText() + "\r\n" + fastestTimeLabel.getText() + "\r\n" + lastTimeLabel.getText() + "\r\n" + timeDifString;
 	}
 
 	private String copySplitsToClipboard()
@@ -460,6 +463,11 @@ public class CoxPointsPanel extends PluginPanel
 	void setCompletions(int regKC, int cmKC)
 	{
 		raidsCompletedLabel.setText(toCompletions(regKC, cmKC));
+	}
+
+	void setAvgTime(String time)
+	{
+		avgTimeLabel.setText("Avg. Time: " + time);
 	}
 
 	void setFastestTime(String time)
