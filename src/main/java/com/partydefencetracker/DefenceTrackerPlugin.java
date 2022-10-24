@@ -451,7 +451,7 @@ public class DefenceTrackerPlugin extends Plugin
 		}
 		else if ((weapon == SpecialWeapon.ARCLIGHT || weapon == SpecialWeapon.DARKLIGHT) && hit > 0)
 		{
-			if (boss.equals("K'ril Tsutsaroth"))
+			if (boss.equals("K'ril Tsutsaroth") || boss.equals("Abyssal Sire"))
 			{
 				currentBossDef -= startingBossDef * .10;
 			}
