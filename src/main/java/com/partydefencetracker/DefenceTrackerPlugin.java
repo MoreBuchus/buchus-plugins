@@ -95,7 +95,8 @@ public class DefenceTrackerPlugin extends Plugin
 
 	private String boss = "";
 	private int bossIndex = 0;
-	private double bossDef = -1;
+	private double startingBossDef = -1;
+	private double currentBossDef = -1;
 	private DefenceInfoBox box = null;
 	private VulnerabilityInfoBox vulnBox = null;
 	private SpritePixels vuln = null;
@@ -141,7 +142,8 @@ public class DefenceTrackerPlugin extends Plugin
 		infoBoxManager.removeInfoBox(vulnBox);
 		boss = "";
 		bossIndex = 0;
-		bossDef = -1;
+		startingBossDef = -1;
+		currentBossDef = -1;
 		box = null;
 		vulnBox = null;
 		vuln = null;
@@ -167,7 +169,7 @@ public class DefenceTrackerPlugin extends Plugin
 				if (animation == 1816 && boss.equalsIgnoreCase("sotetseg") && (isInOverWorld() || isInUnderWorld()))
 				{
 					infoBoxManager.removeInfoBox(box);
-					bossDef = 200;
+					currentBossDef = 200;
 				}
 			}
 		}
@@ -296,7 +298,7 @@ public class DefenceTrackerPlugin extends Plugin
 					vulnBox.setTooltip(ColorUtil.wrapWithColorTag(boss, Color.WHITE));
 					infoBoxManager.addInfoBox(vulnBox);
 				}
-				bossDef -= bossDef * .1;
+				currentBossDef -= currentBossDef * .1;
 
 				updateDefInfobox();
 			}
@@ -336,77 +338,78 @@ public class DefenceTrackerPlugin extends Plugin
 		{
 			case "Abyssal Sire":
 			case "General Graardor":
-				bossDef = 250;
+				startingBossDef = 250;
 				break;
 			case "Callisto":
-				bossDef = 440;
+				startingBossDef = 440;
 				break;
 			case "Cerberus":
-				bossDef = 110;
+				startingBossDef = 110;
 				break;
 			case "Chaos Elemental":
 			case "K'ril Tsutsaroth":
-				bossDef = 270;
+				startingBossDef = 270;
 				break;
 			case "Corporeal Beast":
-				bossDef = 310;
+				startingBossDef = 310;
 				break;
 			case "Giant Mole":
 			case "The Maiden of Sugadinti":
 			case "Sotetseg":
-				bossDef = 200;
+				startingBossDef = 200;
 				break;
 			case "Kalphite Queen":
-				bossDef = 300;
+				startingBossDef = 300;
 				break;
 			case "King Black Dragon":
-				bossDef = 240;
+				startingBossDef = 240;
 				break;
 			case "Sarachnis":
-				bossDef = 150;
+				startingBossDef = 150;
 				break;
 			case "Venenatis":
-				bossDef = 490;
+				startingBossDef = 490;
 				break;
 			case "Vet'ion":
 			case "Vet'ion Reborn":
-				bossDef = 395;
+				startingBossDef = 395;
 				break;
 			case "Pestilent Bloat":
-				bossDef = 100;
+				startingBossDef = 100;
 				break;
 			case "Nylocas Vasilias":
-				bossDef = 50;
+				startingBossDef = 50;
 				break;
 			case "Xarpus":
 				if (hmXarpus)
 				{
-					bossDef = 200;
+					startingBossDef = 200;
 				}
 				else
 				{
-					bossDef = 250;
+					startingBossDef = 250;
 				}
 				break;
 			case "Great Olm (Left claw)":
-				bossDef = 175 * (1 + (.01 * (client.getVarbitValue(5424) - 1)));
+				startingBossDef = 175 * (1 + (.01 * (client.getVarbitValue(5424) - 1)));
 
 				if (isInCm)
 				{
-					bossDef = bossDef * 1.5;
+					startingBossDef = startingBossDef * 1.5;
 				}
 				break;
 			case "Tekton":
 			case "Tekton (enraged)":
 				boss = "Tekton";
-				bossDef = 205 * (1 + (.01 * (client.getVarbitValue(5424) - 1)));
+				startingBossDef = 205 * (1 + (.01 * (client.getVarbitValue(5424) - 1)));
 
 				if (isInCm)
 				{
-					bossDef = bossDef * 1.2;
+					startingBossDef = startingBossDef * 1.2;
 				}
 				break;
 		}
+		currentBossDef = startingBossDef;
 	}
 
 	private void calculateDefence(SpecialWeapon weapon, int hit)
@@ -417,12 +420,12 @@ public class DefenceTrackerPlugin extends Plugin
 			{
 				if (client.getVarbitValue(Varbits.IN_RAID) == 1 && boss.equals("Tekton"))
 				{
-					bossDef -= bossDef * .05;
+					currentBossDef -= currentBossDef * .05;
 				}
 			}
 			else
 			{
-				bossDef -= bossDef * .30;
+				currentBossDef -= currentBossDef * .30;
 			}
 		}
 		else if (weapon == SpecialWeapon.BANDOS_GODSWORD)
@@ -431,18 +434,18 @@ public class DefenceTrackerPlugin extends Plugin
 			{
 				if (client.getVarbitValue(Varbits.IN_RAID) == 1 && boss.equals("Tekton"))
 				{
-					bossDef -= 10;
+					currentBossDef -= 10;
 				}
 			}
 			else
 			{
 				if (boss.equals("Corporeal Beast") || (isInBloat() && boss.equals("Pestilent Bloat") && !bloatDown))
 				{
-					bossDef -= hit * 2;
+					currentBossDef -= hit * 2;
 				}
 				else
 				{
-					bossDef -= hit;
+					currentBossDef -= hit;
 				}
 			}
 		}
@@ -450,20 +453,20 @@ public class DefenceTrackerPlugin extends Plugin
 		{
 			if (boss.equals("K'ril Tsutsaroth"))
 			{
-				bossDef -= bossDef * .10;
+				currentBossDef -= startingBossDef * .10;
 			}
 			else
 			{
-				bossDef -= bossDef * .05;
+				currentBossDef -= startingBossDef * .05;
 			}
 		}
 		else if (weapon == SpecialWeapon.BARRELCHEST_ANCHOR)
 		{
-			bossDef -= hit * .10;
+			currentBossDef -= hit * .10;
 		}
 		else if (weapon == SpecialWeapon.BONE_DAGGER || weapon == SpecialWeapon.DORGESHUUN_CROSSBOW)
 		{
-			bossDef -= hit;
+			currentBossDef -= hit;
 		}
 	}
 
@@ -484,16 +487,16 @@ public class DefenceTrackerPlugin extends Plugin
 
 	private void updateDefInfobox()
 	{
-		if (boss.equals("Sotetseg") && bossDef < 100)
+		if (boss.equals("Sotetseg") && currentBossDef < 100)
 		{
-			bossDef = 100;
+			currentBossDef = 100;
 		}
-		else if (bossDef < 0)
+		else if (currentBossDef < 0)
 		{
-			bossDef = 0;
+			currentBossDef = 0;
 		}
 		infoBoxManager.removeInfoBox(box);
-		box = new DefenceInfoBox(skillIconManager.getSkillImage(Skill.DEFENCE), this, Math.round(bossDef), config);
+		box = new DefenceInfoBox(skillIconManager.getSkillImage(Skill.DEFENCE), this, Math.round(currentBossDef), config);
 		box.setTooltip(ColorUtil.wrapWithColorTag(boss, Color.WHITE));
 		infoBoxManager.addInfoBox(box);
 	}
