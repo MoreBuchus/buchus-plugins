@@ -28,15 +28,20 @@ import com.google.inject.Provides;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.Client;
 import net.runelite.api.IndexDataBase;
 import net.runelite.api.NPC;
+import net.runelite.api.Player;
 import net.runelite.api.Skill;
 import net.runelite.api.SpritePixels;
 import net.runelite.api.Varbits;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.GameTick;
@@ -96,26 +101,32 @@ public class DefenceTrackerPlugin extends Plugin
 	private String boss = "";
 	private int bossIndex = 0;
 	private double bossDef = -1;
+
 	private DefenceInfoBox box = null;
 	private VulnerabilityInfoBox vulnBox = null;
 	private SpritePixels vuln = null;
+
 	private boolean isInCm = false;
-	private final ArrayList<String> bossList = new ArrayList<>(Arrays.asList(
-		"Abyssal Sire", "Callisto", "Cerberus", "Chaos Elemental", "Corporeal Beast", "General Graardor", "Giant Mole",
-		"Kalphite Queen", "King Black Dragon", "K'ril Tsutsaroth", "Sarachnis", "Venenatis", "Vet'ion", "Vet'ion Reborn",
-		"The Maiden of Sugadinti", "Pestilent Bloat", "Nylocas Vasilias", "Sotetseg", "Xarpus",
-		"Great Olm (Left claw)", "Tekton", "Tekton (enraged)"));
 
 	private boolean hmXarpus = false;
-	private static final int MAIDEN_REGION = 12613;
-	private static final int BLOAT_REGION = 13125;
-	private static final int NYLOCAS_REGION = 13122;
-	private static final int SOTETSEG_REGION = 13123;
-	private static final int SOTETSEG_MAZE_REGION = 13379;
-	private static final int XARPUS_REGION = 12612;
 	private boolean bloatDown = false;
 
 	private QueuedNpc queuedNpc = null;
+
+	Map<String, ArrayList<Integer>> bossRegions = new HashMap<String, ArrayList<Integer>>()
+	{{
+		put("The Maiden of Sugadinti", new ArrayList<>(Collections.singletonList(12613)));
+		put("Pestilent Bloat", new ArrayList<>(Collections.singletonList(13125)));
+		put("Nylocas Vasilias", new ArrayList<>(Collections.singletonList(13122)));
+		put("Sotetseg", new ArrayList<>(Arrays.asList(13123, 13379)));
+		put("Xarpus", new ArrayList<>(Collections.singletonList(12612)));
+		put("Zebak", new ArrayList<>(Collections.singletonList(15700)));
+		put("Kephri", new ArrayList<>(Collections.singletonList(14164)));
+		put("Ba-Ba", new ArrayList<>(Collections.singletonList(15188)));
+		put("<col=00ffff>Obelisk</col>", new ArrayList<>(Collections.singletonList(15184)));
+		put("Tumeken's Warden", new ArrayList<>(Collections.singletonList(15696)));
+		put("Elidinis' Warden", new ArrayList<>(Collections.singletonList(15696)));
+	}};
 
 	@Provides
 	DefenceTrackerConfig provideConfig(ConfigManager configManager)
@@ -159,12 +170,13 @@ public class DefenceTrackerPlugin extends Plugin
 	@Subscribe
 	public void onAnimationChanged(AnimationChanged e)
 	{
-		if (e.getActor() != null && client.getLocalPlayer() != null && e.getActor().getName() != null)
+		int animation = e.getActor().getAnimation();
+
+		if (e.getActor() instanceof Player && e.getActor() != null && client.getLocalPlayer() != null && e.getActor().getName() != null)
 		{
-			int animation = e.getActor().getAnimation();
 			if (e.getActor().getName().equals(client.getLocalPlayer().getName()))
 			{
-				if (animation == 1816 && boss.equalsIgnoreCase("sotetseg") && (isInOverWorld() || isInUnderWorld()))
+				if (animation == 1816 && boss.equalsIgnoreCase("sotetseg") && inBossRegion())
 				{
 					infoBoxManager.removeInfoBox(box);
 					bossDef = 200;
@@ -172,9 +184,18 @@ public class DefenceTrackerPlugin extends Plugin
 			}
 		}
 
-		if (e.getActor() instanceof NPC && e.getActor().getName() != null && e.getActor().getName().equalsIgnoreCase("pestilent bloat"))
+		if (e.getActor() instanceof NPC && e.getActor().getName() != null)
 		{
-			bloatDown = e.getActor().getAnimation() == 8082;
+			if (e.getActor().getName().equalsIgnoreCase("pestilent bloat"))
+			{
+				bloatDown = animation == 8082;
+			}
+			//Enraged Wardens
+			else if (animation == 9685 && (boss.equalsIgnoreCase("Tumeken's Warden") || boss.equalsIgnoreCase("Elidinis' Warden")))
+			{
+				infoBoxManager.removeInfoBox(box);
+				bossDef = 60;
+			}
 		}
 	}
 
@@ -198,7 +219,7 @@ public class DefenceTrackerPlugin extends Plugin
 	public void onNpcSpawned(NpcSpawned e)
 	{
 		NPC npc = e.getNpc();
-		if (npc.getName() != null && bossList.contains(npc.getName()))
+		if (npc.getName() != null && BossInfo.getBoss(npc.getName()) != null)
 		{
 			hmXarpus = npc.getId() >= 10770 && npc.getId() <= 10772;
 		}
@@ -227,7 +248,7 @@ public class DefenceTrackerPlugin extends Plugin
 
 		clientThread.invoke(() ->
 		{
-			if ((npc != null && npc.getName() != null && bossList.contains(npc.getName())) || bossIndex == index)
+			if ((npc != null && npc.getName() != null && BossInfo.getBoss(npc.getName()) != null) || bossIndex == index)
 			{
 				if (bossIndex != index)
 				{
@@ -238,17 +259,13 @@ public class DefenceTrackerPlugin extends Plugin
 						baseDefence(bossName, index);
 						calculateQueue(index);
 					}
-
-					if (((boss.equals("Tekton") || boss.contains("Great Olm")) && client.getVarbitValue(Varbits.IN_RAID) != 1)
-						|| ((boss.contains("The Maiden of Sugadinti") || boss.contains("Pestilent Bloat") || boss.contains("Nylocas Vasilias")
-						|| boss.contains("Sotetseg") || boss.contains("Xarpus")) && client.getVarbitValue(Varbits.THEATRE_OF_BLOOD) != 2)
-						|| world != client.getWorld())
-					{
-						return;
-					}
 				}
-				calculateDefence(weapon, hit);
-				updateDefInfobox();
+
+				if (inBossRegion() && world == client.getWorld())
+				{
+					calculateDefence(weapon, hit);
+					updateDefInfobox();
+				}
 			}
 			else
 			{
@@ -279,26 +296,21 @@ public class DefenceTrackerPlugin extends Plugin
 					calculateQueue(e.getIndex());
 				}
 
-				if (((boss.equals("Tekton") || boss.contains("Great Olm")) && client.getVarbitValue(Varbits.IN_RAID) != 1)
-					|| ((boss.contains("The Maiden of Sugadinti") || boss.contains("Pestilent Bloat") || boss.contains("Nylocas Vasilias")
-					|| boss.contains("Sotetseg") || boss.contains("Xarpus")) && client.getVarbitValue(Varbits.THEATRE_OF_BLOOD) != 2)
-					|| world != client.getWorld())
+				if (inBossRegion() && world == client.getWorld())
 				{
-					return;
-				}
+					if (config.vulnerability())
+					{
+						infoBoxManager.removeInfoBox(vulnBox);
+						IndexDataBase sprite = client.getIndexSprites();
+						vuln = Objects.requireNonNull(client.getSprites(sprite, 56, 0))[0];
+						vulnBox = new VulnerabilityInfoBox(vuln.toBufferedImage(), this);
+						vulnBox.setTooltip(ColorUtil.wrapWithColorTag(boss, Color.WHITE));
+						infoBoxManager.addInfoBox(vulnBox);
+					}
+					bossDef -= bossDef * .1;
 
-				if (config.vulnerability())
-				{
-					infoBoxManager.removeInfoBox(vulnBox);
-					IndexDataBase sprite = client.getIndexSprites();
-					vuln = Objects.requireNonNull(client.getSprites(sprite, 56, 0))[0];
-					vulnBox = new VulnerabilityInfoBox(vuln.toBufferedImage(), this);
-					vulnBox.setTooltip(ColorUtil.wrapWithColorTag(boss, Color.WHITE));
-					infoBoxManager.addInfoBox(vulnBox);
+					updateDefInfobox();
 				}
-				bossDef -= bossDef * .1;
-
-				updateDefInfobox();
 			}
 		});
 	}
@@ -306,10 +318,7 @@ public class DefenceTrackerPlugin extends Plugin
 	@Subscribe
 	private void onVarbitChanged(VarbitChanged e)
 	{
-		if ((client.getVarbitValue(Varbits.IN_RAID) != 1 && (boss.equals("Tekton") || boss.equals("Great Olm (Left claw)")))
-			|| (boss.equals("The Maiden of Sugadinti") && !isInMaiden()) || (boss.equals("Pestilent Bloat") && !isInBloat())
-			|| (boss.equals("Nylocas Vasilias") && !isInNylo()) || (boss.equals("Sotetseg") && !isInOverWorld() && !isInUnderWorld())
-			|| (boss.equals("Xarpus") && !isInXarpus()))
+		if (!inBossRegion())
 		{
 			reset();
 		}
@@ -321,7 +330,7 @@ public class DefenceTrackerPlugin extends Plugin
 		//85 = splash
 		if (e.getActor() instanceof NPC && e.getActor().getName() != null && e.getActor().getGraphic() == 169 && partyService.isInParty())
 		{
-			if (bossList.contains(e.getActor().getName()))
+			if (BossInfo.getBoss(e.getActor().getName()) != null)
 			{
 				partyService.send(new DefenceTrackerUpdate(e.getActor().getName(), ((NPC) e.getActor()).getIndex(), true, false, client.getWorld()));
 			}
@@ -332,80 +341,19 @@ public class DefenceTrackerPlugin extends Plugin
 	{
 		boss = bossName;
 		bossIndex = index;
-		switch (boss)
+		bossDef = BossInfo.getBaseDefence(boss);
+
+		if (boss.equals("Xarpus") && hmXarpus)
 		{
-			case "Abyssal Sire":
-			case "General Graardor":
-				bossDef = 250;
-				break;
-			case "Callisto":
-				bossDef = 440;
-				break;
-			case "Cerberus":
-				bossDef = 110;
-				break;
-			case "Chaos Elemental":
-			case "K'ril Tsutsaroth":
-				bossDef = 270;
-				break;
-			case "Corporeal Beast":
-				bossDef = 310;
-				break;
-			case "Giant Mole":
-			case "The Maiden of Sugadinti":
-			case "Sotetseg":
-				bossDef = 200;
-				break;
-			case "Kalphite Queen":
-				bossDef = 300;
-				break;
-			case "King Black Dragon":
-				bossDef = 240;
-				break;
-			case "Sarachnis":
-				bossDef = 150;
-				break;
-			case "Venenatis":
-				bossDef = 490;
-				break;
-			case "Vet'ion":
-			case "Vet'ion Reborn":
-				bossDef = 395;
-				break;
-			case "Pestilent Bloat":
-				bossDef = 100;
-				break;
-			case "Nylocas Vasilias":
-				bossDef = 50;
-				break;
-			case "Xarpus":
-				if (hmXarpus)
-				{
-					bossDef = 200;
-				}
-				else
-				{
-					bossDef = 250;
-				}
-				break;
-			case "Great Olm (Left claw)":
-				bossDef = 175 * (1 + (.01 * (client.getVarbitValue(5424) - 1)));
-
-				if (isInCm)
-				{
-					bossDef = bossDef * 1.5;
-				}
-				break;
-			case "Tekton":
-			case "Tekton (enraged)":
-				boss = "Tekton";
-				bossDef = 205 * (1 + (.01 * (client.getVarbitValue(5424) - 1)));
-
-				if (isInCm)
-				{
-					bossDef = bossDef * 1.2;
-				}
-				break;
+			bossDef = 200;
+		}
+		else if (boss.equals("Great Olm (Left claw)") || boss.contains("Tekton"))
+		{
+			bossDef = bossDef * (1 + (.01 * (client.getVarbitValue(Varbits.RAID_PARTY_SIZE) - 1)));
+			if (isInCm)
+			{
+				bossDef = bossDef * (boss.contains("Tekton") ? 1.2 : 1.5);
+			}
 		}
 	}
 
@@ -436,7 +384,7 @@ public class DefenceTrackerPlugin extends Plugin
 			}
 			else
 			{
-				if (boss.equals("Corporeal Beast") || (isInBloat() && boss.equals("Pestilent Bloat") && !bloatDown))
+				if (boss.equals("Corporeal Beast") || (inBossRegion() && boss.equals("Pestilent Bloat") && !bloatDown))
 				{
 					bossDef -= hit * 2;
 				}
@@ -448,13 +396,13 @@ public class DefenceTrackerPlugin extends Plugin
 		}
 		else if ((weapon == SpecialWeapon.ARCLIGHT || weapon == SpecialWeapon.DARKLIGHT) && hit > 0)
 		{
-			if (boss.equals("K'ril Tsutsaroth"))
+			if (boss.equals("K'ril Tsutsaroth") || boss.equals("Abyssal Sire"))
 			{
-				bossDef -= bossDef * .10;
+				bossDef -= BossInfo.getBaseDefence(boss) * .10;
 			}
 			else
 			{
-				bossDef -= bossDef * .05;
+				bossDef -= BossInfo.getBaseDefence(boss) * .05;
 			}
 		}
 		else if (weapon == SpecialWeapon.BARRELCHEST_ANCHOR)
@@ -464,6 +412,15 @@ public class DefenceTrackerPlugin extends Plugin
 		else if (weapon == SpecialWeapon.BONE_DAGGER || weapon == SpecialWeapon.DORGESHUUN_CROSSBOW)
 		{
 			bossDef -= hit;
+		}
+
+		if (boss.equals("Sotetseg") && bossDef < 100)
+		{
+			bossDef = 100;
+		}
+		else if (bossDef < 0)
+		{
+			bossDef = 0;
 		}
 	}
 
@@ -484,47 +441,22 @@ public class DefenceTrackerPlugin extends Plugin
 
 	private void updateDefInfobox()
 	{
-		if (boss.equals("Sotetseg") && bossDef < 100)
-		{
-			bossDef = 100;
-		}
-		else if (bossDef < 0)
-		{
-			bossDef = 0;
-		}
 		infoBoxManager.removeInfoBox(box);
 		box = new DefenceInfoBox(skillIconManager.getSkillImage(Skill.DEFENCE), this, Math.round(bossDef), config);
 		box.setTooltip(ColorUtil.wrapWithColorTag(boss, Color.WHITE));
 		infoBoxManager.addInfoBox(box);
 	}
 
-	private boolean isInMaiden()
+	private boolean inBossRegion()
 	{
-		return client.getMapRegions().length > 0 && client.getMapRegions()[0] == MAIDEN_REGION;
-	}
-
-	private boolean isInBloat()
-	{
-		return client.getMapRegions().length > 0 && client.getMapRegions()[0] == BLOAT_REGION;
-	}
-
-	private boolean isInNylo()
-	{
-		return client.getMapRegions().length > 0 && client.getMapRegions()[0] == NYLOCAS_REGION;
-	}
-
-	private boolean isInOverWorld()
-	{
-		return client.getMapRegions().length > 0 && client.getMapRegions()[0] == SOTETSEG_REGION;
-	}
-
-	private boolean isInUnderWorld()
-	{
-		return client.getMapRegions().length > 0 && client.getMapRegions()[0] == SOTETSEG_MAZE_REGION;
-	}
-
-	private boolean isInXarpus()
-	{
-		return client.getMapRegions().length > 0 && client.getMapRegions()[0] == XARPUS_REGION;
+		if (client.getLocalPlayer() != null && bossRegions.containsKey(boss))
+		{
+			WorldPoint wp = WorldPoint.fromLocalInstance(client, client.getLocalPlayer().getLocalLocation());
+			if (wp != null)
+			{
+				return bossRegions.get(boss).contains(wp.getRegionID());
+			}
+		}
+		return client.getVarbitValue(Varbits.IN_RAID) == 1 || (!boss.equals("Tekton") && !boss.equals("Great Olm (Left claw)"));
 	}
 }
