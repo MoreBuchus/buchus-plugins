@@ -7,16 +7,12 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.image.BufferedImage;
 import javax.inject.Inject;
-import net.runelite.api.Client;
-import net.runelite.api.Varbits;
 import net.runelite.api.widgets.WidgetItem;
 import net.runelite.client.game.ItemManager;
 import net.runelite.client.ui.overlay.WidgetItemOverlay;
 
 public class CoxItemOverlay extends WidgetItemOverlay
 {
-	private final Client client;
-
 	private final ItemManager itemManager;
 
 	private final CoxAdditionsPlugin plugin;
@@ -24,9 +20,8 @@ public class CoxItemOverlay extends WidgetItemOverlay
 	private final CoxAdditionsConfig config;
 
 	@Inject
-	public CoxItemOverlay(final Client client, ItemManager itemManager, CoxAdditionsPlugin plugin, CoxAdditionsConfig config)
+	public CoxItemOverlay(ItemManager itemManager, CoxAdditionsPlugin plugin, CoxAdditionsConfig config)
 	{
-		this.client = client;
 		this.itemManager = itemManager;
 		this.plugin = plugin;
 		this.config = config;
@@ -35,7 +30,7 @@ public class CoxItemOverlay extends WidgetItemOverlay
 
 	public void renderItemOverlay(Graphics2D graphics, int itemId, WidgetItem itemWidget)
 	{
-		if (client.getVarbitValue(Varbits.IN_RAID) == 1)
+		if (plugin.isInRaid())
 		{
 			if (config.highlightChest() != CoxAdditionsConfig.HighlightChestMode.OFF)
 			{
@@ -45,7 +40,7 @@ public class CoxItemOverlay extends WidgetItemOverlay
 					{
 						if (config.highlightChest() == CoxAdditionsConfig.HighlightChestMode.UNDERLINE)
 						{
-							underlineItem(graphics, itemId, itemWidget, config.highlightChestItemsColor());
+							underlineItem(graphics, itemWidget, config.highlightChestItemsColor());
 						}
 						else if (config.highlightChest() == CoxAdditionsConfig.HighlightChestMode.OUTLINE)
 						{
@@ -60,7 +55,7 @@ public class CoxItemOverlay extends WidgetItemOverlay
 					{
 						if (config.highlightChest() == CoxAdditionsConfig.HighlightChestMode.UNDERLINE)
 						{
-							underlineItem(graphics, itemId, itemWidget, config.highlightChestItemsColor2());
+							underlineItem(graphics, itemWidget, config.highlightChestItemsColor2());
 						}
 						else if (config.highlightChest() == CoxAdditionsConfig.HighlightChestMode.OUTLINE)
 						{
@@ -79,7 +74,7 @@ public class CoxItemOverlay extends WidgetItemOverlay
 		graphics.drawImage(outline, (int) bounds.getX(), (int) bounds.getY(), null);
 	}
 
-	private void underlineItem(Graphics2D graphics, int itemId, WidgetItem itemWidget, Color color)
+	private void underlineItem(Graphics2D graphics, WidgetItem itemWidget, Color color)
 	{
 		Rectangle bounds = itemWidget.getCanvasBounds();
 		int heightOffSet = (int) bounds.getY() + (int) bounds.getHeight() + 2;

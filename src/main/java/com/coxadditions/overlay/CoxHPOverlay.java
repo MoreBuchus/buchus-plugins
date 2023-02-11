@@ -12,7 +12,6 @@ import net.runelite.api.InstanceTemplates;
 import net.runelite.api.NPC;
 import net.runelite.api.Point;
 import net.runelite.api.Varbits;
-import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -44,13 +43,12 @@ public class CoxHPOverlay extends Overlay
 			plugin.loadFont(true);
 		}
 
-		if (client.getVarbitValue(Varbits.IN_RAID) == 1 && client.getLocalPlayer() != null)
+		if (plugin.isInRaid() && client.getLocalPlayer() != null)
 		{
-			LocalPoint lp = client.getLocalPlayer().getLocalLocation();
 			boolean solo = client.getVarbitValue(Varbits.RAID_PARTY_SIZE) == 1;
 
 			if (config.smallMuttaHp() && plugin.isSmallMuttaAlive() && !plugin.getSmallMutta().isDead()
-				&& plugin.getCurrentRoom(lp.getSceneX(), lp.getSceneY(), client.getPlane()) == InstanceTemplates.RAIDS_MUTTADILES)
+				&& plugin.room() == InstanceTemplates.RAIDS_MUTTADILES)
 			{
 				NPC smallMutta = plugin.getSmallMutta();
 				if (smallMutta.getHealthRatio() > 0 || (plugin.getLastRatio() != 0 && plugin.getLastHealthScale() != 0))
@@ -66,7 +64,7 @@ public class CoxHPOverlay extends Overlay
 
 			if (config.iceDemonHp() && plugin.getIceDemon() != null && !plugin.isIceDemonActive())
 			{
-				if (plugin.getCurrentRoom(lp.getSceneX(), lp.getSceneY(), client.getPlane()) == InstanceTemplates.RAIDS_ICE_DEMON)
+				if (plugin.room() == InstanceTemplates.RAIDS_ICE_DEMON)
 				{
 					if (solo)
 					{

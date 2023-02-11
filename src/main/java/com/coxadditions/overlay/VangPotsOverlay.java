@@ -6,7 +6,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import javax.inject.Inject;
-import lombok.val;
 import net.runelite.api.Client;
 import net.runelite.api.InstanceTemplates;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -44,10 +43,8 @@ public class VangPotsOverlay extends OverlayPanel
 
 		if (config.showPanel() && plugin.getOverloadsDropped() > 0 && plugin.isInRaid() && client.getLocalPlayer() != null)
 		{
-			val currentRoom = plugin.getCurrentRoom(client.getLocalPlayer().getLocalLocation().getSceneX(),
-				client.getLocalPlayer().getLocalLocation().getSceneY(), client.getPlane());
-			boolean overlayRooms = (currentRoom == InstanceTemplates.RAIDS_VANGUARDS || currentRoom == InstanceTemplates.RAIDS_FARMING || currentRoom == InstanceTemplates.RAIDS_FARMING2);
-			if (currentRoom != null && overlayRooms)
+			boolean overlayRooms = (plugin.room() == InstanceTemplates.RAIDS_VANGUARDS || plugin.isInPrep());
+			if (plugin.room() != null && overlayRooms)
 			{
 				graphics.setFont(plugin.getPanelFont());
 				panelComponent.getChildren().clear();

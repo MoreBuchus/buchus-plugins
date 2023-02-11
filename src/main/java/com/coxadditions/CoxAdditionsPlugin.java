@@ -27,6 +27,7 @@ package com.coxadditions;
 import com.coxadditions.overlay.CoxAdditionsOverlay;
 import com.coxadditions.overlay.CoxHPOverlay;
 import com.coxadditions.overlay.CoxItemOverlay;
+import com.coxadditions.overlay.CoxPrepOverlay;
 import com.coxadditions.overlay.InstanceTimerOverlay;
 import com.coxadditions.overlay.OlmHpPanelOverlay;
 import com.coxadditions.overlay.OlmPhasePanel;
@@ -40,27 +41,35 @@ import java.awt.Font;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.AnimationID;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.GameObject;
 import net.runelite.api.GameState;
 import net.runelite.api.InstanceTemplates;
+import net.runelite.api.InventoryID;
 import net.runelite.api.ItemID;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.NPC;
 import net.runelite.api.NpcID;
+import net.runelite.api.Player;
+import net.runelite.api.Point;
 import net.runelite.api.Projectile;
+import net.runelite.api.Skill;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.Varbits;
 import net.runelite.api.coords.LocalPoint;
+import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
+import net.runelite.api.events.AnimationChanged;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicsObjectCreated;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.NpcChanged;
 import net.runelite.api.events.NpcDespawned;
 import net.runelite.api.events.NpcSpawned;
@@ -141,6 +150,9 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	private OlmPhasePanel phasePanel;
 
 	@Inject
+	private CoxPrepOverlay prepOverlay;
+
+	@Inject
 	private InfoBoxManager infoBoxManager;
 
 	@Inject
@@ -161,6 +173,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	@Getter
 	private final ArrayListMultimap<String, Integer> optionIndexes = ArrayListMultimap.create();
 
+	//Prep/Farming
 	@Getter
 	private GameObject coxHerb1;
 	@Getter
@@ -171,14 +184,88 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	private int coxHerbTimer2;
 
 	@Getter
+	private int totalBuchus = 0;
+	@Getter
+	private int totalGolpar = 0;
+	@Getter
+	private int totalNox = 0;
+
+	@Getter
+	private int inventoryBuchus = 0;
+	@Getter
+	private int inventoryGolpar = 0;
+	@Getter
+	private int inventoryNox = 0;
+
+	@Getter
+	private int totalBrews = 0;
+	@Getter
+	private int totalRevites = 0;
+	@Getter
+	private int totalEnhances = 0;
+	@Getter
+	private int totalElders = 0;
+	@Getter
+	private int totalTwisteds = 0;
+	@Getter
+	private int totalKodais = 0;
+	@Getter
+	private int totalOverloads = 0;
+
+	@Getter
+	private int inventoryBrews = 0;
+	@Getter
+	private int inventoryRevites = 0;
+	@Getter
+	private int inventoryEnhances = 0;
+	@Getter
+	private int inventoryElders = 0;
+	@Getter
+	private int inventoryTwisteds = 0;
+	@Getter
+	private int inventoryKodais = 0;
+	@Getter
+	private int inventoryOverloads = 0;
+
+	@Getter
+	private int pickedJuice = 0;
+	@Getter
+	private int pickedShrooms = 0;
+	@Getter
+	private int pickedCicely = 0;
+
+	@Getter
+	private boolean pickedHerb = false;
+	@Getter
+	private boolean potMade = false;
+
+	//Thieving
+	@Getter
+	private int totalGrubs = 0;
+	@Getter
+	private int previousGrubs = 0;
+	@Getter
+	private boolean inThieving = false;
+	@Getter
+	private boolean inPrep = false;
+	@Getter
+	private GrubsInfobox grubsInfobox;
+
+	//Prayer Enhance
+	@Getter
 	private boolean enhanceSipped;
 	@Getter
 	private int enhanceTicks = -1;
 	@Getter
 	private int totalEnhCycles = 0;
 	@Getter
+	private int maxEnhCycles = 0;
+	@Getter
+	private int enhRegenRate = 0;
+	@Getter
 	private EnhanceInfobox enhanceInfobox;
 
+	//Instance Timer
 	@Getter
 	private int instanceTimer = 3;
 	@Getter
@@ -307,6 +394,42 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		coxHerb2 = null;
 		coxHerbTimer2 = 16;
 
+		totalBuchus = 0;
+		totalGolpar = 0;
+		totalNox = 0;
+
+		inventoryBuchus = 0;
+		inventoryGolpar = 0;
+		inventoryNox = 0;
+
+		totalBrews = 0;
+		totalRevites = 0;
+		totalEnhances = 0;
+		totalElders = 0;
+		totalTwisteds = 0;
+		totalKodais = 0;
+		totalOverloads = 0;
+
+		inventoryBrews = 0;
+		inventoryRevites = 0;
+		inventoryEnhances = 0;
+		inventoryElders = 0;
+		inventoryTwisteds = 0;
+		inventoryKodais = 0;
+		inventoryOverloads = 0;
+
+		pickedJuice = 0;
+		pickedShrooms = 0;
+		pickedCicely = 0;
+
+		pickedHerb = false;
+		potMade = false;
+
+		totalGrubs = 0;
+		previousGrubs = 0;
+		inThieving = false;
+		inPrep = false;
+
 		olmTile = null;
 		olmPhase = "";
 		olmSpawned = false;
@@ -400,8 +523,15 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			enhanceInfobox = null;
 		}
 
+		if (grubsInfobox != null)
+		{
+			infoBoxManager.removeInfoBox(grubsInfobox);
+			grubsInfobox = null;
+		}
+
 		keyManager.registerKeyListener(this);
 		wsClient.registerMessage(PartyOverloadUpdate.class);
+		wsClient.registerMessage(PartyGrubsUpdate.class);
 		overlayManager.add(overlay);
 		overlayManager.add(olmSideOverlay);
 		overlayManager.add(vanguardInfobox);
@@ -411,6 +541,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		overlayManager.add(olmHpPanelOverlay);
 		overlayManager.add(vangPotsOverlay);
 		overlayManager.add(phasePanel);
+		overlayManager.add(prepOverlay);
 	}
 
 	@Override
@@ -420,6 +551,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		eventBus.unregister(this);
 		keyManager.unregisterKeyListener(this);
 		wsClient.unregisterMessage(PartyOverloadUpdate.class);
+		wsClient.unregisterMessage(PartyGrubsUpdate.class);
 		overlayManager.remove(overlay);
 		overlayManager.remove(olmSideOverlay);
 		overlayManager.remove(vanguardInfobox);
@@ -429,6 +561,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		overlayManager.remove(olmHpPanelOverlay);
 		overlayManager.remove(vangPotsOverlay);
 		overlayManager.remove(phasePanel);
+		overlayManager.remove(prepOverlay);
 	}
 
 	@Subscribe
@@ -485,11 +618,21 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				case "detailedPrayerEnhance":
 					if (config.detailedPrayerEnhance() == CoxAdditionsConfig.enhanceMode.OFF && enhanceInfobox != null)
 					{
-						removeInfobox();
+						removeInfobox("Enhance");
 					}
 					else
 					{
-						addInfobox();
+						addInfobox("Enhance");
+					}
+					break;
+				case "grubsInfobox":
+					if (config.grubsInfobox() == CoxAdditionsConfig.grubsMode.OFF && grubsInfobox != null)
+					{
+						removeInfobox("Grubs");
+					}
+					else
+					{
+						addInfobox("Grubs");
 					}
 					break;
 				case "overlayFontType":
@@ -610,13 +753,25 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 
 			if (client.getVarbitValue(5417) > 0)
 			{
-				addInfobox();
+				addInfobox("Enhance");
 			}
 			else if (client.getVarbitValue(5417) == 0)
 			{
-				removeInfobox();
+				removeInfobox("Enhance");
 			}
 			enhanceTicks--;
+
+			inPrep = room() == InstanceTemplates.RAIDS_FARMING || room() == InstanceTemplates.RAIDS_FARMING2;
+			inThieving = room() == InstanceTemplates.RAIDS_THIEVING;
+			if ((config.grubsInfobox() == CoxAdditionsConfig.grubsMode.THIEVING && inThieving) ||
+				(config.grubsInfobox() == CoxAdditionsConfig.grubsMode.BOTH && (inThieving || inPrep)))
+			{
+				addInfobox("Grubs");
+			}
+			else
+			{
+				removeInfobox("Grubs");
+			}
 		}
 
 		if (isInstanceTimerRunning)
@@ -661,6 +816,32 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 					coxHerbTimer2 = 16;
 				}
 			}
+			else if (obj.getId() == 29745) //Chest with Grubs
+			{
+				Point p = e.getTile().getSceneLocation();
+				int angle = obj.getOrientation() >> 9;
+				int chestX = p.getX() + ((angle == 1) ? -1 : ((angle == 3) ? 1 : 0));
+				int chestY = p.getY() + ((angle == 0) ? -1 : ((angle == 2) ? 1 : 0));
+
+				if (client.getLocalPlayer() != null)
+				{
+					WorldPoint wp = client.getLocalPlayer().getWorldLocation();
+
+					if (wp.getX() - client.getBaseX() == chestX && wp.getY() - client.getBaseY() == chestY)
+					{
+						int grubs = client.getItemContainer(InventoryID.INVENTORY).count(ItemID.CAVERN_GRUBS);
+
+						int delta = grubs - previousGrubs;
+						totalGrubs += delta;
+						previousGrubs = grubs;
+
+						if (partyService.isInParty() && delta > 0)
+						{
+							partyService.send(new PartyGrubsUpdate(client.getLocalPlayer().getName(), client.getWorld(), delta));
+						}
+					}
+				}
+			}
 		}
 	}
 
@@ -695,15 +876,122 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	}
 
 	@Subscribe
-	public void onGraphicsObjectCreated(GraphicsObjectCreated e)
+	public void onAnimationChanged(AnimationChanged e)
+	{
+		if (e.getActor().getName() != null && client.getLocalPlayer() != null && e.getActor().getName().equals(client.getLocalPlayer().getName()) && inRaid)
+		{
+			pickedHerb = e.getActor().getAnimation() == AnimationID.FARMING_HARVEST_HERB;
+			potMade = e.getActor().getAnimation() == AnimationID.HERBLORE_POTIONMAKING;
+		}
+	}
+
+	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged e)
 	{
 		if (inRaid)
 		{
-			//Ice Demon Pop
-			if (e.getGraphicsObject().getId() == 188)
+			int nox = e.getItemContainer().count(ItemID.GRIMY_NOXIFER) + e.getItemContainer().count(ItemID.NOXIFER);
+			int golpar = e.getItemContainer().count(ItemID.GRIMY_GOLPAR) + e.getItemContainer().count(ItemID.GOLPAR);
+			int buchus = e.getItemContainer().count(ItemID.GRIMY_BUCHU_LEAF) + e.getItemContainer().count(ItemID.BUCHU_LEAF);
+			int brews = e.getItemContainer().count(ItemID.XERICS_AID_4_20984);
+			int revites = e.getItemContainer().count(ItemID.REVITALISATION_4_20960);
+			int enhances = e.getItemContainer().count(ItemID.PRAYER_ENHANCE_4_20972);
+			int elders = e.getItemContainer().count(ItemID.ELDER_4_20924);
+			int twisteds = e.getItemContainer().count(ItemID.TWISTED_4_20936);
+			int kodais = e.getItemContainer().count(ItemID.KODAI_4_20948);
+			int overloads = e.getItemContainer().count(ItemID.OVERLOAD_4_20996);
+			int grubs = e.getItemContainer().count(ItemID.CAVERN_GRUBS);
+
+			if (e.getContainerId() == 93) //Inventory
 			{
-				iceDemonActive = true;
+				if (pickedHerb)
+				{
+					if (nox > inventoryNox)
+					{
+						totalNox++;
+					}
+					if (golpar > inventoryGolpar)
+					{
+						totalGolpar++;
+					}
+					if (buchus > inventoryBuchus)
+					{
+						totalBuchus++;
+					}
+				}
+
+				if (potMade)
+				{
+					if (brews > inventoryBrews)
+					{
+						totalBrews++;
+					}
+					if (revites > inventoryRevites)
+					{
+						totalRevites++;
+					}
+					if (enhances > inventoryEnhances)
+					{
+						totalEnhances++;
+					}
+					if (elders > inventoryElders)
+					{
+						totalElders++;
+					}
+					if (twisteds > inventoryTwisteds)
+					{
+						totalTwisteds++;
+					}
+					if (kodais > inventoryKodais)
+					{
+						totalKodais++;
+					}
+					if (overloads > inventoryOverloads)
+					{
+						totalOverloads++;
+					}
+				}
+
+				inventoryNox = nox;
+				inventoryGolpar = golpar;
+				inventoryBuchus = buchus;
+				inventoryBrews = brews;
+				inventoryRevites = revites;
+				inventoryEnhances = enhances;
+				inventoryElders = elders;
+				inventoryTwisteds = twisteds;
+				inventoryKodais = kodais;
+				inventoryOverloads = overloads;
+				pickedJuice = e.getItemContainer().count(ItemID.ENDARKENED_JUICE);
+				pickedShrooms = e.getItemContainer().count(ItemID.STINKHORN_MUSHROOM);
+				pickedCicely = e.getItemContainer().count(ItemID.CICELY);
+
+				previousGrubs = grubs;
 			}
+		}
+	}
+
+	@Subscribe
+	public void onPartyGrubsUpdate(PartyGrubsUpdate e)
+	{
+		Player localPlayer = client.getLocalPlayer();
+		String player = e.getPlayer();
+		int world = e.getWorld();
+		int grubs = e.getGrubs();
+
+		if (localPlayer.getName() != null && !localPlayer.getName().equals(player) && client.getWorld() == world)
+		{
+			totalGrubs += grubs;
+		}
+	}
+
+	@Subscribe
+	public void onGraphicsObjectCreated(GraphicsObjectCreated e)
+	{
+		//Ice Demon Pop
+		if (inRaid && e.getGraphicsObject().getId() == 188)
+		{
+			iceDemonActive = true;
 		}
 	}
 
@@ -982,6 +1270,16 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		client.setMenuEntries(updateMenuEntries(client.getMenuEntries()));
 	}
 
+	public int getMaxEnhanceCycles()
+	{
+		return (int) Math.floor((float)(client.getRealSkillLevel(Skill.PRAYER) / 2) + 31);
+	}
+
+	public int getEnhanceRegenRate()
+	{
+		return (int) Math.floor((float) 500 / getMaxEnhanceCycles());
+	}
+
 	@Subscribe
 	public void onVarbitChanged(VarbitChanged e)
 	{
@@ -989,17 +1287,13 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 
 		if (inRaid)
 		{
-			if (client.getVarbitValue(5417) > 0 && totalEnhCycles == 0)
+			if ((client.getVarbitValue(5417) > 0 && totalEnhCycles == 0) || (client.getVarbitValue(5417) != totalEnhCycles))
 			{
+				maxEnhCycles = getMaxEnhanceCycles();
+				enhRegenRate = getEnhanceRegenRate();
 				totalEnhCycles = client.getVarbitValue(5417);
 				enhanceTicks = client.getVarbitValue(5417) * 6;
-				addInfobox();
-			}
-			else if (client.getVarbitValue(5417) < totalEnhCycles || client.getVarbitValue(5417) > totalEnhCycles)
-			{
-				enhanceTicks = client.getVarbitValue(5417) * 6;
-				totalEnhCycles = client.getVarbitValue(5417);
-				addInfobox(); //Makes infobox persist after log out
+				addInfobox("Enhance");
 			}
 			else
 			{
@@ -1034,6 +1328,47 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			coxHerb2 = null;
 			coxHerbTimer2 = 16;
 
+			totalBuchus = 0;
+			totalGolpar = 0;
+			totalNox = 0;
+
+			inventoryBuchus = 0;
+			inventoryGolpar = 0;
+			inventoryNox = 0;
+
+			totalBrews = 0;
+			totalRevites = 0;
+			totalEnhances = 0;
+			totalElders = 0;
+			totalTwisteds = 0;
+			totalKodais = 0;
+			totalOverloads = 0;
+
+			inventoryBrews = 0;
+			inventoryRevites = 0;
+			inventoryEnhances = 0;
+			inventoryElders = 0;
+			inventoryTwisteds = 0;
+			inventoryKodais = 0;
+			inventoryOverloads = 0;
+
+			pickedJuice = 0;
+			pickedShrooms = 0;
+			pickedCicely = 0;
+
+			pickedHerb = false;
+			potMade = false;
+
+			totalGrubs = 0;
+			previousGrubs = 0;
+			inThieving = false;
+			inPrep = false;
+			if (grubsInfobox != null)
+			{
+				infoBoxManager.removeInfoBox(grubsInfobox);
+				grubsInfobox = null;
+			}
+
 			inVangs = false;
 			meleeFound = false;
 			rangerFound = false;
@@ -1047,6 +1382,8 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			enhanceSipped = false;
 			enhanceTicks = -1;
 			totalEnhCycles = 0;
+			maxEnhCycles = 0;
+			enhRegenRate = 0;
 			if (enhanceInfobox != null)
 			{
 				infoBoxManager.removeInfoBox(enhanceInfobox);
@@ -1223,27 +1560,56 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		}
 	}
 
-	public void addInfobox()
+	public void addInfobox(String infobox)
 	{
-		enhanceSipped = true;
-		if (enhanceInfobox == null && config.detailedPrayerEnhance() != CoxAdditionsConfig.enhanceMode.OFF)
+		int img;
+
+		switch (infobox)
 		{
-			enhanceInfobox = new EnhanceInfobox(client, this, config);
-			int img = ItemID.PRAYER_ENHANCE_4_20972;
-			enhanceInfobox.setImage(itemManager.getImage(img));
-			infoBoxManager.addInfoBox(enhanceInfobox);
+			case "Enhance":
+				enhanceSipped = true;
+				if (enhanceInfobox == null && config.detailedPrayerEnhance() != CoxAdditionsConfig.enhanceMode.OFF)
+				{
+					enhanceInfobox = new EnhanceInfobox(client, this, config);
+					img = ItemID.PRAYER_ENHANCE_4_20972;
+					enhanceInfobox.setImage(itemManager.getImage(img));
+					infoBoxManager.addInfoBox(enhanceInfobox);
+				}
+				break;
+			case "Grubs":
+				if (grubsInfobox == null && config.grubsInfobox() != CoxAdditionsConfig.grubsMode.OFF)
+				{
+					if ((config.grubsInfobox() == CoxAdditionsConfig.grubsMode.THIEVING && inThieving) ||
+						(config.grubsInfobox() == CoxAdditionsConfig.grubsMode.BOTH && (inThieving || inPrep)))
+					{
+						grubsInfobox = new GrubsInfobox(client, this, config);
+						img = ItemID.CAVERN_GRUBS;
+						grubsInfobox.setImage(itemManager.getImage(img));
+						infoBoxManager.addInfoBox(grubsInfobox);
+					}
+				}
+				break;
 		}
 	}
 
-	public void removeInfobox()
+	public void removeInfobox(String infobox)
 	{
-		totalEnhCycles = 0;
-		enhanceSipped = false;
-		infoBoxManager.removeInfoBox(enhanceInfobox);
-		enhanceInfobox = null;
+		switch (infobox)
+		{
+			case "Enhance":
+				totalEnhCycles = 0;
+				enhanceSipped = false;
+				infoBoxManager.removeInfoBox(enhanceInfobox);
+				enhanceInfobox = null;
+				break;
+			case "Grubs":
+				infoBoxManager.removeInfoBox(grubsInfobox);
+				grubsInfobox = null;
+				break;
+		}
 	}
 
-	public InstanceTemplates getCurrentRoom(int x, int y, int z)
+	private InstanceTemplates getCurrentRoom(int x, int y, int z)
 	{
 		if (client.getGameState() == GameState.LOGGED_IN && inRaid)
 		{
@@ -1251,6 +1617,12 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			return InstanceTemplates.findMatch(chunkData);
 		}
 		return null;
+	}
+
+	public InstanceTemplates room()
+	{
+		return getCurrentRoom(client.getLocalPlayer().getLocalLocation().getSceneX(),
+			client.getLocalPlayer().getLocalLocation().getSceneY(), client.getPlane());
 	}
 
 	public void loadFont(boolean overlay)

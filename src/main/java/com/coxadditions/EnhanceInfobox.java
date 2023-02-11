@@ -29,7 +29,7 @@ public class EnhanceInfobox extends InfoBox
 		{
 			if (config.detailedPrayerEnhance() == CoxAdditionsConfig.enhanceMode.REGEN_CYCLE)
 			{
-				enhanceTime = String.valueOf(plugin.getEnhanceTicks() % 6 + 1);
+				enhanceTime = String.valueOf(plugin.getEnhanceTicks() % plugin.getEnhanceRegenRate() + 1);
 			}
 			else
 			{
@@ -43,7 +43,7 @@ public class EnhanceInfobox extends InfoBox
 	@Override
 	public Color getTextColor()
 	{
-		if (plugin.getEnhanceTicks() % 6 == 5)
+		if (plugin.getEnhanceTicks() % plugin.getEnhRegenRate() == plugin.getEnhanceRegenRate() - 1)
 		{
 			return new Color(26, 204, 6);
 		}

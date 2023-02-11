@@ -6,7 +6,6 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import javax.inject.Inject;
 import net.runelite.api.Client;
-import net.runelite.api.Varbits;
 import net.runelite.client.ui.overlay.*;
 import net.runelite.client.ui.overlay.components.LineComponent;
 
@@ -34,7 +33,7 @@ public class InstanceTimerOverlay extends OverlayPanel
 		}
 
 		panelComponent.getChildren().clear();
-		if (config.instanceTimer() == CoxAdditionsConfig.instanceTimerMode.INFOBOX && plugin.isInstanceTimerRunning() && client.getVarbitValue(Varbits.IN_RAID) == 1)
+		if (config.instanceTimer() == CoxAdditionsConfig.instanceTimerMode.INFOBOX && plugin.isInstanceTimerRunning() && plugin.isInRaid())
 		{
 			graphics.setFont(plugin.getPanelFont());
 			panelComponent.setPreferredSize(new Dimension(graphics.getFontMetrics().stringWidth("Tick:   ") + 15, 0));

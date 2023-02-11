@@ -24,6 +24,8 @@
  */
 package com.coxadditions;
 
+import java.util.Collections;
+import java.util.Set;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.runelite.client.config.*;
@@ -214,10 +216,22 @@ public interface CoxAdditionsConfig extends Config
 	}
 
 	@ConfigItem(
+		name = "CC Warning",
+		keyName = "ccWarning",
+		description = "Highlights the entrance to CoX. Red = not in a CC, Yellow = in a CC, but no party made.",
+		position = 2,
+		section = roomSection
+	)
+	default boolean ccWarning()
+	{
+		return false;
+	}
+
+	@ConfigItem(
 		name = "Hotkey",
 		keyName = "hotkey",
 		description = "Configures the hotkey used for hotkey configs in Cox Additions",
-		position = 2,
+		position = 3,
 		section = roomSection
 	)
 	default Keybind hotkey()
@@ -229,7 +243,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Hotkey Swap Private Chest",
 		keyName = "hotkeySwapBank",
 		description = "Switches your CoX chest from shared to private when holding the hotkey",
-		position = 3,
+		position = 4,
 		section = roomSection
 	)
 	default boolean hotkeySwapBank()
@@ -241,7 +255,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Detailed Prayer Enhance",
 		keyName = "detailedPrayerEnhance",
 		description = "Displays a detailed prayer enhance timer in CoX",
-		position = 4,
+		position = 5,
 		section = roomSection
 	)
 	default enhanceMode detailedPrayerEnhance()
@@ -253,7 +267,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "—————— True Tile ——————",
 		keyName = "room divider",
 		description = "",
-		position = 5,
+		position = 6,
 		section = roomSection
 	)
 	void roomDivider();
@@ -262,7 +276,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "True Location List",
 		keyName = "tlList",
 		description = "NPC's in this list will be highlighted with true location. ONLY works with Cox bosses",
-		position = 6,
+		position = 7,
 		section = roomSection
 	)
 	default String tlList()
@@ -275,7 +289,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "True Location Width",
 		keyName = "tlThiCC",
 		description = "Outline width for true location highlight",
-		position = 7,
+		position = 8,
 		section = roomSection
 	)
 	default double tlThiCC()
@@ -287,7 +301,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "True Location Color",
 		keyName = "tlColor",
 		description = "Highlight color for true location",
-		position = 8,
+		position = 9,
 		section = roomSection
 	)
 	default Color tlColor()
@@ -299,16 +313,64 @@ public interface CoxAdditionsConfig extends Config
 		name = "—————— Puzzle Rooms ——————",
 		keyName = "puzzle divider",
 		description = "",
-		position = 9,
+		position = 10,
 		section = roomSection
 	)
 	void puzzleDivider();
 
 	@ConfigItem(
+		keyName = "chestGroupsHighlight",
+		name = "Highlight Grub Chests",
+		description = "CoX CM ONLY - Highlights groups of 4 chests",
+		position = 11,
+		section = roomSection
+	)
+	default Set<HighlightChestGroups> chestGroupsHighlight()
+	{
+		return Collections.emptySet();
+	}
+
+	@ConfigItem(
+		keyName = "chestGroupsHighlightStyle",
+		name = "Chest Highlight Style",
+		description = "Selects the highlight style for 'Highlight Grub Chests'",
+		position = 12,
+		section = roomSection
+	)
+	default GrubChestStyle chestGroupsHighlightStyle()
+	{
+		return GrubChestStyle.HULL;
+	}
+
+	@ConfigItem(
+		keyName = "grubsInfobox",
+		name = "Grubs Counter",
+		description = "Displays an infobox showing the total amount of cavern grubs collected. Works with party",
+		position = 13,
+		section = roomSection
+	)
+	default grubsMode grubsInfobox()
+	{
+		return grubsMode.OFF;
+	}
+
+	@ConfigItem(
+		keyName = "grubsAmount",
+		name = "Grubs Amount",
+		description = "Set to the amount of grubs you/your team want to collect. The cavern grub counter's text will turn green when this number is reached.",
+		position = 14,
+		section = roomSection
+	)
+	default int grubsAmount()
+	{
+		return 30;
+	}
+
+	@ConfigItem(
 		name = "Hotkey Swap Smash",
 		keyName = "hotkeySwapSmash",
 		description = "Switches attack and smash when holding the hotkey",
-		position = 10,
+		position = 15,
 		section = roomSection
 	)
 	default boolean hotkeySwapSmash()
@@ -320,7 +382,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "iceDemonHp",
 		name = "Ice Demon HP",
 		description = "Displays Ice Demon HP percent while lighting kindling",
-		position = 11,
+		position = 16,
 		section = roomSection
 	)
 	default boolean iceDemonHp()
@@ -332,7 +394,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "swapCoXKeystone",
 		name = "Left Click Drop Keystone",
 		description = "swaps use with drop for the keystone crystal at tightrope",
-		position = 12,
+		position = 17,
 		section = roomSection
 	)
 	default boolean swapCoXKeystone()
@@ -344,7 +406,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "—————— Combat Rooms ——————",
 		keyName = "combat divider",
 		description = "",
-		position = 13,
+		position = 18,
 		section = roomSection
 	)
 	void combatDivider();
@@ -353,7 +415,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Small Muttadile HP",
 		keyName = "smallMuttaHp",
 		description = "Displays the health percentage of small Muttadile while meat tree is alive",
-		position = 14,
+		position = 19,
 		section = roomSection
 	)
 	default boolean smallMuttaHp()
@@ -365,7 +427,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Vanguard HP Infobox",
 		keyName = "vangInfobox",
 		description = "Displays the hp left on each vanguard",
-		position = 15,
+		position = 20,
 		section = roomSection
 	)
 	default boolean vangInfobox()
@@ -377,7 +439,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "showPanel",
 		name = "Vanguard Overloads Overlay",
 		description = "Shows how many Overloads have been received from Vanguards. Works with party.",
-		position = 16,
+		position = 21,
 		section = roomSection
 	)
 	default boolean showPanel()
@@ -389,7 +451,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "overloadChatMessage",
 		name = "Overload Dropped Chat Message",
 		description = "Prints a chat message when a player receives an Overload from Vanguards. Works with party.",
-		position = 17,
+		position = 22,
 		section = roomSection
 	)
 	default boolean overloadChatMessage()
@@ -434,10 +496,110 @@ public interface CoxAdditionsConfig extends Config
 	}
 
 	@ConfigItem(
+		name = "—————— Prep ——————",
+		keyName = "prep divider",
+		description = "",
+		position = 4,
+		section = prepSection
+	)
+	void prepDivider();
+
+	@Range(min = 0)
+	@ConfigItem(
+		keyName = "brews",
+		name = "Xeric's Aids",
+		description = "How many Xeric's Aids your team wants to make",
+		position = 5,
+		section = prepSection
+	)
+	default int brews() {
+		return 0;
+	}
+
+	@Range(min = 0)
+	@ConfigItem(
+		keyName = "revites",
+		name = "Revites",
+		description = "How many Revites your team wants to make",
+		position = 6,
+		section = prepSection
+	)
+	default int revites() {
+		return 0;
+	}
+
+	@Range(min = 0)
+	@ConfigItem(
+		keyName = "enhances",
+		name = "Prayer Enhances",
+		description = "How many Prayer Enhances your team wants to make",
+		position = 7,
+		section = prepSection
+	)
+	default int enhances() {
+		return 0;
+	}
+
+	@Range(min = 0)
+	@ConfigItem(
+		keyName = "overloads",
+		name = "Overloads",
+		description = "How many Overloads your team wants to make",
+		position = 8,
+		section = prepSection
+	)
+	default int overloads() {
+		return 0;
+	}
+
+	@Range(min = 0)
+	@ConfigItem(
+		keyName = "extraNox",
+		name = "Extra Nox",
+		description = "How many extra Noxifer you want to pick",
+		position = 9,
+		section = prepSection
+	)
+	default int extraNox() {
+		return 0;
+	}
+
+	@ConfigItem(
+		keyName = "showSecondaries",
+		name = "Show Secondaries",
+		description = "Toggle whether or not to show secondaries overlay in scavs",
+		position = 10,
+		section = prepSection
+	)
+	default boolean showSecondaries() {
+		return false;
+	}
+
+	@ConfigItem(
+		keyName = "showPots",
+		name = "Show Pots Made",
+		description = "Toggle whether or not to show how many pots you have made in prep",
+		position = 11,
+		section = prepSection
+	)
+	default boolean showPots() {
+		return false;
+	}
+
+	@ConfigItem(
+		name = "—————— Chest ——————",
+		keyName = "chest divider",
+		description = "",
+		position = 12,
+		section = prepSection
+	)
+	void bankDivider();
+
+	@ConfigItem(
 		name = "Highlight Chest Mode",
 		keyName = "highlightChest",
 		description = "Highlight items in your private chest based off the lists",
-		position = 4,
+		position = 13,
 		section = prepSection)
 	default HighlightChestMode highlightChest()
 	{
@@ -448,7 +610,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Highlight Private Chest Items 1",
 		keyName = "highlightChestItems",
 		description = "Highlights items in the list in the storage chest. Must be ids.",
-		position = 5,
+		position = 14,
 		section = prepSection)
 	default String highlightChestItems()
 	{
@@ -460,7 +622,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Chest Items Color 1",
 		keyName = "highlightChestItemsColor",
 		description = "Sets color of highlight chest items",
-		position = 6,
+		position = 15,
 		section = prepSection)
 	default Color highlightChestItemsColor()
 	{
@@ -471,7 +633,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Highlight Private Chest Items 2",
 		keyName = "highlightChestItems2",
 		description = "Highlights items in the list in the storage chest. Must be ids.",
-		position = 7,
+		position = 16,
 		section = prepSection)
 	default String highlightChestItems2()
 	{
@@ -483,7 +645,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Chest Items Color 2",
 		keyName = "highlightChestItemsColor2",
 		description = "Sets color of highlight chest items",
-		position = 8,
+		position = 17,
 		section = prepSection)
 	default Color highlightChestItemsColor2()
 	{
@@ -643,6 +805,49 @@ public interface CoxAdditionsConfig extends Config
 		OFF,
 		INFOBOX,
 		OVERLAY
+	}
+
+	enum GrubChestStyle
+	{
+		HULL,
+		OUTLINE,
+		TILE,
+		CLICKBOX
+	}
+
+	@Getter
+	@RequiredArgsConstructor
+	enum HighlightChestGroups
+	{
+		CHEST_GROUPS_1("Groups 1-4"),
+		CHEST_GROUPS_2("Groups 5-7"),
+		CHEST_GROUPS_3("Groups 8-10");
+
+		@Getter
+		private final String group;
+
+		@Override
+		public String toString()
+		{
+			return group;
+		}
+	}
+
+	@Getter
+	@RequiredArgsConstructor
+	enum grubsMode
+	{
+		OFF("Off"),
+		THIEVING("Thieving"),
+		BOTH("Thieving/Prep");
+
+		private final String name;
+
+		@Override
+		public String toString()
+		{
+			return name;
+		}
 	}
 
 	@Getter
