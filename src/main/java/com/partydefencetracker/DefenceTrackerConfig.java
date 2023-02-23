@@ -45,21 +45,10 @@ public interface DefenceTrackerConfig extends Config
 	}
 
 	@ConfigItem(
-			keyName = "cm",
-			name = "Challenge Mode",
-			description = "Toggle this to set the defence to Challenge Mode when doing Cox",
-			position = 2
-	)
-	default boolean cm()
-	{
-		return true;
-	}
-
-	@ConfigItem(
 			keyName = "vulnerability",
 			name = "Show Vulnerability",
 			description = "Displays an infobox when you successfully land vulnerability",
-			position = 3
+			position = 2
 	)
 	default boolean vulnerability()
 	{

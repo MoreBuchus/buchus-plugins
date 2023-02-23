@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.inject.Inject;
@@ -44,6 +45,7 @@ import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.AnimationChanged;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicChanged;
 import net.runelite.api.events.NpcSpawned;
@@ -51,7 +53,6 @@ import net.runelite.api.events.VarbitChanged;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
-import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.SkillIconManager;
 import net.runelite.client.party.PartyService;
 import net.runelite.client.party.WSClient;
@@ -98,6 +99,9 @@ public class DefenceTrackerPlugin extends Plugin
 	@Inject
 	private InfoBoxManager infoBoxManager;
 
+	@Inject
+	private CoXLayoutSolver layoutSolver;
+
 	private String boss = "";
 	private int bossIndex = 0;
 	private double bossDef = -1;
@@ -105,8 +109,6 @@ public class DefenceTrackerPlugin extends Plugin
 	private DefenceInfoBox box = null;
 	private VulnerabilityInfoBox vulnBox = null;
 	private SpritePixels vuln = null;
-
-	private boolean isInCm = false;
 
 	private boolean hmXarpus = false;
 	private boolean bloatDown = false;
@@ -126,7 +128,17 @@ public class DefenceTrackerPlugin extends Plugin
 		put("<col=00ffff>Obelisk</col>", new ArrayList<>(Collections.singletonList(15184)));
 		put("Tumeken's Warden", new ArrayList<>(Collections.singletonList(15696)));
 		put("Elidinis' Warden", new ArrayList<>(Collections.singletonList(15696)));
+		put("Alchemical Hydra", new ArrayList<>(Collections.singletonList(5536)));
+		put("Nex", new ArrayList<>(Collections.singletonList(11601)));
+		put("Phantom Muspah", new ArrayList<>(Collections.singletonList(11330)));
+		put("Skotizo", new ArrayList<>(Collections.singletonList(9048)));
+		put("TzKal-Zuk", new ArrayList<>(Collections.singletonList(9043)));
+		put("TzTok-Jad", new ArrayList<>(Collections.singletonList(9551)));
+		put("Vorkath", new ArrayList<>(Collections.singletonList(9023)));
+		put("Zulrah", new ArrayList<>(Arrays.asList(9007, 9008)));
 	}};
+
+	private final List<String> coxBosses = Arrays.asList("Great Olm (Left claw)", "Ice Demon", "Skeletal Mystic", "Tekton", "Vasa Nistirio");
 
 	@Provides
 	DefenceTrackerConfig provideConfig(ConfigManager configManager)
@@ -156,15 +168,8 @@ public class DefenceTrackerPlugin extends Plugin
 		box = null;
 		vulnBox = null;
 		vuln = null;
-		isInCm = config.cm();
 		bloatDown = false;
 		queuedNpc = null;
-	}
-
-	@Subscribe
-	public void onConfigChanged(ConfigChanged e)
-	{
-		isInCm = config.cm();
 	}
 
 	@Subscribe
@@ -204,6 +209,8 @@ public class DefenceTrackerPlugin extends Plugin
 	{
 		if (partyService.isInParty())
 		{
+			layoutSolver.onGameTick(e);
+
 			for (NPC n : client.getNpcs())
 			{
 				if (n != null && n.getName() != null && (n.getName().equals(boss) || (n.getName().contains("Tekton") && boss.equals("Tekton")))
@@ -322,6 +329,8 @@ public class DefenceTrackerPlugin extends Plugin
 		{
 			reset();
 		}
+
+		layoutSolver.onVarbitChanged(e);
 	}
 
 	@Subscribe
@@ -337,6 +346,12 @@ public class DefenceTrackerPlugin extends Plugin
 		}
 	}
 
+	@Subscribe
+	protected void onGameStateChanged(GameStateChanged e)
+	{
+		layoutSolver.onGameStateChanged(e);
+	}
+
 	private void baseDefence(String bossName, int index)
 	{
 		boss = bossName;
@@ -347,10 +362,10 @@ public class DefenceTrackerPlugin extends Plugin
 		{
 			bossDef = 200;
 		}
-		else if (boss.equals("Great Olm (Left claw)") || boss.contains("Tekton"))
+		else if (coxBosses.contains(boss))
 		{
 			bossDef = bossDef * (1 + (.01 * (client.getVarbitValue(Varbits.RAID_PARTY_SIZE) - 1)));
-			if (isInCm)
+			if (layoutSolver.isCM())
 			{
 				bossDef = bossDef * (boss.contains("Tekton") ? 1.2 : 1.5);
 			}
@@ -457,6 +472,6 @@ public class DefenceTrackerPlugin extends Plugin
 				return bossRegions.get(boss).contains(wp.getRegionID());
 			}
 		}
-		return client.getVarbitValue(Varbits.IN_RAID) == 1 || (!boss.equals("Tekton") && !boss.equals("Great Olm (Left claw)"));
+		return client.getVarbitValue(Varbits.IN_RAID) == 1 || !coxBosses.contains(boss);
 	}
 }
