@@ -466,6 +466,18 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 
 		overlayFont = null;
 		panelFont = null;
+
+		if (enhanceInfobox != null)
+		{
+			infoBoxManager.removeInfoBox(enhanceInfobox);
+			enhanceInfobox = null;
+		}
+
+		if (grubsInfobox != null)
+		{
+			infoBoxManager.removeInfoBox(grubsInfobox);
+			grubsInfobox = null;
+		}
 	}
 
 	@Override
@@ -517,17 +529,6 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		enhanceSipped = false;
 		enhanceTicks = -1;
 		totalEnhCycles = 0;
-		if (enhanceInfobox != null)
-		{
-			infoBoxManager.removeInfoBox(enhanceInfobox);
-			enhanceInfobox = null;
-		}
-
-		if (grubsInfobox != null)
-		{
-			infoBoxManager.removeInfoBox(grubsInfobox);
-			grubsInfobox = null;
-		}
 
 		keyManager.registerKeyListener(this);
 		wsClient.registerMessage(PartyOverloadUpdate.class);
