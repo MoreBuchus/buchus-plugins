@@ -117,6 +117,7 @@ public class DefenceTrackerPlugin extends Plugin
 	private boolean bloatDown = false;
 
 	private boolean inCm;
+	private boolean coxModeSet = false;
 
 	private QueuedNpc queuedNpc = null;
 
@@ -175,6 +176,7 @@ public class DefenceTrackerPlugin extends Plugin
 		vuln = null;
 		bloatDown = false;
 		queuedNpc = null;
+		coxModeSet = false;
 	}
 
 	@Subscribe
@@ -214,8 +216,6 @@ public class DefenceTrackerPlugin extends Plugin
 	{
 		if (partyService.isInParty())
 		{
-			layoutSolver.onGameTick(e);
-
 			for (NPC n : client.getNpcs())
 			{
 				if (n != null && n.getName() != null && (n.getName().equalsIgnoreCase(boss) || (n.getName().contains("Tekton") && boss.equalsIgnoreCase("Tekton")))
@@ -224,6 +224,14 @@ public class DefenceTrackerPlugin extends Plugin
 					partyService.send(new DefenceTrackerUpdate(n.getName(), n.getIndex(), false, false, client.getWorld()));
 				}
 			}
+		}
+
+		layoutSolver.onGameTick(e);
+
+		if (!coxModeSet && client.getVarbitValue(Varbits.IN_RAID) == 1)
+		{
+			inCm = layoutSolver.isCM();
+			coxModeSet = true;
 		}
 	}
 
@@ -336,6 +344,7 @@ public class DefenceTrackerPlugin extends Plugin
 			{
 				// Determine if in challege mode or regular
 				inCm = layoutSolver.isCM();
+				coxModeSet = true;
 			}
 		}
 	}
@@ -348,9 +357,10 @@ public class DefenceTrackerPlugin extends Plugin
 			reset();
 		}
 
-		if (client.getVarbitValue(Varbits.IN_RAID) != 1)
+		if (client.getVarbitValue(Varbits.IN_RAID) != 1 && isInCoxLobby())
 		{
 			inCm = false;
+			coxModeSet = false;
 		}
 
 		layoutSolver.onVarbitChanged(e);
@@ -496,5 +506,10 @@ public class DefenceTrackerPlugin extends Plugin
 			}
 		}
 		return client.getVarbitValue(Varbits.IN_RAID) == 1 || !coxBosses.contains(boss);
+	}
+
+	public boolean isInCoxLobby()
+	{
+		return client.getMapRegions() != null && client.getMapRegions().length > 0 && Arrays.stream(client.getMapRegions()).anyMatch((s) -> s == 4919);
 	}
 }
