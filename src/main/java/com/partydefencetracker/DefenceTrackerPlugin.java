@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import javax.inject.Inject;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
 import net.runelite.api.IndexDataBase;
 import net.runelite.api.NPC;
@@ -45,6 +46,7 @@ import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.AnimationChanged;
+import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicChanged;
@@ -65,6 +67,7 @@ import net.runelite.client.plugins.specialcounter.SpecialWeapon;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.ui.overlay.infobox.InfoBoxManager;
 import net.runelite.client.util.ColorUtil;
+import net.runelite.client.util.Text;
 
 @PluginDescriptor(
 	name = "Party Defence Tracker",
@@ -113,6 +116,8 @@ public class DefenceTrackerPlugin extends Plugin
 	private boolean hmXarpus = false;
 	private boolean bloatDown = false;
 
+	private boolean inCm;
+
 	private QueuedNpc queuedNpc = null;
 
 	Map<String, ArrayList<Integer>> bossRegions = new HashMap<String, ArrayList<Integer>>()
@@ -138,7 +143,7 @@ public class DefenceTrackerPlugin extends Plugin
 		put("Zulrah", new ArrayList<>(Arrays.asList(9007, 9008)));
 	}};
 
-	private final List<String> coxBosses = Arrays.asList("Great Olm (Left claw)", "Ice Demon", "Skeletal Mystic", "Tekton", "Vasa Nistirio");
+	private final List<String> coxBosses = Arrays.asList("Great Olm (Left claw)", "Ice demon", "Skeletal Mystic", "Tekton", "Vasa Nistirio");
 
 	@Provides
 	DefenceTrackerConfig provideConfig(ConfigManager configManager)
@@ -213,7 +218,7 @@ public class DefenceTrackerPlugin extends Plugin
 
 			for (NPC n : client.getNpcs())
 			{
-				if (n != null && n.getName() != null && (n.getName().equals(boss) || (n.getName().contains("Tekton") && boss.equals("Tekton")))
+				if (n != null && n.getName() != null && (n.getName().equalsIgnoreCase(boss) || (n.getName().contains("Tekton") && boss.equalsIgnoreCase("Tekton")))
 					&& (n.isDead() || n.getHealthRatio() == 0))
 				{
 					partyService.send(new DefenceTrackerUpdate(n.getName(), n.getIndex(), false, false, client.getWorld()));
@@ -237,7 +242,7 @@ public class DefenceTrackerPlugin extends Plugin
 	{
 		if (e.getActor() instanceof NPC && e.getActor().getName() != null && client.getLocalPlayer() != null && partyService.isInParty())
 		{
-			if (e.getActor().getName().equals(boss) || (e.getActor().getName().contains("Tekton") && boss.equals("Tekton")))
+			if (e.getActor().getName().equalsIgnoreCase(boss) || (e.getActor().getName().contains("Tekton") && boss.equalsIgnoreCase("Tekton")))
 			{
 				partyService.send(new DefenceTrackerUpdate(e.getActor().getName(), ((NPC) e.getActor()).getIndex(), false, false, client.getWorld()));
 			}
@@ -261,7 +266,7 @@ public class DefenceTrackerPlugin extends Plugin
 				{
 					String bossName = npc.getName();
 
-					if (!boss.equals(bossName) || (bossName.contains("Tekton") && !boss.equals("Tekton")))
+					if (!boss.equalsIgnoreCase(bossName) || (bossName.contains("Tekton") && !boss.equalsIgnoreCase("Tekton")))
 					{
 						baseDefence(bossName, index);
 						calculateQueue(index);
@@ -297,7 +302,7 @@ public class DefenceTrackerPlugin extends Plugin
 			}
 			else
 			{
-				if (!boss.equals(e.getBoss()) || (e.getBoss().contains("Tekton") && !boss.equals("Tekton")))
+				if (!boss.equalsIgnoreCase(e.getBoss()) || (e.getBoss().contains("Tekton") && !boss.equalsIgnoreCase("Tekton")))
 				{
 					baseDefence(e.getBoss(), e.getIndex());
 					calculateQueue(e.getIndex());
@@ -311,7 +316,7 @@ public class DefenceTrackerPlugin extends Plugin
 						IndexDataBase sprite = client.getIndexSprites();
 						vuln = Objects.requireNonNull(client.getSprites(sprite, 56, 0))[0];
 						vulnBox = new VulnerabilityInfoBox(vuln.toBufferedImage(), this);
-						vulnBox.setTooltip(ColorUtil.wrapWithColorTag(boss, Color.WHITE));
+						vulnBox.setTooltip(ColorUtil.wrapWithColorTag(Text.removeTags(boss), Color.WHITE));
 						infoBoxManager.addInfoBox(vulnBox);
 					}
 					bossDef -= bossDef * .1;
@@ -323,11 +328,29 @@ public class DefenceTrackerPlugin extends Plugin
 	}
 
 	@Subscribe
+	public void onChatMessage(ChatMessage event)
+	{
+		if (event.getType() == ChatMessageType.FRIENDSCHATNOTIFICATION)
+		{
+			if (Text.removeTags(event.getMessage()).equals("The raid has begun!") && client.getVarbitValue(Varbits.IN_RAID) == 1)
+			{
+				// Determine if in challege mode or regular
+				inCm = layoutSolver.isCM();
+			}
+		}
+	}
+
+	@Subscribe
 	private void onVarbitChanged(VarbitChanged e)
 	{
 		if (!inBossRegion())
 		{
 			reset();
+		}
+
+		if (client.getVarbitValue(Varbits.IN_RAID) != 1)
+		{
+			inCm = false;
 		}
 
 		layoutSolver.onVarbitChanged(e);
@@ -358,14 +381,14 @@ public class DefenceTrackerPlugin extends Plugin
 		bossIndex = index;
 		bossDef = BossInfo.getBaseDefence(boss);
 
-		if (boss.equals("Xarpus") && hmXarpus)
+		if (boss.equalsIgnoreCase("Xarpus") && hmXarpus)
 		{
 			bossDef = 200;
 		}
 		else if (coxBosses.contains(boss))
 		{
 			bossDef = bossDef * (1 + (.01 * (client.getVarbitValue(Varbits.RAID_PARTY_SIZE) - 1)));
-			if (layoutSolver.isCM())
+			if (inCm)
 			{
 				bossDef = bossDef * (boss.contains("Tekton") ? 1.2 : 1.5);
 			}
@@ -378,7 +401,7 @@ public class DefenceTrackerPlugin extends Plugin
 		{
 			if (hit == 0)
 			{
-				if (client.getVarbitValue(Varbits.IN_RAID) == 1 && boss.equals("Tekton"))
+				if (client.getVarbitValue(Varbits.IN_RAID) == 1 && boss.equalsIgnoreCase("Tekton"))
 				{
 					bossDef -= bossDef * .05;
 				}
@@ -392,14 +415,14 @@ public class DefenceTrackerPlugin extends Plugin
 		{
 			if (hit == 0)
 			{
-				if (client.getVarbitValue(Varbits.IN_RAID) == 1 && boss.equals("Tekton"))
+				if (client.getVarbitValue(Varbits.IN_RAID) == 1 && boss.equalsIgnoreCase("Tekton"))
 				{
 					bossDef -= 10;
 				}
 			}
 			else
 			{
-				if (boss.equals("Corporeal Beast") || (inBossRegion() && boss.equals("Pestilent Bloat") && !bloatDown))
+				if (boss.equalsIgnoreCase("Corporeal Beast") || (inBossRegion() && boss.equalsIgnoreCase("Pestilent Bloat") && !bloatDown))
 				{
 					bossDef -= hit * 2;
 				}
@@ -411,7 +434,7 @@ public class DefenceTrackerPlugin extends Plugin
 		}
 		else if ((weapon == SpecialWeapon.ARCLIGHT || weapon == SpecialWeapon.DARKLIGHT) && hit > 0)
 		{
-			if (boss.equals("K'ril Tsutsaroth") || boss.equals("Abyssal Sire"))
+			if (boss.equalsIgnoreCase("K'ril Tsutsaroth") || boss.equalsIgnoreCase("Abyssal Sire"))
 			{
 				bossDef -= BossInfo.getBaseDefence(boss) * .10;
 			}
@@ -429,7 +452,7 @@ public class DefenceTrackerPlugin extends Plugin
 			bossDef -= hit;
 		}
 
-		if (boss.equals("Sotetseg") && bossDef < 100)
+		if (boss.equalsIgnoreCase("Sotetseg") && bossDef < 100)
 		{
 			bossDef = 100;
 		}
