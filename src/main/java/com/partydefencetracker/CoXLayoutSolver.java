@@ -81,7 +81,7 @@ public class CoXLayoutSolver
 
 	public void onVarbitChanged(VarbitChanged event)
 	{
-		if (event.getVarpId() == VarPlayer.IN_RAID_PARTY.getId())
+		if (event.getVarpId() == VarPlayer.IN_RAID_PARTY)
 		{
 			boolean tempInRaid = client.getVarbitValue(Varbits.IN_RAID) == 1;
 			if (loggedIn && !tempInRaid)
