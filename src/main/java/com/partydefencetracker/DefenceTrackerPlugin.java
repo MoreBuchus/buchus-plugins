@@ -34,14 +34,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.inject.Inject;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import net.runelite.api.Actor;
 import net.runelite.api.ChatMessageType;
 import net.runelite.api.Client;
+import net.runelite.api.Hitsplat;
 import net.runelite.api.IndexDataBase;
+import net.runelite.api.ItemID;
 import net.runelite.api.NPC;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
 import net.runelite.api.SpritePixels;
+import net.runelite.api.VarPlayer;
 import net.runelite.api.Varbits;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.ActorDeath;
@@ -50,11 +55,14 @@ import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicChanged;
+import net.runelite.api.events.HitsplatApplied;
 import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.kit.KitType;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
+import net.runelite.client.game.ItemManager;
 import net.runelite.client.game.SkillIconManager;
 import net.runelite.client.party.PartyService;
 import net.runelite.client.party.WSClient;
@@ -100,6 +108,9 @@ public class DefenceTrackerPlugin extends Plugin
 	private SkillIconManager skillIconManager;
 
 	@Inject
+	private ItemManager itemManager;
+
+	@Inject
 	private InfoBoxManager infoBoxManager;
 
 	@Inject
@@ -112,6 +123,16 @@ public class DefenceTrackerPlugin extends Plugin
 	private DefenceInfoBox box = null;
 	private VulnerabilityInfoBox vulnBox = null;
 	private SpritePixels vuln = null;
+	private RedKerisInfoBox redKerisBox = null;
+	@Getter
+	private int redKerisTicks = 0;
+
+	//Copied from special counter
+	//Expected tick the hitsplat will happen on
+	private int hitsplatTick;
+	private Hitsplat lastSpecHitsplat;
+	private NPC lastSpecTarget;
+	private double lastSpecPercent = -1;
 
 	private boolean hmXarpus = false;
 	private boolean bloatDown = false;
@@ -131,9 +152,12 @@ public class DefenceTrackerPlugin extends Plugin
 		put("Zebak", new ArrayList<>(Collections.singletonList(15700)));
 		put("Kephri", new ArrayList<>(Collections.singletonList(14164)));
 		put("Ba-Ba", new ArrayList<>(Collections.singletonList(15188)));
+		put("Akkha", new ArrayList<>(Collections.singletonList(14676)));
+		put("Akkha's Shadow", new ArrayList<>(Collections.singletonList(14676)));
 		put("<col=00ffff>Obelisk</col>", new ArrayList<>(Collections.singletonList(15184)));
 		put("Tumeken's Warden", new ArrayList<>(Collections.singletonList(15696)));
 		put("Elidinis' Warden", new ArrayList<>(Collections.singletonList(15696)));
+		put("<col=00ffff>Core</col>", new ArrayList<>(Arrays.asList(15184, 15696)));
 		put("Alchemical Hydra", new ArrayList<>(Collections.singletonList(5536)));
 		put("Nex", new ArrayList<>(Collections.singletonList(11601)));
 		put("Phantom Muspah", new ArrayList<>(Collections.singletonList(11330)));
@@ -168,15 +192,17 @@ public class DefenceTrackerPlugin extends Plugin
 	{
 		infoBoxManager.removeInfoBox(box);
 		infoBoxManager.removeInfoBox(vulnBox);
+		infoBoxManager.removeInfoBox(redKerisBox);
 		boss = "";
 		bossIndex = 0;
 		bossDef = -1;
 		box = null;
 		vulnBox = null;
 		vuln = null;
+		redKerisBox = null;
+		redKerisTicks = 0;
 		bloatDown = false;
 		queuedNpc = null;
-		coxModeSet = false;
 	}
 
 	@Subscribe
@@ -221,7 +247,7 @@ public class DefenceTrackerPlugin extends Plugin
 				if (n != null && n.getName() != null && (n.getName().equalsIgnoreCase(boss) || (n.getName().contains("Tekton") && boss.equalsIgnoreCase("Tekton")))
 					&& (n.isDead() || n.getHealthRatio() == 0))
 				{
-					partyService.send(new DefenceTrackerUpdate(n.getName(), n.getIndex(), false, false, client.getWorld()));
+					partyService.send(new DefenceTrackerUpdate(n.getName(), n.getIndex(), false, client.getWorld(), ""));
 				}
 			}
 		}
@@ -233,7 +259,45 @@ public class DefenceTrackerPlugin extends Plugin
 			inCm = layoutSolver.isCM();
 			coxModeSet = true;
 		}
+
+		if (redKerisTicks > 0)
+		{
+			redKerisTicks--;
+			if (redKerisTicks == 0)
+			{
+				infoBoxManager.removeInfoBox(redKerisBox);
+			}
+		}
+
+		//Copied from special counter
+		if (lastSpecHitsplat != null && lastSpecTarget != null)
+		{
+			if (lastSpecHitsplat.getAmount() > 0 && partyService.isInParty())
+			{
+				partyService.send(new DefenceTrackerUpdate(lastSpecTarget.getName(), lastSpecTarget.getIndex(), true, client.getWorld(), "keris"));
+			}
+			lastSpecHitsplat = null;
+			lastSpecTarget = null;
+		}
 	}
+
+	@Subscribe
+	public void onHitsplatApplied(HitsplatApplied e)
+	{
+		Actor target = e.getActor();
+		Hitsplat hitsplat = e.getHitsplat();
+		if (hitsplat.isMine() && target instanceof NPC && lastSpecTarget != null && hitsplatTick == client.getTickCount())
+		{
+			NPC npc = (NPC) target;
+			String name = npc.getName();
+			if (name != null && (BossInfo.getBoss(name) != null || bossIndex == npc.getIndex()))
+			{
+				// The weapon hitsplat is always last, after other hitsplats which occur on the same tick such as from venge or thralls.
+				lastSpecHitsplat = hitsplat;
+			}
+		}
+	}
+
 
 	@Subscribe
 	public void onNpcSpawned(NpcSpawned e)
@@ -252,7 +316,7 @@ public class DefenceTrackerPlugin extends Plugin
 		{
 			if (e.getActor().getName().equalsIgnoreCase(boss) || (e.getActor().getName().contains("Tekton") && boss.equalsIgnoreCase("Tekton")))
 			{
-				partyService.send(new DefenceTrackerUpdate(e.getActor().getName(), ((NPC) e.getActor()).getIndex(), false, false, client.getWorld()));
+				partyService.send(new DefenceTrackerUpdate(e.getActor().getName(), ((NPC) e.getActor()).getIndex(), false, client.getWorld(), ""));
 			}
 		}
 	}
@@ -310,26 +374,40 @@ public class DefenceTrackerPlugin extends Plugin
 			}
 			else
 			{
-				if (!boss.equalsIgnoreCase(e.getBoss()) || (e.getBoss().contains("Tekton") && !boss.equalsIgnoreCase("Tekton")))
-				{
-					baseDefence(e.getBoss(), e.getIndex());
-					calculateQueue(e.getIndex());
-				}
-
 				if (inBossRegion() && world == client.getWorld())
 				{
-					if (config.vulnerability())
+					if (e.getWeapon().equals("vuln"))
 					{
-						infoBoxManager.removeInfoBox(vulnBox);
-						IndexDataBase sprite = client.getIndexSprites();
-						vuln = Objects.requireNonNull(client.getSprites(sprite, 56, 0))[0];
-						vulnBox = new VulnerabilityInfoBox(vuln.toBufferedImage(), this);
-						vulnBox.setTooltip(ColorUtil.wrapWithColorTag(Text.removeTags(boss), Color.WHITE));
-						infoBoxManager.addInfoBox(vulnBox);
-					}
-					bossDef -= bossDef * .1;
+						if (!boss.equalsIgnoreCase(e.getBoss()) || (e.getBoss().contains("Tekton") && !boss.equalsIgnoreCase("Tekton")))
+						{
+							baseDefence(e.getBoss(), e.getIndex());
+							calculateQueue(e.getIndex());
+						}
 
-					updateDefInfobox();
+						if (config.vulnerability())
+						{
+							infoBoxManager.removeInfoBox(vulnBox);
+							IndexDataBase sprite = client.getIndexSprites();
+							vuln = Objects.requireNonNull(client.getSprites(sprite, 56, 0))[0];
+							vulnBox = new VulnerabilityInfoBox(vuln.toBufferedImage(), this);
+							vulnBox.setTooltip(ColorUtil.wrapWithColorTag(Text.removeTags(boss), Color.WHITE));
+							infoBoxManager.addInfoBox(vulnBox);
+						}
+						bossDef -= bossDef * .1;
+
+						updateDefInfobox();
+					}
+					else if (e.getWeapon().equals("keris"))
+					{
+						redKerisTicks = 9;
+						if (config.redKeris())
+						{
+							infoBoxManager.removeInfoBox(redKerisBox);
+							redKerisBox = new RedKerisInfoBox(itemManager.getImage(ItemID.KERIS_PARTISAN_OF_CORRUPTION), this);
+							redKerisBox.setTooltip(ColorUtil.wrapWithColorTag(e.getBoss(), Color.WHITE));
+							infoBoxManager.addInfoBox(redKerisBox);
+						}
+					}
 				}
 			}
 		});
@@ -364,17 +442,40 @@ public class DefenceTrackerPlugin extends Plugin
 		}
 
 		layoutSolver.onVarbitChanged(e);
+
+		//Copied from special counter plugin
+		if (e.getVarpId() == VarPlayer.SPECIAL_ATTACK_PERCENT)
+		{
+			if (client.getLocalPlayer() != null && client.getLocalPlayer().getPlayerComposition() != null)
+			{
+				int weapon = client.getLocalPlayer().getPlayerComposition().getEquipmentId(KitType.WEAPON);
+				if (weapon == ItemID.KERIS_PARTISAN_OF_CORRUPTION && (e.getValue() == lastSpecPercent - 750 || e.getValue() == lastSpecPercent - 375))
+				{
+					// This event runs prior to player and npc updating, making getInteracting() too early to call..
+					// defer this with invokeLater(), but note that this will run after incrementing the server tick counter
+					// so we capture the current server tick counter here for use in computing the final hitsplat tick
+					final int serverTicks = client.getTickCount();
+					clientThread.invokeLater(() ->
+					{
+						Actor target = client.getLocalPlayer().getInteracting();
+						lastSpecTarget = target instanceof NPC ? (NPC) target : null;
+						hitsplatTick = serverTicks + 1; //red keris has hit delay 1
+					});
+				}
+			}
+			lastSpecPercent = e.getValue();
+		}
 	}
 
 	@Subscribe
 	public void onGraphicChanged(GraphicChanged e)
 	{
 		//85 = splash
-		if (e.getActor() instanceof NPC && e.getActor().getName() != null && e.getActor().getGraphic() == 169 && partyService.isInParty())
+		if (e.getActor() instanceof NPC && e.getActor().getName() != null && e.getActor().hasSpotAnim(169) && partyService.isInParty())
 		{
 			if (BossInfo.getBoss(e.getActor().getName()) != null)
 			{
-				partyService.send(new DefenceTrackerUpdate(e.getActor().getName(), ((NPC) e.getActor()).getIndex(), true, false, client.getWorld()));
+				partyService.send(new DefenceTrackerUpdate(e.getActor().getName(), ((NPC) e.getActor()).getIndex(), true, client.getWorld(), "vuln"));
 			}
 		}
 	}

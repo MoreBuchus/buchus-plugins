@@ -13,6 +13,6 @@ public class DefenceTrackerUpdate extends PartyMemberMessage
 	String boss;
 	int index;
 	boolean alive;
-	boolean bossSpawned;
 	int world;
+	String weapon;
 }

@@ -54,4 +54,15 @@ public interface DefenceTrackerConfig extends Config
 	{
 		return true;
 	}
+
+	@ConfigItem(
+		keyName = "redKeris",
+		name = "Show Red Keris",
+		description = "Displays an infobox when you successfully land a Red Keris (Corruption) special attack",
+		position = 3
+	)
+	default boolean redKeris()
+	{
+		return true;
+	}
 }
