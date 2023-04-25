@@ -6,6 +6,8 @@ enum BossInfo
 {
 	ABYSSAL_SIRE("Abyssal Sire", 250),
 	ALCHEMICAL_HYDRA("Alchemical Hydra", 100),
+	AKKHA("Akkha", 80),
+	AKKHAS_SHADOW("Akkha's Shadow", 30),
 	ARTIO("Artio", 150),
 	BA_BA("Ba-Ba", 20),
 	CALLISTO("Callisto", 225),
@@ -13,6 +15,7 @@ enum BossInfo
 	CERBERUS("Cerberus", 110),
 	CHAOS_ELEMENTAL("Chaos Elemental", 270),
 	COMMANDER_ZILYANA("Commander Zilyana", 300),
+	CORE("<col=00ffff>Core</col>", 0),
 	CORPOREAL_BEAST("Corporeal Beast", 310),
 	DAGANNOTH_PRIME("Dagannoth Prime", 255),
 	DAGANNOTH_REX("Dagannoth Rex", 255),
