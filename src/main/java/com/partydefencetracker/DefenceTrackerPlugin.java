@@ -168,7 +168,7 @@ public class DefenceTrackerPlugin extends Plugin
 		put("Zulrah", new ArrayList<>(Arrays.asList(9007, 9008)));
 	}};
 
-	private final List<String> coxBosses = Arrays.asList("Great Olm (Left claw)", "Ice demon", "Skeletal Mystic", "Tekton", "Vasa Nistirio");
+	private final List<String> coxBosses = Arrays.asList("Great Olm (Left claw)", "Ice demon", "Skeletal Mystic", "Tekton", "Vasa Nistirio", "Guardian", "Abyssal portal");
 
 	@Provides
 	DefenceTrackerConfig provideConfig(ConfigManager configManager)
