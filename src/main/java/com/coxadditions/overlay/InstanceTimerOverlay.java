@@ -2,6 +2,7 @@ package com.coxadditions.overlay;
 
 import com.coxadditions.CoxAdditionsConfig;
 import com.coxadditions.CoxAdditionsPlugin;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import javax.inject.Inject;
@@ -35,11 +36,15 @@ public class InstanceTimerOverlay extends OverlayPanel
 		panelComponent.getChildren().clear();
 		if (config.instanceTimer() == CoxAdditionsConfig.instanceTimerMode.INFOBOX && plugin.isInstanceTimerRunning() && plugin.isInRaid())
 		{
+			Color goodTick = new Color(37, 197, 79);
+			Color badTick = new Color(224, 60, 49);
+
 			graphics.setFont(plugin.getPanelFont());
 			panelComponent.setPreferredSize(new Dimension(graphics.getFontMetrics().stringWidth("Tick:   ") + 15, 0));
 			panelComponent.getChildren().add(LineComponent.builder()
 				.left("Tick: ")
 				.right(String.valueOf(plugin.getInstanceTimer()))
+				.rightColor(plugin.getInstanceTimer() == 0 ? goodTick : badTick)
 				.build());
 		}
 		return super.render(graphics);

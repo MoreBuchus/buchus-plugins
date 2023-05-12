@@ -69,7 +69,7 @@ public class CoxAdditionsOverlay extends Overlay
 				plugin.loadFont(true);
 			}
 
-			if (config.coxHerbTimer() != CoxAdditionsConfig.CoXHerbTimerMode.OFF && (plugin.getCoxHerb1() != null || plugin.getCoxHerb2() != null))
+			if (config.coxHerbTimer() != CoxAdditionsConfig.CoXHerbTimerMode.OFF && (plugin.getCoxHerb1() != null || plugin.getCoxHerb2() != null) && plugin.isInPrep())
 			{
 				if (config.coxHerbTimer() == CoxAdditionsConfig.CoXHerbTimerMode.TEXT)
 				{
@@ -142,8 +142,11 @@ public class CoxAdditionsOverlay extends Overlay
 					Point point = player.getCanvasTextLocation(graphics, "#", player.getLogicalHeight() + 60);
 					if (point != null)
 					{
+						Color goodTick = new Color(37, 197, 79);
+						Color badTick = new Color(224, 60, 49);
+
 						graphics.setFont(plugin.getOverlayFont());
-						OverlayUtil.renderTextLocation(graphics, point, String.valueOf(plugin.getInstanceTimer()), Color.CYAN);
+						OverlayUtil.renderTextLocation(graphics, point, String.valueOf(plugin.getInstanceTimer()), plugin.getInstanceTimer() == 0 ? goodTick : badTick);
 					}
 				}
 			}

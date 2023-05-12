@@ -1293,7 +1293,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				maxEnhCycles = getMaxEnhanceCycles();
 				enhRegenRate = getEnhanceRegenRate();
 				totalEnhCycles = client.getVarbitValue(5417);
-				enhanceTicks = client.getVarbitValue(5417) * 6;
+				enhanceTicks = client.getVarbitValue(5417) * getEnhanceRegenRate();
 				addInfobox("Enhance");
 			}
 			else
