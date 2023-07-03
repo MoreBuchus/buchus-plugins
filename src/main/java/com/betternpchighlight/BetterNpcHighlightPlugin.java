@@ -24,8 +24,12 @@
  */
 package com.betternpchighlight;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
+import java.awt.event.KeyEvent;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -33,15 +37,29 @@ import javax.swing.UIManager;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
 import net.runelite.api.events.*;
+import net.runelite.api.vars.InputType;
+import net.runelite.client.callback.Hooks;
+import net.runelite.client.chat.ChatColorType;
+import net.runelite.client.chat.ChatMessageBuilder;
+import net.runelite.client.chat.ChatMessageManager;
+import net.runelite.client.chat.QueuedMessage;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.NpcUtil;
+import net.runelite.client.input.KeyListener;
+import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
+import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.PluginManager;
+import net.runelite.client.plugins.slayer.SlayerPlugin;
+import net.runelite.client.plugins.slayer.SlayerPluginService;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.Text;
+import net.runelite.client.util.WildcardMatcher;
+import org.apache.commons.lang3.StringUtils;
 import javax.inject.Inject;
 import java.awt.*;
 import java.time.Instant;
@@ -56,9 +74,10 @@ import static net.runelite.api.MenuAction.MENU_ACTION_DEPRIORITIZE_OFFSET;
 @PluginDescriptor(
 	name = "Better NPC Highlight",
 	description = "A more customizable NPC highlight",
-	tags = {"npc", "highlight", "indicators", "respawn"}
+	tags = {"npc", "highlight", "indicators", "respawn", "hide", "entity", "custom", "id", "name"}
 )
-public class BetterNpcHighlightPlugin extends Plugin
+@PluginDependency(SlayerPlugin.class)
+public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 {
 	@Inject
 	private Client client;
@@ -81,38 +100,63 @@ public class BetterNpcHighlightPlugin extends Plugin
 	@Inject
 	private ConfigManager configManager;
 
+	@Inject
+	private PluginManager pluginManager;
+
+	@Inject
+	private Hooks hooks;
+
+	@Inject
+	private SlayerPluginService slayerPluginService;
+
+	@Inject
+	private KeyManager keyManager;
+
+	@Inject
+	private ChatMessageManager chatMessageManager;
+
 	private static final Set<MenuAction> NPC_MENU_ACTIONS = ImmutableSet.of(MenuAction.NPC_FIRST_OPTION, MenuAction.NPC_SECOND_OPTION,
 		MenuAction.NPC_THIRD_OPTION, MenuAction.NPC_FOURTH_OPTION, MenuAction.NPC_FIFTH_OPTION, MenuAction.WIDGET_TARGET_ON_NPC,
 		MenuAction.ITEM_USE_ON_NPC);
 
-	public ArrayList<String> tileNames = new ArrayList<String>();
-	public ArrayList<Integer> tileIds = new ArrayList<Integer>();
-	public ArrayList<String> trueTileNames = new ArrayList<String>();
-	public ArrayList<Integer> trueTileIds = new ArrayList<Integer>();
-	public ArrayList<String> swTileNames = new ArrayList<String>();
-	public ArrayList<Integer> swTileIds = new ArrayList<Integer>();
-	public ArrayList<String> swTrueTileNames = new ArrayList<String>();
-	public ArrayList<Integer> swTrueTileIds = new ArrayList<Integer>();
-	public ArrayList<String> hullNames = new ArrayList<String>();
-	public ArrayList<Integer> hullIds = new ArrayList<Integer>();
-	public ArrayList<String> areaNames = new ArrayList<String>();
-	public ArrayList<Integer> areaIds = new ArrayList<Integer>();
-	public ArrayList<String> outlineNames = new ArrayList<String>();
-	public ArrayList<Integer> outlineIds = new ArrayList<Integer>();
-	public ArrayList<String> clickboxNames = new ArrayList<String>();
-	public ArrayList<Integer> clickboxIds = new ArrayList<Integer>();
-	public ArrayList<String> turboNames = new ArrayList<String>();
-	public ArrayList<Integer> turboIds = new ArrayList<Integer>();
-	public ArrayList<Color> turboColors = new ArrayList<Color>();
-	public ArrayList<NpcSpawn> npcSpawns = new ArrayList<NpcSpawn>();
-	public ArrayList<String> namesToDisplay = new ArrayList<String>();
-	public ArrayList<String> ignoreDeadExclusionList = new ArrayList<String>();
+	public ArrayList<String> tileNames = new ArrayList<>();
+	public ArrayList<Integer> tileIds = new ArrayList<>();
+	public ArrayList<String> trueTileNames = new ArrayList<>();
+	public ArrayList<Integer> trueTileIds = new ArrayList<>();
+	public ArrayList<String> swTileNames = new ArrayList<>();
+	public ArrayList<Integer> swTileIds = new ArrayList<>();
+	public ArrayList<String> swTrueTileNames = new ArrayList<>();
+	public ArrayList<Integer> swTrueTileIds = new ArrayList<>();
+	public ArrayList<String> hullNames = new ArrayList<>();
+	public ArrayList<Integer> hullIds = new ArrayList<>();
+	public ArrayList<String> areaNames = new ArrayList<>();
+	public ArrayList<Integer> areaIds = new ArrayList<>();
+	public ArrayList<String> outlineNames = new ArrayList<>();
+	public ArrayList<Integer> outlineIds = new ArrayList<>();
+	public ArrayList<String> clickboxNames = new ArrayList<>();
+	public ArrayList<Integer> clickboxIds = new ArrayList<>();
+	public ArrayList<String> turboNames = new ArrayList<>();
+	public ArrayList<Integer> turboIds = new ArrayList<>();
+	public ArrayList<Color> turboColors = new ArrayList<>();
+	public ArrayList<NpcSpawn> npcSpawns = new ArrayList<>();
+	public ArrayList<String> namesToDisplay = new ArrayList<>();
+	public ArrayList<String> ignoreDeadExclusionList = new ArrayList<>();
+	public ArrayList<Integer> ignoreDeadExclusionIDList = new ArrayList<>();
+	public ArrayList<String> hiddenNames = new ArrayList<>();
+	public ArrayList<Integer> hiddenIds = new ArrayList<>();
 	public Instant lastTickUpdate;
 	public int turboModeStyle = 0;
 	public int turboTileWidth = 0;
 	public int turboOutlineWidth = 0;
 	public int turboOutlineFeather = 0;
 	public boolean confirmedWarning = false;
+
+	private final Hooks.RenderableDrawListener drawListener = this::shouldDraw;
+
+	private static final String HIDE_COMMAND = "!hide";
+	private static final String UNHIDE_COMMAND = "!unhide";
+	private static final String TAG_COMMAND = "!tag";
+	private static final String UNTAG_COMMAND = "!untag";
 
 	@Provides
 	BetterNpcHighlightConfig providesConfig(ConfigManager configManager)
@@ -145,6 +189,17 @@ public class BetterNpcHighlightPlugin extends Plugin
 		splitIdList(config.turboIds(), turboIds);
 		splitNameList(config.displayName(), namesToDisplay);
 		splitNameList(config.ignoreDeadExclusion(), ignoreDeadExclusionList);
+		splitIdList(config.ignoreDeadExclusionID(), ignoreDeadExclusionIDList);
+		splitNameList(config.entityHiderNames(), hiddenNames);
+		splitIdList(config.entityHiderIds(), hiddenIds);
+		hooks.registerRenderableDrawListener(drawListener);
+		keyManager.registerKeyListener(this);
+
+		final Optional<Plugin> slayerPlugin = pluginManager.getPlugins().stream().filter(p -> p.getName().equals("Slayer")).findFirst();
+		if (slayerPlugin.isPresent() && pluginManager.isPluginEnabled(slayerPlugin.get()) && config.slayerHighlight())
+		{
+			pluginManager.setPluginEnabled(slayerPlugin.get(), true);
+		}
 	}
 
 	protected void shutDown()
@@ -152,6 +207,8 @@ public class BetterNpcHighlightPlugin extends Plugin
 		reset();
 		overlayManager.remove(overlay);
 		overlayManager.remove(mapOverlay);
+		hooks.unregisterRenderableDrawListener(drawListener);
+		keyManager.unregisterKeyListener(this);
 	}
 
 	private void reset()
@@ -172,13 +229,18 @@ public class BetterNpcHighlightPlugin extends Plugin
 		outlineIds.clear();
 		clickboxNames.clear();
 		clickboxIds.clear();
+		turboNames.clear();
+		turboIds.clear();
+		hiddenNames.clear();
+		hiddenIds.clear();
+		ignoreDeadExclusionList.clear();
+		ignoreDeadExclusionIDList.clear();
+		namesToDisplay.clear();
 		npcSpawns.clear();
 		turboModeStyle = 0;
 		turboTileWidth = 0;
 		turboOutlineWidth = 0;
 		turboOutlineFeather = 0;
-		namesToDisplay.clear();
-		ignoreDeadExclusionList.clear();
 		confirmedWarning = false;
 	}
 
@@ -304,6 +366,10 @@ public class BetterNpcHighlightPlugin extends Plugin
 					ignoreDeadExclusionList.clear();
 					splitNameList(config.ignoreDeadExclusion(), ignoreDeadExclusionList);
 					break;
+				case "ignoreDeadExclusionID":
+					ignoreDeadExclusionIDList.clear();
+					splitIdList(config.ignoreDeadExclusionID(), ignoreDeadExclusionIDList);
+					break;
 				case "turboHighlight":
 					if (event.getNewValue().equals("true"))
 					{
@@ -315,6 +381,21 @@ public class BetterNpcHighlightPlugin extends Plugin
 						{
 							confirmedWarning = false;
 						}
+					}
+					break;
+				case "entityHiderNames":
+					hiddenNames.clear();
+					splitNameList(config.entityHiderNames(), hiddenNames);
+					break;
+				case "entityHiderIds":
+					hiddenIds.clear();
+					splitIdList(config.entityHiderIds(), hiddenIds);
+					break;
+				case "slayerHighlight":
+					final Optional<Plugin> slayerPlugin = pluginManager.getPlugins().stream().filter(p -> p.getName().equals("Slayer")).findFirst();
+					if (slayerPlugin.isPresent() && pluginManager.isPluginEnabled(slayerPlugin.get()) && config.slayerHighlight())
+					{
+						pluginManager.setPluginEnabled(slayerPlugin.get(), true);
 					}
 					break;
 			}
@@ -349,7 +430,8 @@ public class BetterNpcHighlightPlugin extends Plugin
 			{
 				color = config.deadNpcMenuColor();
 			}
-			else if (config.highlightMenuNames() && npc.getName() != null && checkAllLists(npc))
+			else if (config.highlightMenuNames() && npc.getName() != null && (checkAllLists(npc) ||
+				(config.slayerHighlight() && slayerPluginService.getTargets().contains(npc))))
 			{
 				color = getSpecificColor(npc);
 			}
@@ -375,102 +457,39 @@ public class BetterNpcHighlightPlugin extends Plugin
 				{
 					if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TILE)
 					{
-						if (tileNames.contains(npc.getName().toLowerCase()))
-						{
-							option = "Untag-Tile";
-						}
-						else
-						{
-							option = "Tag-Tile";
-						}
+						option = tileNames.contains(npc.getName().toLowerCase()) ? "Untag-Tile" : "Tag-Tile";
 					}
 					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TRUE_TILE)
 					{
-						if (trueTileNames.contains(npc.getName().toLowerCase()))
-						{
-							option = "Untag-True-Tile";
-						}
-						else
-						{
-							option = "Tag-True-Tile";
-						}
+						option = trueTileNames.contains(npc.getName().toLowerCase()) ? "Untag-True-Tile" : "Tag-True-Tile";
 					}
 					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.SW_TILE)
 					{
-						if (swTileNames.contains(npc.getName().toLowerCase()))
-						{
-							option = "Untag-SW-Tile";
-						}
-						else
-						{
-							option = "Tag-SW-Tile";
-						}
+						option = swTileNames.contains(npc.getName().toLowerCase()) ? "Untag-SW-Tile" : "Tag-SW-Tile";
 					}
 					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.SW_TRUE_TILE)
 					{
-						if (swTrueTileNames.contains(npc.getName().toLowerCase()))
-						{
-							option = "Untag-SW-True-Tile";
-						}
-						else
-						{
-							option = "Tag-SW-True-Tile";
-						}
+						option = swTrueTileNames.contains(npc.getName().toLowerCase()) ? "Untag-SW-True-Tile" : "Tag-SW-True-Tile";
 					}
 					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.HULL)
 					{
-						if (hullNames.contains(npc.getName().toLowerCase()))
-						{
-							option = "Untag-Hull";
-						}
-						else
-						{
-							option = "Tag-Hull";
-						}
+						option = hullNames.contains(npc.getName().toLowerCase()) ? "Untag-Hull" : "Tag-Hull";
 					}
 					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.AREA)
 					{
-						if (areaNames.contains(npc.getName().toLowerCase()))
-						{
-							option = "Untag-Area";
-						}
-						else
-						{
-							option = "Tag-Area";
-						}
+						option = areaNames.contains(npc.getName().toLowerCase()) ? "Untag-Area" : "Tag-Area";
 					}
 					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.OUTLINE)
 					{
-						if (outlineNames.contains(npc.getName().toLowerCase()))
-						{
-							option = "Untag-Outline";
-						}
-						else
-						{
-							option = "Tag-Outline";
-						}
+						option = outlineNames.contains(npc.getName().toLowerCase()) ? "Untag-Outline" : "Tag-Outline";
 					}
 					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.CLICKBOX)
 					{
-						if (clickboxNames.contains(npc.getName().toLowerCase()))
-						{
-							option = "Untag-Clickbox";
-						}
-						else
-						{
-							option = "Tag-Clickbox";
-						}
+						option = clickboxNames.contains(npc.getName().toLowerCase()) ? "Untag-Clickbox" : "Tag-Clickbox";
 					}
 					else
 					{
-						if (turboNames.contains(npc.getName().toLowerCase()))
-						{
-							option = "Untag-Turbo";
-						}
-						else
-						{
-							option = "Tag-Turbo";
-						}
+						option = turboNames.contains(npc.getName().toLowerCase()) ? "Untag-Turbo" : "Tag-Turbo";
 					}
 
 					if (option.contains("Untag-") && (config.highlightMenuNames() || (npc.isDead() && config.deadNpcMenuColor() != null)))
@@ -493,7 +512,7 @@ public class BetterNpcHighlightPlugin extends Plugin
 
 					if (client.isKeyPressed(KeyCode.KC_SHIFT))
 					{
-						String tagAllEntry = "";
+						String tagAllEntry;
 						if (config.highlightMenuNames() || (npc.isDead() && config.deadNpcMenuColor() != null))
 						{
 							String colorCode;
@@ -544,147 +563,81 @@ public class BetterNpcHighlightPlugin extends Plugin
 			{
 				final int id = event.getId();
 				final NPC npc = client.getCachedNPCs()[id];
-
-				ArrayList<String> listToChange = new ArrayList<>();
+				boolean tag = event.getMenuOption().contains("Tag");
 				if (npc.getName() != null)
 				{
-					if (event.getMenuOption().contains("Untag"))
+					if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TILE)
 					{
-						if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TILE)
-						{
-							tileNames.remove(npc.getName().toLowerCase());
-							listToChange = tileNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TRUE_TILE)
-						{
-							trueTileNames.remove(npc.getName().toLowerCase());
-							listToChange = trueTileNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.SW_TILE)
-						{
-							swTileNames.remove(npc.getName().toLowerCase());
-							listToChange = swTileNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.SW_TRUE_TILE)
-						{
-							swTrueTileNames.remove(npc.getName().toLowerCase());
-							listToChange = swTrueTileNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.HULL)
-						{
-							hullNames.remove(npc.getName().toLowerCase());
-							listToChange = hullNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.AREA)
-						{
-							areaNames.remove(npc.getName().toLowerCase());
-							listToChange = areaNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.OUTLINE)
-						{
-							outlineNames.remove(npc.getName().toLowerCase());
-							listToChange = outlineNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.CLICKBOX)
-						{
-							clickboxNames.remove(npc.getName().toLowerCase());
-							listToChange = clickboxNames;
-						}
-						else
-						{
-							turboNames.remove(npc.getName().toLowerCase());
-							listToChange = turboNames;
-						}
+						config.setTileNames(configListToString(tag, npc.getName().toLowerCase(), tileNames));
 					}
-					else
+					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TRUE_TILE)
 					{
-						if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TILE)
-						{
-							tileNames.add(npc.getName());
-							listToChange = tileNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TRUE_TILE)
-						{
-							trueTileNames.add(npc.getName());
-							listToChange = trueTileNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.SW_TILE)
-						{
-							swTileNames.add(npc.getName());
-							listToChange = swTileNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.SW_TRUE_TILE)
-						{
-							swTrueTileNames.add(npc.getName());
-							listToChange = swTrueTileNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.HULL)
-						{
-							hullNames.add(npc.getName());
-							listToChange = hullNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.AREA)
-						{
-							areaNames.add(npc.getName());
-							listToChange = areaNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.OUTLINE)
-						{
-							outlineNames.add(npc.getName());
-							listToChange = outlineNames;
-						}
-						else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.CLICKBOX)
-						{
-							clickboxNames.add(npc.getName());
-							listToChange = clickboxNames;
-						}
-						else
-						{
-							turboNames.add(npc.getName());
-							listToChange = turboNames;
-						}
+						config.setTrueTileNames(configListToString(tag, npc.getName().toLowerCase(), trueTileNames));
 					}
-				}
-
-				if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TILE)
-				{
-					config.setTileNames(Text.toCSV(listToChange));
-				}
-				else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TRUE_TILE)
-				{
-					config.setTrueTileNames(Text.toCSV(listToChange));
-				}
-				else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.SW_TILE)
-				{
-					config.setSwTileNames(Text.toCSV(listToChange));
-				}
-				else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.SW_TRUE_TILE)
-				{
-					config.setSwTrueTileNames(Text.toCSV(listToChange));
-				}
-				else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.HULL)
-				{
-					config.setHullNames(Text.toCSV(listToChange));
-				}
-				else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.AREA)
-				{
-					config.setAreaNames(Text.toCSV(listToChange));
-				}
-				else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.OUTLINE)
-				{
-					config.setOutlineNames(Text.toCSV(listToChange));
-				}
-				else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.CLICKBOX)
-				{
-					config.setClickboxNames(Text.toCSV(listToChange));
-				}
-				else
-				{
-					config.setTurboNames(Text.toCSV(listToChange));
+					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.SW_TILE)
+					{
+						config.setSwTileNames(configListToString(tag, npc.getName().toLowerCase(), swTileNames));
+					}
+					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.SW_TRUE_TILE)
+					{
+						config.setSwTrueTileNames(configListToString(tag, npc.getName().toLowerCase(), swTrueTileNames));
+					}
+					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.HULL)
+					{
+						config.setHullNames(configListToString(tag, npc.getName().toLowerCase(), hullNames));
+					}
+					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.AREA)
+					{
+						config.setAreaNames(configListToString(tag, npc.getName().toLowerCase(), areaNames));
+					}
+					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.OUTLINE)
+					{
+						config.setOutlineNames(configListToString(tag, npc.getName().toLowerCase(), outlineNames));
+					}
+					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.CLICKBOX)
+					{
+						config.setClickboxNames(configListToString(tag, npc.getName().toLowerCase(), clickboxNames));
+					}
+					else if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TURBO)
+					{
+						config.setTurboNames(configListToString(tag, npc.getName().toLowerCase(), turboNames));
+					}
 				}
 				event.consume();
 			}
 		}
+	}
+
+	private String configListToString(boolean tagOrHide, String name, ArrayList<String> strList)
+	{
+		if (tagOrHide)
+		{
+			if (!strList.contains(name))
+			{
+				strList.add(name);
+			}
+		}
+		else
+		{
+			strList.remove(name);
+		}
+		return Text.toCSV(strList);
+	}
+
+	private String configListToString(boolean tagOrHide, int id, ArrayList<Integer> intList)
+	{
+		if (tagOrHide)
+		{
+			if (!intList.contains(id))
+			{
+				intList.add(id);
+			}
+		}
+		else
+		{
+			intList.remove((Integer) id);
+		}
+		return intList.stream().map(String::valueOf).collect(Collectors.joining(","));
 	}
 
 	@Subscribe
@@ -760,9 +713,7 @@ public class BetterNpcHighlightPlugin extends Plugin
 			String name = npc.getName().toLowerCase();
 			for (String str : strList)
 			{
-				if (str.equalsIgnoreCase(name) || (str.contains("*")
-					&& ((str.startsWith("*") && str.endsWith("*") && name.contains(str.replace("*", "")))
-					|| (str.startsWith("*") && name.endsWith(str.replace("*", ""))) || name.startsWith(str.replace("*", "")))))
+				if (WildcardMatcher.matches(str, name))
 				{
 					return true;
 				}
@@ -787,9 +738,7 @@ public class BetterNpcHighlightPlugin extends Plugin
 			{
 				for (String str : strList)
 				{
-					if (str.equalsIgnoreCase(name) || (str.contains("*")
-						&& ((str.startsWith("*") && str.endsWith("*") && name.contains(str.replace("*", "")))
-						|| (str.startsWith("*") && name.endsWith(str.replace("*", ""))) || name.startsWith(str.replace("*", "")))))
+					if (WildcardMatcher.matches(str, name))
 					{
 						return true;
 					}
@@ -841,42 +790,52 @@ public class BetterNpcHighlightPlugin extends Plugin
 
 	public Color getSpecificColor(NPC npc)
 	{
-		if (checkSpecificList(tileNames, tileIds, npc))
+		if (slayerPluginService.getTargets().contains(npc) && config.slayerHighlight())
 		{
-			return config.tileColor();
+			return config.slayerRave() ? getRaveColor(config.slayerRaveSpeed()) : config.taskColor();
+		}
+		else if (checkSpecificList(tileNames, tileIds, npc))
+		{
+			return config.tileRave() ? getRaveColor(config.tileRaveSpeed()) : config.tileColor();
 		}
 		else if (checkSpecificList(trueTileNames, trueTileIds, npc))
 		{
-			return config.trueTileColor();
+			return config.trueTileRave() ? getRaveColor(config.trueTileRaveSpeed()) : config.trueTileColor();
 		}
 		else if (checkSpecificList(swTileNames, swTileIds, npc))
 		{
-			return config.swTileColor();
+			return config.swTileRave() ? getRaveColor(config.swTileRaveSpeed()) : config.swTileColor();
 		}
 		else if (checkSpecificList(swTrueTileNames, swTrueTileIds, npc))
 		{
-			return config.swTrueTileColor();
+			return config.swTrueTileRave() ? getRaveColor(config.swTrueTileRaveSpeed()) : config.swTrueTileColor();
 		}
 		else if (checkSpecificList(hullNames, hullIds, npc))
 		{
-			return config.hullColor();
+			return config.hullRave() ? getRaveColor(config.hullRaveSpeed()) : config.hullColor();
 		}
 		else if (checkSpecificList(areaNames, areaIds, npc))
 		{
-			return config.areaColor();
+			return config.areaRave() ? getRaveColor(config.areaRaveSpeed()) : config.areaColor();
 		}
 		else if (checkSpecificList(outlineNames, outlineIds, npc))
 		{
-			return config.outlineColor();
+			return config.outlineRave() ? getRaveColor(config.outlineRaveSpeed()) : config.outlineColor();
 		}
 		else if (checkSpecificList(clickboxNames, clickboxIds, npc))
 		{
-			return config.clickboxColor();
+			return config.clickboxRave() ? getRaveColor(config.clickboxRaveSpeed()) : config.clickboxColor();
 		}
 		else
 		{
 			return getTurboIndex(npc.getId(), npc.getName()) != -1 ? turboColors.get(getTurboIndex(npc.getId(), npc.getName())) : Color.WHITE;
 		}
+	}
+
+	public Color getRaveColor(int speed)
+	{
+		int ticks = speed / 20;
+		return Color.getHSBColor((client.getGameCycle() % ticks) / ((float) ticks), 1.0f, 1.0f);
 	}
 
 	public int getTurboIndex(int id, String name)
@@ -890,9 +849,7 @@ public class BetterNpcHighlightPlugin extends Plugin
 			int index = turboIds.size() - 1;
 			for (String str : turboNames)
 			{
-				if (str.equalsIgnoreCase(name) || (str.contains("*")
-					&& ((str.startsWith("*") && str.endsWith("*") && name.contains(str.replace("*", "")))
-					|| (str.startsWith("*") && name.endsWith(str.replace("*", ""))) || name.startsWith(str.replace("*", "")))))
+				if (WildcardMatcher.matches(str, name))
 				{
 					return index;
 				}
@@ -922,5 +879,233 @@ public class BetterNpcHighlightPlugin extends Plugin
 			configManager.setConfiguration(config.CONFIG_GROUP, "turboHighlight", true);
 		}
 		UIManager.put("OptionPane.buttonFont", font);
+	}
+
+	@VisibleForTesting
+	boolean shouldDraw(Renderable renderable, boolean drawingUI)
+	{
+		if (renderable instanceof NPC)
+		{
+			NPC npc = (NPC) renderable;
+
+			if (config.entityHiderToggle())
+			{
+				return !hiddenIds.contains(npc.getId()) && (npc.getName() != null && !hiddenNames.contains(npc.getName().toLowerCase()));
+			}
+		}
+		return true;
+	}
+
+	public void keyPressed(KeyEvent e)
+	{
+		//Enter is pressed
+		if (e.getKeyCode() == 10)
+		{
+			int inputType = client.getVarcIntValue(VarClientInt.INPUT_TYPE);
+			if (inputType == InputType.PRIVATE_MESSAGE.getType() || inputType == InputType.NONE.getType())
+			{
+				int var;
+				if (inputType == InputType.PRIVATE_MESSAGE.getType())
+				{
+					var = VarClientStr.INPUT_TEXT;
+				}
+				else
+				{
+					var = VarClientStr.CHATBOX_TYPED_TEXT;
+				}
+
+				if (client.getVarcStrValue(var) != null && !client.getVarcStrValue(var).isEmpty())
+				{
+					String text = client.getVarcStrValue(var).toLowerCase();
+					if (config.entityHiderCommands() && (text.startsWith(HIDE_COMMAND) || text.startsWith(UNHIDE_COMMAND)))
+					{
+						hideNPCCommand(text, var);
+					}
+					else if (config.tagCommands() && (text.startsWith(TAG_COMMAND) || text.startsWith(UNTAG_COMMAND)))
+					{
+						tagNPCCommand(text, var);
+					}
+				}
+			}
+		}
+	}
+
+	private void hideNPCCommand(String text, int var)
+	{
+		String npcToHide = text.replace(text.startsWith(HIDE_COMMAND) ? HIDE_COMMAND : UNHIDE_COMMAND, "").trim();
+		boolean hide = text.startsWith(HIDE_COMMAND);
+
+		if (!npcToHide.isEmpty())
+		{
+			if (StringUtils.isNumeric(npcToHide))
+			{
+				config.setEntityHiderIds(configListToString(hide, Integer.parseInt(npcToHide), hiddenIds));
+			}
+			else
+			{
+				config.setEntityHiderNames(configListToString(hide, npcToHide, hiddenNames));
+			}
+		}
+		else
+		{
+			printMessage("Please enter a valid NPC name or ID!");
+		}
+
+		//Set typed text to nothing
+		client.setVarcStrValue(var, "");
+	}
+
+	private void tagNPCCommand(String text, int var)
+	{
+		if (text.trim().equals(TAG_COMMAND) || text.trim().equals(UNTAG_COMMAND))
+		{
+			printMessage("Please enter a tag abbreviation followed by a valid NPC name or ID!");
+		}
+		else if (text.contains(TAG_COMMAND + " ") || text.contains(UNTAG_COMMAND + " "))
+		{
+			printMessage("Please enter a valid tag abbreviation!");
+		}
+		else if (!text.trim().contains(" "))
+		{
+			printMessage("Please enter a valid NPC name or ID!");
+		}
+		else
+		{
+			String npcToTag = text.substring(text.indexOf(" ") + 1).toLowerCase().trim();
+			boolean tag = text.startsWith(TAG_COMMAND);
+
+			if (!npcToTag.isEmpty())
+			{
+				if (validateCommand(text, "t ") || validateCommand(text, "tile "))
+				{
+					if (StringUtils.isNumeric(npcToTag))
+					{
+						config.setTileIds(configListToString(tag, Integer.parseInt(npcToTag), tileIds));
+					}
+					else
+					{
+						config.setTileNames(configListToString(tag, npcToTag, tileNames));
+					}
+				}
+				else if (validateCommand(text, "tt ") || validateCommand(text, "truetile "))
+				{
+					if (StringUtils.isNumeric(npcToTag))
+					{
+						config.setTrueTileIds(configListToString(tag, Integer.parseInt(npcToTag), trueTileIds));
+					}
+					else
+					{
+						config.setTrueTileNames(configListToString(tag, npcToTag, trueTileNames));
+					}
+				}
+				else if (validateCommand(text, "sw ") || validateCommand(text, "swt ")
+					|| validateCommand(text, "southwesttile ") || validateCommand(text, "southwest ")
+					|| validateCommand(text, "swtile ") || validateCommand(text, "southwestt "))
+				{
+					if (StringUtils.isNumeric(npcToTag))
+					{
+						config.setSwTileIds(configListToString(tag, Integer.parseInt(npcToTag), swTileIds));
+					}
+					else
+					{
+						config.setSwTileNames(configListToString(tag, npcToTag, swTileNames));
+					}
+				}
+				else if (validateCommand(text, "swtt ") || validateCommand(text, "swtruetile ")
+					|| validateCommand(text, "southwesttruetile ") || validateCommand(text, "southwesttt "))
+				{
+					if (StringUtils.isNumeric(npcToTag))
+					{
+						config.setSwTrueTileIds(configListToString(tag, Integer.parseInt(npcToTag), swTrueTileIds));
+					}
+					else
+					{
+						config.setSwTrueTileNames(configListToString(tag, npcToTag, swTrueTileNames));
+					}
+				}
+				else if (validateCommand(text, "h ") || validateCommand(text, "hull "))
+				{
+					if (StringUtils.isNumeric(npcToTag))
+					{
+						config.setHullIds(configListToString(tag, Integer.parseInt(npcToTag), hullIds));
+					}
+					else
+					{
+						config.setHullNames(configListToString(tag, npcToTag, hullNames));
+					}
+				}
+				else if (validateCommand(text, "a ") || validateCommand(text, "area "))
+				{
+					if (StringUtils.isNumeric(npcToTag))
+					{
+						config.setAreaIds(configListToString(tag, Integer.parseInt(npcToTag), areaIds));
+					}
+					else
+					{
+						config.setAreaNames(configListToString(tag, npcToTag, areaNames));
+					}
+				}
+				else if (validateCommand(text, "o ") || validateCommand(text, "outline "))
+				{
+					if (StringUtils.isNumeric(npcToTag))
+					{
+						config.setOutlineIds(configListToString(tag, Integer.parseInt(npcToTag), outlineIds));
+					}
+					else
+					{
+						config.setOutlineNames(configListToString(tag, npcToTag, outlineNames));
+					}
+				}
+				else if (validateCommand(text, "c ") || validateCommand(text, "clickbox ") || validateCommand(text, "box "))
+				{
+					if (StringUtils.isNumeric(npcToTag))
+					{
+						config.setClickboxIds(configListToString(tag, Integer.parseInt(npcToTag), clickboxIds));
+					}
+					else
+					{
+						config.setClickboxNames(configListToString(tag, npcToTag, clickboxNames));
+					}
+				}
+				else if (validateCommand(text, "tu ") || validateCommand(text, "turbo "))
+				{
+					if (StringUtils.isNumeric(npcToTag))
+					{
+						config.setTurboIds(configListToString(tag, Integer.parseInt(npcToTag), turboIds));
+					}
+					else
+					{
+						config.setTurboNames(configListToString(tag, npcToTag, turboNames));
+					}
+				}
+			}
+		}
+		//Set typed text to nothing
+		client.setVarcStrValue(var, "");
+	}
+
+	public boolean validateCommand(String command, String type)
+	{
+		return command.startsWith(TAG_COMMAND + type) || command.startsWith(UNTAG_COMMAND + type);
+	}
+
+	public void printMessage(String msg)
+	{
+		final ChatMessageBuilder message = new ChatMessageBuilder()
+			.append(ChatColorType.HIGHLIGHT)
+			.append(msg);
+
+		chatMessageManager.queue(QueuedMessage.builder()
+			.type(ChatMessageType.CONSOLE)
+			.runeLiteFormattedMessage(message.build())
+			.build());
+	}
+
+	public void keyReleased(KeyEvent e)
+	{
+	}
+
+	public void keyTyped(KeyEvent e)
+	{
 	}
 }

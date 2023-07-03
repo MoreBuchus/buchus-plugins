@@ -1,17 +1,19 @@
 package com.betternpchighlight;
 
+import java.util.Arrays;
 import net.runelite.api.Point;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.game.NpcUtil;
+import net.runelite.client.plugins.slayer.SlayerPluginService;
 import net.runelite.client.ui.overlay.*;
 import net.runelite.client.ui.overlay.outline.ModelOutlineRenderer;
 
 import javax.inject.Inject;
 import java.awt.*;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Random;
+import net.runelite.client.util.WildcardMatcher;
 
 public class BetterNpcHighlightOverlay extends Overlay
 {
@@ -25,15 +27,18 @@ public class BetterNpcHighlightOverlay extends Overlay
 
 	private final NpcUtil npcUtil;
 
+	private final SlayerPluginService slayerPluginService;
+
 	@Inject
 	private BetterNpcHighlightOverlay(Client client, BetterNpcHighlightPlugin plugin, BetterNpcHighlightConfig config,
-									  ModelOutlineRenderer modelOutlineRenderer, NpcUtil npcUtil)
+									  ModelOutlineRenderer modelOutlineRenderer, NpcUtil npcUtil, SlayerPluginService slayerPluginService)
 	{
 		this.client = client;
 		this.plugin = plugin;
 		this.config = config;
 		this.modelOutlineRenderer = modelOutlineRenderer;
 		this.npcUtil = npcUtil;
+		this.slayerPluginService = slayerPluginService;
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_SCENE);
 	}
@@ -42,217 +47,104 @@ public class BetterNpcHighlightOverlay extends Overlay
 	{
 		for (NPC npc : client.getNpcs())
 		{
-			boolean showWhileDead = !npcUtil.isDying(npc) || !config.ignoreDeadNpcs()
-				|| plugin.checkSpecificList(plugin.ignoreDeadExclusionList, new ArrayList<>(), npc);
-
-			if (!npc.isDead() || showWhileDead)
+			NPCComposition npcComposition = npc.getTransformedComposition();
+			if (npcComposition != null)
 			{
-				Color outlineColor = Color.CYAN;
-				Color fillColor = new Color(0, 255, 255, 20);
-
-				NPCComposition npcComposition = npc.getTransformedComposition();
-				if (npcComposition != null)
+				if (config.debugNPC())
 				{
-					int size = npcComposition.getSize();
-					if (config.tileHighlight() && plugin.checkSpecificList(plugin.tileNames, plugin.tileIds, npc))
+					LocalPoint lp = npc.getLocalLocation();
+					if (lp != null)
 					{
-						outlineColor = config.tileColor();
-						fillColor = config.tileFillColor();
-
-						LocalPoint lp = npc.getLocalLocation();
-						if (lp != null)
+						Point point = npc.getCanvasTextLocation(graphics, "N: " + npc.getName() + " | ID: " + npc.getId(), npc.getLogicalHeight() + 40);
+						Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, npcComposition.getSize());
+						if (tilePoly != null)
 						{
-							Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
-							if (tilePoly != null)
+							renderPoly(graphics, Color.GRAY, new Color(0, 0, 0, 0), 255, 0, tilePoly, config.tileWidth(), true);
+							OverlayUtil.renderTextLocation(graphics, point, "N: " + npc.getName() + " | ID: " + npc.getId(), Color.WHITE);
+						}
+					}
+				}
+
+				boolean showWhileDead = (!npc.isDead() && !npcUtil.isDying(npc)) || !config.ignoreDeadNpcs()
+					|| plugin.checkSpecificList(plugin.ignoreDeadExclusionList, plugin.ignoreDeadExclusionIDList, npc);
+				boolean showNPC = (npcComposition.isFollower() && config.highlightPets()) || (!npcComposition.isFollower() && showWhileDead);
+
+				if (showNPC)
+				{
+					if (config.slayerHighlight() && slayerPluginService.getTargets().contains(npc))
+					{
+						for (BetterNpcHighlightConfig.tagStyleMode mode : BetterNpcHighlightConfig.tagStyleMode.values())
+						{
+							if (config.taskHighlightStyle().contains(mode))
 							{
-								renderPoly(graphics, outlineColor, fillColor, tilePoly, config.tileWidth(), config.tileAA());
+								renderNpcOverlay(graphics, npc, mode.getKey());
 							}
 						}
 					}
-
-					if (config.trueTileHighlight() && plugin.checkSpecificList(plugin.trueTileNames, plugin.trueTileIds, npc))
+					else
 					{
-						outlineColor = config.trueTileColor();
-						fillColor = config.trueTileFillColor();
-
-						LocalPoint lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
-						if (lp != null)
+						if (config.tileHighlight() && plugin.checkSpecificList(plugin.tileNames, plugin.tileIds, npc))
 						{
-							lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64);
-							Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
-							if (tilePoly != null)
+							renderNpcOverlay(graphics, npc, "tile");
+						}
+
+						if (config.trueTileHighlight() && plugin.checkSpecificList(plugin.trueTileNames, plugin.trueTileIds, npc))
+						{
+							renderNpcOverlay(graphics, npc, "trueTile");
+						}
+
+						if (config.swTileHighlight() && plugin.checkSpecificList(plugin.swTileNames, plugin.swTileIds, npc))
+						{
+							renderNpcOverlay(graphics, npc, "swTile");
+						}
+
+						if (config.swTrueTileHighlight() && plugin.checkSpecificList(plugin.swTrueTileNames, plugin.swTrueTileIds, npc))
+						{
+							renderNpcOverlay(graphics, npc, "swTrueTile");
+						}
+
+						if (config.hullHighlight() && plugin.checkSpecificList(plugin.hullNames, plugin.hullIds, npc))
+						{
+							renderNpcOverlay(graphics, npc, "hull");
+						}
+
+						if (config.areaHighlight() && plugin.checkSpecificList(plugin.areaNames, plugin.areaIds, npc))
+						{
+							renderNpcOverlay(graphics, npc, "area");
+						}
+
+						if (config.outlineHighlight() && plugin.checkSpecificList(plugin.outlineNames, plugin.outlineIds, npc))
+						{
+							renderNpcOverlay(graphics, npc, "outline");
+						}
+
+						if (config.clickboxHighlight() && plugin.checkSpecificList(plugin.clickboxNames, plugin.clickboxIds, npc))
+						{
+							renderNpcOverlay(graphics, npc, "clickbox");
+						}
+
+						if (config.turboHighlight() && plugin.checkSpecificList(plugin.turboNames, plugin.turboIds, npc))
+						{
+							renderNpcOverlay(graphics, npc, "turbo");
+						}
+					}
+
+					if (plugin.namesToDisplay.size() > 0 && npc.getName() != null)
+					{
+						for (String str : plugin.namesToDisplay)
+						{
+							if (WildcardMatcher.matches(str, npc.getName().toLowerCase()))
 							{
-								renderPoly(graphics, outlineColor, fillColor, tilePoly, config.trueTileWidth(), config.trueTileAA());
-							}
-						}
-					}
-
-					if (config.swTileHighlight() && plugin.checkSpecificList(plugin.swTileNames, plugin.swTileIds, npc))
-					{
-						outlineColor = config.swTileColor();
-						fillColor = config.swTileFillColor();
-
-						LocalPoint lp = npc.getLocalLocation();
-						if (lp != null)
-						{
-							int x = lp.getX() - (size - 1) * 128 / 2;
-							int y = lp.getY() - (size - 1) * 128 / 2;
-							Polygon tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
-							if (tilePoly != null)
-							{
-								renderPoly(graphics, outlineColor, fillColor, tilePoly, config.swTileWidth(), config.swTileAA());
-							}
-						}
-					}
-
-					if (config.swTrueTileHighlight() && plugin.checkSpecificList(plugin.swTrueTileNames, plugin.swTrueTileIds, npc))
-					{
-						outlineColor = config.swTrueTileColor();
-						fillColor = config.swTrueTileFillColor();
-
-						LocalPoint lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
-						if (lp != null)
-						{
-							Polygon tilePoly = Perspective.getCanvasTilePoly(client, lp);
-							renderPoly(graphics, outlineColor, fillColor, tilePoly, config.swTrueTileWidth(), config.swTrueTileAA());
-						}
-					}
-
-					if (config.hullHighlight() && plugin.checkSpecificList(plugin.hullNames, plugin.hullIds, npc))
-					{
-						outlineColor = config.hullColor();
-						fillColor = config.hullFillColor();
-
-						Shape objectClickbox = npc.getConvexHull();
-						if (objectClickbox != null)
-						{
-							renderPoly(graphics, outlineColor, fillColor, objectClickbox, config.hullWidth(), config.hullAA());
-						}
-					}
-
-					if (config.areaHighlight() && plugin.checkSpecificList(plugin.areaNames, plugin.areaIds, npc))
-					{
-						fillColor = config.areaColor();
-
-						graphics.setColor(fillColor);
-						graphics.fill(npc.getConvexHull());
-					}
-
-					if (config.outlineHighlight() && plugin.checkSpecificList(plugin.outlineNames, plugin.outlineIds, npc))
-					{
-						outlineColor = config.outlineColor();
-
-						modelOutlineRenderer.drawOutline(npc, config.outlineWidth(), outlineColor, config.outlineFeather());
-					}
-
-					if (config.clickboxHighlight() && plugin.checkSpecificList(plugin.clickboxNames, plugin.clickboxIds, npc))
-					{
-						outlineColor = config.clickboxColor();
-						fillColor = config.clickboxFillColor();
-
-						LocalPoint lp = npc.getLocalLocation();
-						if (lp != null)
-						{
-							Shape clickbox = Perspective.getClickbox(client, npc.getModel(), npc.getCurrentOrientation(), lp.getX(), lp.getY(),
-								Perspective.getTileHeight(client, lp, npc.getWorldLocation().getPlane()));
-							OverlayUtil.renderHoverableArea(graphics, clickbox, client.getMouseCanvasPosition(), fillColor, outlineColor, outlineColor.darker());
-						}
-					}
-
-					if (config.turboHighlight() && plugin.checkSpecificList(plugin.turboNames, plugin.turboIds, npc))
-					{
-						Color raveColor = plugin.turboIds.contains(npc.getId()) ? plugin.turboColors.get(plugin.turboIds.indexOf(npc.getId()) + plugin.turboNames.size()) : Color.WHITE;
-						outlineColor = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
-						fillColor = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
-						if (raveColor == Color.WHITE)
-						{
-							if (npc.getName() != null)
-							{
-								String name = npc.getName().toLowerCase();
-								int index = 0;
-								for (String str : plugin.turboNames)
+								String text = npc.getName();
+								Point textLoc = npc.getCanvasTextLocation(graphics, text, npc.getLogicalHeight() + 20);
+								if (textLoc != null)
 								{
-									if (str.equalsIgnoreCase(name) || (str.contains("*")
-										&& ((str.startsWith("*") && str.endsWith("*") && name.contains(str.replace("*", "")))
-										|| (str.startsWith("*") && name.endsWith(str.replace("*", ""))) || name.startsWith(str.replace("*", "")))))
-									{
-										raveColor = plugin.turboColors.get(index);
-										outlineColor = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
-										fillColor = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
-										break;
-									}
-									index++;
+									Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
+									OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
+									OverlayUtil.renderTextLocation(graphics, textLoc, text, plugin.getSpecificColor(npc));
+									break;
 								}
 							}
-						}
-
-						if (plugin.turboModeStyle == 0)
-						{
-							LocalPoint lp = npc.getLocalLocation();
-							if (lp != null)
-							{
-								Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
-								if (tilePoly != null)
-								{
-									renderPoly(graphics, outlineColor, fillColor, tilePoly, plugin.turboTileWidth, true);
-								}
-							}
-						}
-						else if (plugin.turboModeStyle == 1)
-						{
-							LocalPoint lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
-							if (lp != null)
-							{
-								lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64);
-								Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
-								if (tilePoly != null)
-								{
-									renderPoly(graphics, outlineColor, fillColor, tilePoly, plugin.turboTileWidth, true);
-								}
-							}
-						}
-						else if (plugin.turboModeStyle == 2)
-						{
-							LocalPoint lp = npc.getLocalLocation();
-							if (lp != null)
-							{
-								int x = lp.getX() - (size - 1) * 128 / 2;
-								int y = lp.getY() - (size - 1) * 128 / 2;
-								Polygon tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
-								if (tilePoly != null)
-								{
-									renderPoly(graphics, outlineColor, fillColor, tilePoly, plugin.turboTileWidth, true);
-								}
-							}
-						}
-						else if (plugin.turboModeStyle == 3)
-						{
-							Shape objectClickbox = npc.getConvexHull();
-							if (objectClickbox != null)
-							{
-								renderPoly(graphics, outlineColor, fillColor, objectClickbox, plugin.turboTileWidth, true);
-							}
-						}
-						else if (plugin.turboModeStyle == 4)
-						{
-							graphics.setColor(fillColor);
-							graphics.fill(npc.getConvexHull());
-						}
-						else
-						{
-							modelOutlineRenderer.drawOutline(npc, plugin.turboTileWidth, outlineColor, plugin.turboOutlineFeather);
-						}
-					}
-
-					if (plugin.namesToDisplay.size() > 0 && npc.getName() != null && plugin.namesToDisplay.contains(npc.getName().toLowerCase()))
-					{
-						String text = npc.getName();
-						Point textLoc = npc.getCanvasTextLocation(graphics, text, npc.getLogicalHeight() + 20);
-						if (textLoc != null)
-						{
-							Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
-							OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
-							OverlayUtil.renderTextLocation(graphics, textLoc, text, outlineColor);
 						}
 					}
 				}
@@ -285,7 +177,7 @@ public class BetterNpcHighlightOverlay extends Overlay
 						Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, centerLp, n.size);
 						if (tilePoly != null)
 						{
-							renderPoly(graphics, outlineColor, fillColor, tilePoly, width, true);
+							renderPoly(graphics, outlineColor, fillColor, outlineColor.getAlpha(), fillColor.getAlpha(), tilePoly, width, true);
 						}
 
 						String text;
@@ -306,7 +198,7 @@ public class BetterNpcHighlightOverlay extends Overlay
 							text = String.valueOf(Math.max(0, (n.respawnTime - (client.getTickCount() - n.diedOnTick))));
 						}
 
-						Point textLoc = Perspective.getCanvasTextLocation(client, graphics, lp, text, 0);
+						Point textLoc = Perspective.getCanvasTextLocation(client, graphics, centerLp, text, 0);
 						if (textLoc != null)
 						{
 							Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
@@ -327,23 +219,282 @@ public class BetterNpcHighlightOverlay extends Overlay
 		return null;
 	}
 
-	private void renderPoly(Graphics2D graphics, Color outlineColor, Color fillColor, Shape polygon, double width, boolean antiAlias)
+	/**
+	 * Create overlays for NPCs to highlight.
+	 *
+	 * @param graphics
+	 * @param npc
+	 * @param highlight
+	 */
+	protected void renderNpcOverlay(Graphics2D graphics, NPC npc, String highlight)
+	{
+		NPCComposition npcComposition = npc.getTransformedComposition();
+		if (npcComposition != null && npcComposition.isInteractible())
+		{
+			int size = npcComposition.getSize();
+			Polygon tilePoly;
+			LocalPoint lp;
+			Color line;
+			Color fill;
+			int lineAlpha;
+			int fillAlpha;
+			boolean antialias;
+			boolean isTaskNPC = config.slayerHighlight() && slayerPluginService.getTargets().contains(npc)
+				&& Arrays.stream(BetterNpcHighlightConfig.tagStyleMode.values()).anyMatch(h -> h.getKey().equals(highlight) && config.taskHighlightStyle().contains(h));
+
+			switch (highlight)
+			{
+				case "hull":
+					line = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.hullRave() ? plugin.getRaveColor(config.hullRaveSpeed()) : config.hullColor();
+					fill = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.hullRave() ? plugin.getRaveColor(config.hullRaveSpeed()) : config.hullFillColor();
+					lineAlpha = isTaskNPC ? config.taskColor().getAlpha() : config.hullColor().getAlpha();
+					fillAlpha = isTaskNPC ? config.taskFillColor().getAlpha() : config.hullFillColor().getAlpha();
+					antialias = isTaskNPC ? config.slayerAA() : config.hullAA();
+
+					Shape hull = npc.getConvexHull();
+					if (hull != null)
+					{
+						renderPoly(graphics, line, fill, lineAlpha, fillAlpha, hull, config.hullWidth(), antialias);
+					}
+					break;
+				case "tile":
+					line = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.tileRave() ? plugin.getRaveColor(config.tileRaveSpeed()) : config.tileColor();
+					fill = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.tileRave() ? plugin.getRaveColor(config.tileRaveSpeed()) : config.tileFillColor();
+					lineAlpha = isTaskNPC ? config.taskColor().getAlpha() : config.tileColor().getAlpha();
+					fillAlpha = isTaskNPC ? config.taskFillColor().getAlpha() : config.tileFillColor().getAlpha();
+					antialias = isTaskNPC ? config.slayerAA() : config.tileAA();
+
+					lp = npc.getLocalLocation();
+					if (lp != null)
+					{
+						tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
+						if (tilePoly != null)
+						{
+							renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.tileWidth(), antialias);
+						}
+					}
+					break;
+				case "trueTile":
+					line = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.trueTileRave() ? plugin.getRaveColor(config.trueTileRaveSpeed()) : config.trueTileColor();
+					fill = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.trueTileRave() ? plugin.getRaveColor(config.trueTileRaveSpeed()) : config.trueTileFillColor();
+					lineAlpha = isTaskNPC ? config.taskColor().getAlpha() : config.trueTileColor().getAlpha();
+					fillAlpha = isTaskNPC ? config.taskFillColor().getAlpha() : config.trueTileFillColor().getAlpha();
+					antialias = isTaskNPC ? config.slayerAA() : config.trueTileAA();
+
+					lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
+					if (lp != null)
+					{
+						lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64);
+						tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
+						if (tilePoly != null)
+						{
+							renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.trueTileWidth(), antialias);
+						}
+					}
+					break;
+				case "swTile":
+					line = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.swTileRave() ? plugin.getRaveColor(config.swTileRaveSpeed()) : config.swTileColor();
+					fill = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.swTileRave() ? plugin.getRaveColor(config.swTileRaveSpeed()) : config.swTileFillColor();
+					lineAlpha = isTaskNPC ? config.taskColor().getAlpha() : config.swTileColor().getAlpha();
+					fillAlpha = isTaskNPC ? config.taskFillColor().getAlpha() : config.swTileFillColor().getAlpha();
+					antialias = isTaskNPC ? config.slayerAA() : config.swTileAA();
+
+					lp = npc.getLocalLocation();
+					if (lp != null)
+					{
+						int x = lp.getX() - (size - 1) * 128 / 2;
+						int y = lp.getY() - (size - 1) * 128 / 2;
+						tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
+						if (tilePoly != null)
+						{
+							renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTileWidth(), antialias);
+						}
+					}
+					break;
+				case "swTrueTile":
+					line = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.swTrueTileRave() ? plugin.getRaveColor(config.swTrueTileRaveSpeed()) : config.swTrueTileColor();
+					fill = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.swTrueTileRave() ? plugin.getRaveColor(config.swTrueTileRaveSpeed()) : config.swTrueTileFillColor();
+					lineAlpha = isTaskNPC ? config.taskColor().getAlpha() : config.swTrueTileColor().getAlpha();
+					fillAlpha = isTaskNPC ? config.taskFillColor().getAlpha() : config.swTrueTileFillColor().getAlpha();
+					antialias = isTaskNPC ? config.slayerAA() : config.swTrueTileAA();
+
+					lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
+					if (lp != null)
+					{
+						tilePoly = Perspective.getCanvasTilePoly(client, lp);
+						if (tilePoly != null)
+						{
+							renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTrueTileWidth(), antialias);
+						}
+					}
+					break;
+				case "outline":
+					line = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.outlineRave() ? plugin.getRaveColor(config.outlineRaveSpeed()) : config.outlineColor();
+
+					modelOutlineRenderer.drawOutline(npc, config.outlineWidth(), line, config.outlineFeather());
+					break;
+				case "area":
+					fill = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.areaRave() ? plugin.getRaveColor(config.areaRaveSpeed()) : config.areaColor();
+					fillAlpha = isTaskNPC ? config.taskColor().getAlpha() : config.areaColor().getAlpha();
+
+					Shape area = npc.getConvexHull();
+					graphics.setColor(fill.getAlpha() == 0 ? new Color(fill.getRed(), fill.getGreen(), fill.getGreen(), 50)
+						: new Color(fill.getRed(), fill.getGreen(), fill.getBlue(), fillAlpha));
+					graphics.fill(area);
+					break;
+				case "clickbox":
+					line = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.clickboxRave() ? plugin.getRaveColor(config.clickboxRaveSpeed()) : config.clickboxColor();
+					fill = isTaskNPC ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+						: config.clickboxRave() ? plugin.getRaveColor(config.clickboxRaveSpeed()) : config.clickboxFillColor();
+					lineAlpha = isTaskNPC ? config.taskColor().getAlpha() : config.clickboxColor().getAlpha();
+					fillAlpha = isTaskNPC ? config.taskFillColor().getAlpha() : config.clickboxFillColor().getAlpha();
+
+					lp = npc.getLocalLocation();
+					if (lp != null)
+					{
+						Shape clickbox = Perspective.getClickbox(client, npc.getModel(), npc.getCurrentOrientation(), lp.getX(), lp.getY(),
+							Perspective.getTileHeight(client, lp, npc.getWorldLocation().getPlane()));
+						renderClickbox(graphics, clickbox, client.getMouseCanvasPosition(), line, fill, lineAlpha, fillAlpha, line.darker(), config.clickboxAA());
+					}
+					break;
+				case "turbo":
+					Color raveColor = plugin.turboIds.contains(npc.getId()) ? plugin.turboColors.get(plugin.turboIds.indexOf(npc.getId()) + plugin.turboNames.size()) : Color.WHITE;
+					line = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
+					fill = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
+					if (raveColor == Color.WHITE)
+					{
+						if (npc.getName() != null)
+						{
+							String name = npc.getName().toLowerCase();
+							int index = 0;
+
+							if (plugin.turboNames.size() > plugin.turboColors.size())
+							{
+								int missingEntries = plugin.turboNames.size() - plugin.turboColors.size();
+								for (int i = 0; i < missingEntries; i++)
+								{
+									plugin.turboColors.add(Color.getHSBColor(new Random().nextFloat(), 1.0F, 1.0F));
+								}
+							}
+
+							for (String str : plugin.turboNames)
+							{
+								if (str.equalsIgnoreCase(name) || (str.contains("*")
+									&& ((str.startsWith("*") && str.endsWith("*") && name.contains(str.replace("*", "")))
+									|| (str.startsWith("*") && name.endsWith(str.replace("*", ""))) || name.startsWith(str.replace("*", "")))))
+								{
+									raveColor = plugin.turboColors.get(index);
+									line = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
+									fill = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
+									break;
+								}
+								index++;
+							}
+						}
+					}
+
+					if (plugin.turboModeStyle == 0)
+					{
+						lp = npc.getLocalLocation();
+						if (lp != null)
+						{
+							tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
+							if (tilePoly != null)
+							{
+								renderPoly(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+							}
+						}
+					}
+					else if (plugin.turboModeStyle == 1)
+					{
+						lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
+						if (lp != null)
+						{
+							lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64);
+							tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
+							if (tilePoly != null)
+							{
+								renderPoly(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+							}
+						}
+					}
+					else if (plugin.turboModeStyle == 2)
+					{
+						lp = npc.getLocalLocation();
+						if (lp != null)
+						{
+							int x = lp.getX() - (size - 1) * 128 / 2;
+							int y = lp.getY() - (size - 1) * 128 / 2;
+							tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
+							if (tilePoly != null)
+							{
+								renderPoly(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+							}
+						}
+					}
+					else if (plugin.turboModeStyle == 3)
+					{
+						if (npc.getConvexHull() != null)
+						{
+							renderPoly(graphics, line, fill, line.getAlpha(), fill.getAlpha(), npc.getConvexHull(), plugin.turboTileWidth, true);
+						}
+					}
+					else if (plugin.turboModeStyle == 4)
+					{
+						graphics.setColor(fill);
+						graphics.fill(npc.getConvexHull());
+					}
+					else
+					{
+						modelOutlineRenderer.drawOutline(npc, plugin.turboTileWidth, line, plugin.turboOutlineFeather);
+					}
+					break;
+			}
+		}
+	}
+
+	private void renderPoly(Graphics2D graphics, Color outlineColor, Color fillColor, int lineAlpha, int fillAlpha, Shape polygon, double width, boolean antiAlias)
 	{
 		if (polygon != null)
 		{
-			if (antiAlias)
+			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, antiAlias ? RenderingHints.VALUE_ANTIALIAS_ON : RenderingHints.VALUE_ANTIALIAS_OFF);
+			graphics.setColor(new Color(outlineColor.getRed(), outlineColor.getGreen(), outlineColor.getBlue(), lineAlpha));
+			graphics.setStroke(new BasicStroke((float) width));
+			graphics.draw(polygon);
+			graphics.setColor(new Color(fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue(), fillAlpha));
+			graphics.fill(polygon);
+		}
+	}
+
+	public static void renderClickbox(Graphics2D graphics, Shape area, Point mousePosition, Color line, Color fill, int lineAlpha, int fillAlpha, Color hovered, boolean antiAlias)
+	{
+		if (area != null)
+		{
+			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, antiAlias ? RenderingHints.VALUE_ANTIALIAS_ON : RenderingHints.VALUE_ANTIALIAS_OFF);
+			if (area.contains(mousePosition.getX(), mousePosition.getY()))
 			{
-				graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+				graphics.setColor(new Color(hovered.getRed(), hovered.getGreen(), hovered.getBlue(), lineAlpha));
 			}
 			else
 			{
-				graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
+				graphics.setColor(new Color(line.getRed(), line.getGreen(), line.getBlue(), lineAlpha));
 			}
-			graphics.setColor(outlineColor);
-			graphics.setStroke(new BasicStroke((float) width));
-			graphics.draw(polygon);
-			graphics.setColor(fillColor);
-			graphics.fill(polygon);
+			graphics.draw(area);
+			graphics.setColor(new Color(fill.getRed(), fill.getGreen(), fill.getBlue(), fillAlpha));
+			graphics.fill(area);
 		}
 	}
 }

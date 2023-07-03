@@ -24,6 +24,10 @@
  */
 package com.betternpchighlight;
 
+import java.util.Collections;
+import java.util.Set;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import net.runelite.client.config.*;
 
 import java.awt.*;
@@ -104,6 +108,30 @@ public interface BetterNpcHighlightConfig extends Config
 		closedByDefault = true
 	)
 	String turboSection = "turbo";
+
+	@ConfigSection(
+		name = "Slayer",
+		description = "Slayer Plugins",
+		position = 9,
+		closedByDefault = true
+	)
+	String slayerSection = "slayer";
+
+	@ConfigSection(
+		name = "Entity Hider",
+		description = "Entity Hider Plugins",
+		position = 10,
+		closedByDefault = true
+	)
+	String entityHiderSection = "entityHider";
+
+	@ConfigSection(
+		name = "Instructions",
+		description = "Instructions for various features",
+		position = 11,
+		closedByDefault = true
+	)
+	String instructionsSection = "instructions";
 
 	//------------------------------------------------------------//
 	// Tile Section
@@ -201,12 +229,37 @@ public interface BetterNpcHighlightConfig extends Config
 		position = 7,
 		keyName = "tileAA",
 		name = "Anti-Aliasing",
-		description = "Turns on anti-aliasing for the tiles. Makes them smoother.",
+		description = "Turns on anti-aliasing for tile overlays. Makes them smoother.",
 		section = tileSection
 	)
 	default boolean tileAA()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		position = 8,
+		keyName = "tileRave",
+		name = "Enable Rave Mode",
+		description = "Sets all tile overlays to Rave Mode",
+		section = tileSection
+	)
+	default boolean tileRave()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 9,
+		keyName = "tileRaveSpeed",
+		name = "Rave Speed",
+		description = "Sets the speed the overlays rave at",
+		section = tileSection
+	)
+	@Units(Units.MILLISECONDS)
+	default int tileRaveSpeed()
+	{
+		return 6000;
 	}
 
 	//------------------------------------------------------------//
@@ -305,12 +358,37 @@ public interface BetterNpcHighlightConfig extends Config
 		position = 7,
 		keyName = "trueTileAA",
 		name = "Anti-Aliasing",
-		description = "Turns on anti-aliasing for the tiles. Makes them smoother.",
+		description = "Turns on anti-aliasing for true tile overlays. Makes them smoother.",
 		section = trueTileSection
 	)
 	default boolean trueTileAA()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		position = 8,
+		keyName = "trueTileRave",
+		name = "Enable Rave Mode",
+		description = "Sets all true tile overlays to Rave Mode",
+		section = trueTileSection
+	)
+	default boolean trueTileRave()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 9,
+		keyName = "trueTileRaveSpeed",
+		name = "Rave Speed",
+		description = "Sets the speed the overlays rave at",
+		section = trueTileSection
+	)
+	@Units(Units.MILLISECONDS)
+	default int trueTileRaveSpeed()
+	{
+		return 6000;
 	}
 
 	//------------------------------------------------------------//
@@ -409,12 +487,37 @@ public interface BetterNpcHighlightConfig extends Config
 		position = 7,
 		keyName = "swTileAA",
 		name = "Anti-Aliasing",
-		description = "Turns on anti-aliasing for the tiles. Makes them smoother.",
+		description = "Turns on anti-aliasing for the sw tile overlays. Makes them smoother.",
 		section = swTileSection
 	)
 	default boolean swTileAA()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		position = 8,
+		keyName = "swTileRave",
+		name = "Enable Rave Mode",
+		description = "Sets all sw tile overlays to Rave Mode",
+		section = swTileSection
+	)
+	default boolean swTileRave()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 9,
+		keyName = "swTileRaveSpeed",
+		name = "Rave Speed",
+		description = "Sets the speed the overlays rave at",
+		section = swTileSection
+	)
+	@Units(Units.MILLISECONDS)
+	default int swTileRaveSpeed()
+	{
+		return 6000;
 	}
 
 	//------------------------------------------------------------//
@@ -513,12 +616,37 @@ public interface BetterNpcHighlightConfig extends Config
 		position = 7,
 		keyName = "swTrueTileAA",
 		name = "Anti-Aliasing",
-		description = "Turns on anti-aliasing for the tiles. Makes them smoother.",
+		description = "Turns on anti-aliasing for the sw true tile overlays. Makes them smoother.",
 		section = swTrueTileSection
 	)
 	default boolean swTrueTileAA()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		position = 8,
+		keyName = "swTrueTileRave",
+		name = "Enable Rave Mode",
+		description = "Sets all sw true tile overlays to Rave Mode",
+		section = swTrueTileSection
+	)
+	default boolean swTrueTileRave()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 9,
+		keyName = "swTrueTileRaveSpeed",
+		name = "Rave Speed",
+		description = "Sets the speed the overlays rave at",
+		section = swTrueTileSection
+	)
+	@Units(Units.MILLISECONDS)
+	default int swTrueTileRaveSpeed()
+	{
+		return 6000;
 	}
 
 	//------------------------------------------------------------//
@@ -617,12 +745,37 @@ public interface BetterNpcHighlightConfig extends Config
 		position = 7,
 		keyName = "hullAA",
 		name = "Anti-Aliasing",
-		description = "Turns on anti-aliasing for the tiles. Makes them smoother.",
+		description = "Turns on anti-aliasing for hull overlays. Makes them smoother.",
 		section = hullSection
 	)
 	default boolean hullAA()
 	{
 		return true;
+	}
+
+	@ConfigItem(
+		position = 8,
+		keyName = "hullRave",
+		name = "Enable Rave Mode",
+		description = "Sets all hull overlays to Rave Mode",
+		section = hullSection
+	)
+	default boolean hullRave()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 9,
+		keyName = "hullRaveSpeed",
+		name = "Rave Speed",
+		description = "Sets the speed the overlays rave at",
+		section = hullSection
+	)
+	@Units(Units.MILLISECONDS)
+	default int hullRaveSpeed()
+	{
+		return 6000;
 	}
 
 	//------------------------------------------------------------//
@@ -689,6 +842,31 @@ public interface BetterNpcHighlightConfig extends Config
 	default Color areaColor()
 	{
 		return new Color(0, 255, 255, 50);
+	}
+
+	@ConfigItem(
+		position = 5,
+		keyName = "areaRave",
+		name = "Enable Rave Mode",
+		description = "Sets all area overlays to Rave Mode",
+		section = areaSection
+	)
+	default boolean areaRave()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 6,
+		keyName = "areaRaveSpeed",
+		name = "Rave Speed",
+		description = "Sets the speed the overlays rave at",
+		section = areaSection
+	)
+	@Units(Units.MILLISECONDS)
+	default int areaRaveSpeed()
+	{
+		return 6000;
 	}
 
 	//------------------------------------------------------------//
@@ -783,6 +961,31 @@ public interface BetterNpcHighlightConfig extends Config
 		return 2;
 	}
 
+	@ConfigItem(
+		position = 7,
+		keyName = "outlineRave",
+		name = "Enable Rave Mode",
+		description = "Sets all outline overlays to Rave Mode",
+		section = outlineSection
+	)
+	default boolean outlineRave()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 8,
+		keyName = "outlineRaveSpeed",
+		name = "Rave Speed",
+		description = "Sets the speed the overlays rave at",
+		section = outlineSection
+	)
+	@Units(Units.MILLISECONDS)
+	default int outlineRaveSpeed()
+	{
+		return 6000;
+	}
+
 	//------------------------------------------------------------//
 	// Clickbox Section
 	//------------------------------------------------------------//
@@ -862,6 +1065,43 @@ public interface BetterNpcHighlightConfig extends Config
 		return new Color(0, 255, 255, 20);
 	}
 
+	@ConfigItem(
+		position = 6,
+		keyName = "clickboxAA",
+		name = "Anti-Aliasing",
+		description = "Turns on anti-aliasing for the clickboxes. Makes them smoother.",
+		section = clickboxSection
+	)
+	default boolean clickboxAA()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		position = 7,
+		keyName = "clickboxRave",
+		name = "Enable Rave Mode",
+		description = "Sets all clickbox overlays to Rave Mode",
+		section = clickboxSection
+	)
+	default boolean clickboxRave()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 8,
+		keyName = "clickboxRaveSpeed",
+		name = "Rave Speed",
+		description = "Sets the speed the overlays rave at",
+		section = clickboxSection
+	)
+	@Units(Units.MILLISECONDS)
+	default int clickboxRaveSpeed()
+	{
+		return 6000;
+	}
+
 	//------------------------------------------------------------//
 	// Turbo Section
 	//------------------------------------------------------------//
@@ -917,11 +1157,237 @@ public interface BetterNpcHighlightConfig extends Config
 		return "";
 	}
 
+	@ConfigItem(
+		keyName = "turboIds",
+		name = "",
+		description = ""
+	)
+	void setTurboIds(String ids);
+
+	//------------------------------------------------------------//
+	// Slayer Section
+	//------------------------------------------------------------//
+	@ConfigItem(
+		position = 1,
+		keyName = "slayerHighlight",
+		name = "Slayer Task Highlight",
+		description = "Highlights NPCs that are assigned as your slayer task <br>Uses the 'Slayer' plugin. Keep it on!",
+		section = slayerSection
+	)
+	default boolean slayerHighlight()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 2,
+		keyName = "taskHighlightStyle",
+		name = "Slayer Highlight Style",
+		description = "Picks the highlight style you want for NPCs on your slayer task",
+		section = slayerSection
+	)
+	default Set<tagStyleMode> taskHighlightStyle()
+	{
+		return Collections.emptySet();
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 4,
+		keyName = "taskColor",
+		name = "Highlight Color",
+		description = "Sets color of slayer task npc highlights",
+		section = slayerSection
+	)
+	default Color taskColor()
+	{
+		return new Color(224, 60, 49, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 5,
+		keyName = "taskFillColor",
+		name = "Fill Color",
+		description = "Sets the fill color of slayer task npc highlights",
+		section = slayerSection
+	)
+	default Color taskFillColor()
+	{
+		return new Color(224, 60, 49, 20);
+	}
+
+	@ConfigItem(
+		position = 6,
+		keyName = "slayerAA",
+		name = "Anti-Aliasing",
+		description = "Turns on anti-aliasing for the slayer highlights. Makes them smoother.",
+		section = slayerSection
+	)
+	default boolean slayerAA()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		position = 7,
+		keyName = "slayerRave",
+		name = "Enable Rave Mode",
+		description = "Sets all slayer overlays to Rave Mode",
+		section = slayerSection
+	)
+	default boolean slayerRave()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 8,
+		keyName = "slayerRaveSpeed",
+		name = "Rave Speed",
+		description = "Sets the speed the overlays rave at",
+		section = slayerSection
+	)
+	@Units(Units.MILLISECONDS)
+	default int slayerRaveSpeed()
+	{
+		return 6000;
+	}
+
+	//------------------------------------------------------------//
+	// Entity Hider Section
+	//------------------------------------------------------------//
+	@ConfigItem(
+		position = 1,
+		keyName = "entityHiderToggle",
+		name = "Entity Hider",
+		description = "Enables hiding of specific NPCs",
+		section = entityHiderSection
+	)
+	default boolean entityHiderToggle()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 2,
+		keyName = "entityHiderCommands",
+		name = "Entity Hider Commands",
+		description = "Enables the use of commands to add/remove NPCs to the Names/IDs list <br>Read the guide in Instructions section",
+		section = entityHiderSection
+	)
+	default boolean entityHiderCommands()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		position = 3,
+		keyName = "entityHiderNames",
+		name = "Entity Hider Names",
+		description = "NPCs by Name to hide",
+		section = entityHiderSection
+	)
+	default String entityHiderNames()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = "entityHiderNames",
+		name = "",
+		description = ""
+	)
+	void setEntityHiderNames(String names);
+
+	@ConfigItem(
+		position = 4,
+		keyName = "entityHiderIds",
+		name = "Entity Hider IDs",
+		description = "NPCs by ID to hide",
+		section = entityHiderSection
+	)
+	default String entityHiderIds()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		keyName = "entityHiderIds",
+		name = "",
+		description = ""
+	)
+	void setEntityHiderIds(String ids);
+
+	//------------------------------------------------------------//
+	// Instructions Section
+	//------------------------------------------------------------//
+	@ConfigItem(
+		position = 0,
+		keyName = "tagLegend",
+		name = "Tag/Untag Legend",
+		description = "Legend for highlights to use with the !tag and !untag commands",
+		section = instructionsSection
+	)
+	default String tagLegend()
+	{
+		return "### Valid Style Format:\n\n" +
+			"Tile = \"t\", \"tile\" \n" +
+			"True Tile = \"tt\", \"truetile\" \n" +
+			"SW Tile = \"sw\", \"swt\", \"swtile\", \"southwesttile\", \"southwest\", \"southwestt\" \n" +
+			"SW True Tile = \"swtt\", \"swtruetile\", \"southwesttruetile\", \"southwesttt\" \n" +
+			"Hull = \"h\", \"hull\" \n" +
+			"Area = \"a\", \"area\" \n" +
+			"Outline = \"o\", \"outline\" \n" +
+			"Clickbox = \"c\", \"clickbox\", \"box\" \n" +
+			"Turbo = \"tu\", \"turbo\" \n";
+	}
+
+	@ConfigItem(
+		position = 1,
+		keyName = "tagInstructions",
+		name = "Tag/Untag Instructions",
+		description = "Instructions to use the !tag and !untag commands",
+		section = instructionsSection
+	)
+	default String tagInstructions()
+	{
+		return "### Format:\n\n" +
+			"!tag[style] [npc name]\n" +
+			"!tag[style] [npc id]\n" +
+			"!untag[style] [npc name]\n" +
+			"!untag[style] [npc id]\n" +
+			"---------------------\n" +
+			"### Example:\n\n" +
+			"\"!tagswt cow\" -> This would add \"cow\" to the SW True Tile names list\n\n" +
+			"\"!untago 1234\" -> This would remove \"1234\" from the Outline IDs list\n";
+	}
+
+	@ConfigItem(
+		position = 2,
+		keyName = "hideInstructions",
+		name = "Hide/Unhide Instructions",
+		description = "Instructions to use the !hide and !unhide commands",
+		section = instructionsSection
+	)
+	default String hideInstructions()
+	{
+		return "### Format:\n\n" +
+			"!hide [npc name]\n" +
+			"!hide [npc id]\n" +
+			"!unhide [npc name]\n" +
+			"!unhide [npc id]\n" +
+			"---------------------\n" +
+			"### Example:\n\n" +
+			"\"!hide cow\" -> This would add \"cow\" to the Entity Hider names list\n\n" +
+			"\"!unhide 1234\" -> This would remove \"1234\" from the Entity Hider IDs list\n";
+	}
+
 	//------------------------------------------------------------//
 	// No Section
 	//------------------------------------------------------------//
 	@ConfigItem(
-		position = 9,
+		position = 13,
 		keyName = "tagStyleMode",
 		name = "Tag Style",
 		description = "Sets which highlight style list the NPC tagged is added too")
@@ -932,6 +1398,17 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@ConfigItem(
 		position = 14,
+		keyName = "tagCommands",
+		name = "Tag Commands",
+		description = "Enables the use of commands to add/remove NPCs to the Names/IDs list <br>Read the guide in Instructions section"
+	)
+	default boolean tagCommands()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		position = 15,
 		keyName = "highlightMenuNames",
 		name = "Highlight Menu Names",
 		description = "Highlights names in right click menu entry"
@@ -942,7 +1419,7 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 15,
+		position = 16,
 		keyName = "ignoreDeadNpcs",
 		name = "Ignore Dead NPCs",
 		description = "Doesn't highlight dead NPCs"
@@ -953,10 +1430,10 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 16,
+		position = 17,
 		keyName = "ignoreDeadExclusion",
-		name = "Ignore Dead Exclusion List",
-		description = "List of NPCs to not remove highlight when dead"
+		name = "Ignore Dead Exclusion Name List",
+		description = "List of NPC names to not remove highlight when dead"
 	)
 	default String ignoreDeadExclusion()
 	{
@@ -964,7 +1441,29 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 17,
+		position = 18,
+		keyName = "ignoreDeadExclusionID",
+		name = "Ignore Dead Exclusion ID List",
+		description = "List of NPC IDs to not remove highlight when dead"
+	)
+	default String ignoreDeadExclusionID()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		position = 19,
+		keyName = "highlightPets",
+		name = "Highlight pets",
+		description = "Highlights followers/pets that are in any of your lists"
+	)
+	default boolean highlightPets()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		position = 20,
 		keyName = "deadNpcMenuColor",
 		name = "Dead NPC Menu Color",
 		description = "Highlights names in right click menu entry when an NPC is dead"
@@ -972,7 +1471,7 @@ public interface BetterNpcHighlightConfig extends Config
 	Color deadNpcMenuColor();
 
 	@ConfigItem(
-		position = 18,
+		position = 21,
 		keyName = "respawnTimer",
 		name = "Respawn Timer",
 		description = "Marks tile and shows timer for when a marker NPC will respawn"
@@ -984,7 +1483,7 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		position = 19,
+		position = 22,
 		keyName = "respawnTimerColor",
 		name = "Respawn Time Color",
 		description = "Sets the color of the text for Respawn Timer"
@@ -996,7 +1495,7 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		position = 20,
+		position = 23,
 		keyName = "respawnOutlineColor",
 		name = "Respawn Outline Color",
 		description = "Sets the color of the tile for Respawn Timer"
@@ -1008,7 +1507,7 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		position = 21,
+		position = 24,
 		keyName = "respawnFillColor",
 		name = "Respawn Fill Color",
 		description = "Sets the fill color of the tile for Respawn Timer"
@@ -1020,7 +1519,7 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@Range(min = 1, max = 10)
 	@ConfigItem(
-		position = 22,
+		position = 25,
 		keyName = "respawnTileWidth",
 		name = "Respawn Tile Width",
 		description = "Sets the width of the tile for Respawn Timer"
@@ -1031,7 +1530,7 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 23,
+		position = 26,
 		keyName = "displayName",
 		name = "Display Name",
 		description = "Shows name of NPCs in the list above them"
@@ -1042,7 +1541,7 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 24,
+		position = 27,
 		keyName = "npcMinimapMode",
 		name = "Highlight Minimap",
 		description = "Highlights NPC on minimap and/or displays name"
@@ -1052,17 +1551,46 @@ public interface BetterNpcHighlightConfig extends Config
 		return npcMinimapMode.OFF;
 	}
 
+	@ConfigItem(
+		position = 28,
+		keyName = "debugNPC",
+		name = "Debug NPC Info",
+		description = "Highlights all NPCs with their Name and ID"
+	)
+	default boolean debugNPC()
+	{
+		return false;
+	}
+
+	//------------------------------------------------------------//
+	// Enums
+	//------------------------------------------------------------//
+	@Getter
+	@RequiredArgsConstructor
 	enum tagStyleMode
 	{
-		TILE,
-		TRUE_TILE,
-		SW_TILE,
-		SW_TRUE_TILE,
-		HULL,
-		AREA,
-		OUTLINE,
-		CLICKBOX,
-		TURBO
+		TILE("Tile", "tile"),
+		TRUE_TILE("True Tile", "trueTile"),
+		SW_TILE("SW Tile", "swTile"),
+		SW_TRUE_TILE("SW True Tile", "swTrueTile"),
+		HULL("Hull", "hull"),
+		AREA("Area", "area"),
+		OUTLINE("Outline", "outline"),
+		CLICKBOX("Clickbox", "clickbox"),
+		TURBO("Turbo", "turbo"),
+		;
+
+		@Getter
+		private final String group;
+
+		@Getter
+		private final String key;
+
+		@Override
+		public String toString()
+		{
+			return group;
+		}
 	}
 
 	enum respawnTimerMode

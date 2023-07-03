@@ -4,8 +4,8 @@ import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
 import net.runelite.api.Point;
+import net.runelite.client.plugins.slayer.SlayerPluginService;
 import net.runelite.client.ui.overlay.*;
-import net.runelite.client.ui.overlay.outline.ModelOutlineRenderer;
 import javax.inject.Inject;
 import java.awt.*;
 
@@ -17,12 +17,15 @@ public class BetterNpcMinimapOverlay extends Overlay
 
 	private final BetterNpcHighlightConfig config;
 
+	private final SlayerPluginService slayerPluginService;
+
 	@Inject
-	private BetterNpcMinimapOverlay(Client client, BetterNpcHighlightPlugin plugin, BetterNpcHighlightConfig config, ModelOutlineRenderer modelOutlineRenderer)
+	private BetterNpcMinimapOverlay(Client client, BetterNpcHighlightPlugin plugin, BetterNpcHighlightConfig config, SlayerPluginService slayerPluginService)
 	{
 		this.client = client;
 		this.plugin = plugin;
 		this.config = config;
+		this.slayerPluginService = slayerPluginService;
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 	}
@@ -32,7 +35,8 @@ public class BetterNpcMinimapOverlay extends Overlay
 	{
 		for (NPC npc : client.getNpcs())
 		{
-			if (npc.getName() != null && config.npcMinimapMode() != BetterNpcHighlightConfig.npcMinimapMode.OFF && plugin.checkAllLists(npc))
+			if (npc.getName() != null && config.npcMinimapMode() != BetterNpcHighlightConfig.npcMinimapMode.OFF
+				&& (plugin.checkAllLists(npc) || (config.slayerHighlight() && slayerPluginService.getTargets().contains(npc))))
 			{
 				Color color = plugin.getSpecificColor(npc);
 
