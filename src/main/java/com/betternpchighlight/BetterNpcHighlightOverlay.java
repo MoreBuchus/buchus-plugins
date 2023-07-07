@@ -229,7 +229,7 @@ public class BetterNpcHighlightOverlay extends Overlay
 	protected void renderNpcOverlay(Graphics2D graphics, NPC npc, String highlight)
 	{
 		NPCComposition npcComposition = npc.getTransformedComposition();
-		if (npcComposition != null && npcComposition.isInteractible())
+		if (npcComposition != null)
 		{
 			int size = npcComposition.getSize();
 			Polygon tilePoly;
