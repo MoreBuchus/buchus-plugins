@@ -372,10 +372,12 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 				case "ignoreDeadExclusion":
 					ignoreDeadExclusionList.clear();
 					splitList(config.ignoreDeadExclusion(), ignoreDeadExclusionList);
+					recreateList();
 					break;
 				case "ignoreDeadExclusionID":
 					ignoreDeadExclusionIDList.clear();
 					splitList(config.ignoreDeadExclusionID(), ignoreDeadExclusionIDList);
+					recreateList();
 					break;
 				case "turboHighlight":
 					if (event.getNewValue().equals("true"))
@@ -415,6 +417,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		if (event.getGameState() == GameState.LOGIN_SCREEN || event.getGameState() == GameState.HOPPING)
 		{
 			npcSpawns.clear();
+			npcList.clear();
 		}
 	}
 
@@ -933,6 +936,19 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 				{
 					return true;
 				}
+			}
+		}
+		return false;
+	}
+
+	public boolean checkSpecificIdList(ArrayList<String> strList, NPC npc)
+	{
+		int id = npc.getId();
+		for (String entry : strList)
+		{
+			if (StringUtils.isNumeric(entry) && Integer.parseInt(entry) == id)
+			{
+				return true;
 			}
 		}
 		return false;

@@ -35,6 +35,6 @@ public class NPCInfo
 		this.clickbox = plugin.checkSpecificList(plugin.clickboxNames, plugin.clickboxIds, npc, config.clickboxColor(), config.clickboxFillColor());
 		this.turbo = plugin.checkSpecificList(plugin.turboNames, plugin.turboIds, npc, null, null);
 		this.isTask = slayerPluginService != null && slayerPluginService.getTargets().contains(npc);
-		this.ignoreDead = plugin.ignoreDeadExclusionList.contains(npc.getName()) || plugin.ignoreDeadExclusionIDList.contains(String.valueOf(npc.getId()));
+		this.ignoreDead = plugin.checkSpecificNameList(plugin.ignoreDeadExclusionList, npc) || plugin.checkSpecificIdList(plugin.ignoreDeadExclusionIDList, npc);
 	}
 }
