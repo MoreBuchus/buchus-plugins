@@ -44,7 +44,7 @@ public class BetterNpcHighlightOverlay extends Overlay
 		{
 			NPC npc = npcInfo.getNpc();
 			NPCComposition npcComposition = npc.getTransformedComposition();
-			if (npcComposition != null && npc.getModel() != null && ((npc.getName() != null && !npc.getName().equals("") && !npc.getName().equals("null")) || !isInvisible(npc.getModel())))
+			if (npcComposition != null && ((npc.getName() != null && !npc.getName().equals("") && !npc.getName().equals("null")) || !isInvisible(npc.getModel())))
 			{
 				boolean showWhileDead = (!npc.isDead() && !npcUtil.isDying(npc)) || !config.ignoreDeadNpcs() || npcInfo.isIgnoreDead();
 				boolean showNPC = (npcComposition.isFollower() && config.highlightPets()) || (!npcComposition.isFollower() && showWhileDead);
@@ -136,7 +136,8 @@ public class BetterNpcHighlightOverlay extends Overlay
 			for (NPC npc : client.getNpcs())
 			{
 				NPCComposition npcComposition = npc.getTransformedComposition();
-				if (npcComposition != null)
+				//Do not show debug info for NPCs with invisible models
+				if (npcComposition != null && ((npc.getName() != null && !npc.getName().equals("") && !npc.getName().equals("null")) || !isInvisible(npc.getModel())))
 				{
 					LocalPoint lp = npc.getLocalLocation();
 					if (lp != null)
