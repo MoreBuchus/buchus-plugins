@@ -8,6 +8,7 @@ import net.runelite.client.plugins.slayer.SlayerPluginService;
 import net.runelite.client.ui.overlay.*;
 import javax.inject.Inject;
 import java.awt.*;
+import net.runelite.client.util.Text;
 
 public class BetterNpcMinimapOverlay extends Overlay
 {
@@ -17,15 +18,12 @@ public class BetterNpcMinimapOverlay extends Overlay
 
 	private final BetterNpcHighlightConfig config;
 
-	private final SlayerPluginService slayerPluginService;
-
 	@Inject
-	private BetterNpcMinimapOverlay(Client client, BetterNpcHighlightPlugin plugin, BetterNpcHighlightConfig config, SlayerPluginService slayerPluginService)
+	private BetterNpcMinimapOverlay(Client client, BetterNpcHighlightPlugin plugin, BetterNpcHighlightConfig config)
 	{
 		this.client = client;
 		this.plugin = plugin;
 		this.config = config;
-		this.slayerPluginService = slayerPluginService;
 		setPosition(OverlayPosition.DYNAMIC);
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 	}
@@ -33,12 +31,12 @@ public class BetterNpcMinimapOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		for (NPC npc : client.getNpcs())
+		for (NPCInfo npcInfo : plugin.npcList)
 		{
-			if (npc.getName() != null && config.npcMinimapMode() != BetterNpcHighlightConfig.npcMinimapMode.OFF
-				&& (plugin.checkAllLists(npc) || (config.slayerHighlight() && slayerPluginService.getTargets().contains(npc))))
+			NPC npc = npcInfo.getNpc();
+			if (npc.getName() != null && config.npcMinimapMode() != BetterNpcHighlightConfig.npcMinimapMode.OFF)
 			{
-				Color color = plugin.getSpecificColor(npc);
+				Color color = plugin.getSpecificColor(npcInfo);
 
 				NPCComposition npcComposition = npc.getTransformedComposition();
 				if (npcComposition != null && npcComposition.isInteractible())
@@ -53,7 +51,7 @@ public class BetterNpcMinimapOverlay extends Overlay
 
 						if (config.npcMinimapMode() == BetterNpcHighlightConfig.npcMinimapMode.NAME || config.npcMinimapMode() == BetterNpcHighlightConfig.npcMinimapMode.BOTH)
 						{
-							OverlayUtil.renderTextLocation(graphics, minimapLocation, npc.getName(), color);
+							OverlayUtil.renderTextLocation(graphics, minimapLocation, Text.removeTags(npc.getName()), color);
 						}
 					}
 				}

@@ -126,9 +126,17 @@ public interface BetterNpcHighlightConfig extends Config
 	String entityHiderSection = "entityHider";
 
 	@ConfigSection(
+		name = "Presets",
+		description = "Presets Plugins",
+		position = 11,
+		closedByDefault = true
+	)
+	String presetsSection = "presets";
+
+	@ConfigSection(
 		name = "Instructions",
 		description = "Instructions for various features",
-		position = 11,
+		position = 12,
 		closedByDefault = true
 	)
 	String instructionsSection = "instructions";
@@ -1320,6 +1328,151 @@ public interface BetterNpcHighlightConfig extends Config
 	void setEntityHiderIds(String ids);
 
 	//------------------------------------------------------------//
+	// Presets Section
+	//------------------------------------------------------------//
+	@ConfigItem(
+		position = 1,
+		keyName = "presetColorAmount",
+		name = "Preset Colors Amount",
+		description = "The amount of preset colors you want in the Tag sub-menu",
+		section = presetsSection
+	)
+	default presetColorAmount presetColorAmount()
+	{
+		return presetColorAmount.ZERO;
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 2,
+		keyName = "presetColor1",
+		name = "Preset Color 1",
+		description = "Sets color for the first preset color",
+		section = presetsSection
+	)
+	default Color presetColor1()
+	{
+		return new Color(224, 60, 49, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 3,
+		keyName = "presetFillColor1",
+		name = "Preset Fill Color 1",
+		description = "Sets the fill color for the first preset color",
+		section = presetsSection
+	)
+	default Color presetFillColor1()
+	{
+		return new Color(224, 60, 49, 20);
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 4,
+		keyName = "presetColor2",
+		name = "Preset Color 2",
+		description = "Sets color for the second preset color",
+		section = presetsSection
+	)
+	default Color presetColor2()
+	{
+		return new Color(37, 197, 79, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 5,
+		keyName = "presetFillColor2",
+		name = "Preset Fill Color 2",
+		description = "Sets the fill color for the second preset color",
+		section = presetsSection
+	)
+	default Color presetFillColor2()
+	{
+		return new Color(37, 197, 79, 20);
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 6,
+		keyName = "presetColor3",
+		name = "Preset Color 3",
+		description = "Sets color for the third preset color",
+		section = presetsSection
+	)
+	default Color presetColor3()
+	{
+		return new Color(207, 138, 253, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 7,
+		keyName = "presetFillColor3",
+		name = "Preset Fill Color 3",
+		description = "Sets the fill color for the third preset color",
+		section = presetsSection
+	)
+	default Color presetFillColor3()
+	{
+		return new Color(207, 138, 253, 20);
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 8,
+		keyName = "presetColor4",
+		name = "Preset Color 4",
+		description = "Sets color for the fourth preset color",
+		section = presetsSection
+	)
+	default Color presetColor4()
+	{
+		return new Color(38, 255, 169, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 9,
+		keyName = "presetFillColor4",
+		name = "Preset Fill Color 4",
+		description = "Sets the fill color for the fourth preset color",
+		section = presetsSection
+	)
+	default Color presetFillColor4()
+	{
+		return new Color(38, 255, 169, 20);
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 10,
+		keyName = "presetColor5",
+		name = "Preset Color 5",
+		description = "Sets color for the fifth preset color",
+		section = presetsSection
+	)
+	default Color presetColor5()
+	{
+		return new Color(0, 150, 200, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		position = 11,
+		keyName = "presetFillColor5",
+		name = "Preset Fill Color 5",
+		description = "Sets the fill color for the fifth preset color",
+		section = presetsSection
+	)
+	default Color presetFillColor5()
+	{
+		return new Color(0, 150, 200, 20);
+	}
+
+	//------------------------------------------------------------//
 	// Instructions Section
 	//------------------------------------------------------------//
 	@ConfigItem(
@@ -1352,7 +1505,7 @@ public interface BetterNpcHighlightConfig extends Config
 	)
 	default String tagInstructions()
 	{
-		return "### Format:\n\n" +
+		return "### Tag Format:\n\n" +
 			"!tag[style] [npc name]\n" +
 			"!tag[style] [npc id]\n" +
 			"!untag[style] [npc name]\n" +
@@ -1365,6 +1518,27 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@ConfigItem(
 		position = 2,
+		keyName = "presetInstructions",
+		name = "Preset Instructions",
+		description = "Instructions to use presets with the !tag and !untag commands",
+		section = instructionsSection
+	)
+	default String presetInstructions()
+	{
+		return "### Preset Tag Format:\n\n" +
+			"!tag[style] [npc name]:[preset #]\n" +
+			"!tag[style] [npc id]:[preset #]\n" +
+			"!untag[style] [npc name]:[preset #]\n" +
+			"!untag[style] [npc id]:[preset #]\n" +
+			"---------------------\n" +
+			"### Example:\n\n" +
+			"\"!tagswt cow:2\" -> This would add \"cow\" to the SW True Tile names list with preset color 2\n" +
+			"# Tagging an NPC that already has a preset changes the preset to the new one\n\n" +
+			"Untagging is the same, regardless of preset\n";
+	}
+
+	@ConfigItem(
+		position = 3,
 		keyName = "hideInstructions",
 		name = "Hide/Unhide Instructions",
 		description = "Instructions to use the !hide and !unhide commands",
@@ -1585,6 +1759,28 @@ public interface BetterNpcHighlightConfig extends Config
 
 		@Getter
 		private final String key;
+
+		@Override
+		public String toString()
+		{
+			return group;
+		}
+	}
+
+	@Getter
+	@RequiredArgsConstructor
+	enum presetColorAmount
+	{
+		ZERO("None"),
+		ONE("One"),
+		TWO("Two"),
+		THREE("Three"),
+		FOUR("Four"),
+		FIVE("Five"),
+		;
+
+		@Getter
+		private final String group;
 
 		@Override
 		public String toString()
