@@ -243,17 +243,18 @@ public class BetterNpcHighlightOverlay extends Overlay
 			int lineAlpha;
 			int fillAlpha;
 			boolean antialias;
+			boolean isTask = npcInfo.isTask() && config.slayerHighlight();
 
 			switch (highlight)
 			{
 				case "hull":
-					line = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
 						: config.hullRave() ? plugin.getRaveColor(config.hullRaveSpeed()) : npcInfo.getHull().getColor();
-					fill = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
 						: config.hullRave() ? plugin.getRaveColor(config.hullRaveSpeed()) : npcInfo.getHull().getFill();
-					lineAlpha = npcInfo.isTask() ? config.taskColor().getAlpha() : npcInfo.getHull().getColor().getAlpha();
-					fillAlpha = npcInfo.isTask() ? config.taskFillColor().getAlpha() : npcInfo.getHull().getFill().getAlpha();
-					antialias = npcInfo.isTask() ? config.slayerAA() : config.hullAA();
+					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getHull().getColor().getAlpha();
+					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getHull().getFill().getAlpha();
+					antialias = isTask ? config.slayerAA() : config.hullAA();
 
 					Shape hull = npc.getConvexHull();
 					if (hull != null)
@@ -262,13 +263,13 @@ public class BetterNpcHighlightOverlay extends Overlay
 					}
 					break;
 				case "tile":
-					line = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
 						: config.tileRave() ? plugin.getRaveColor(config.tileRaveSpeed()) : npcInfo.getTile().getColor();
-					fill = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
 						: config.tileRave() ? plugin.getRaveColor(config.tileRaveSpeed()) : npcInfo.getTile().getFill();
-					lineAlpha = npcInfo.isTask() ? config.taskColor().getAlpha() : npcInfo.getTile().getColor().getAlpha();
-					fillAlpha = npcInfo.isTask() ? config.taskFillColor().getAlpha() : npcInfo.getTile().getFill().getAlpha();
-					antialias = npcInfo.isTask() ? config.slayerAA() : config.tileAA();
+					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getTile().getColor().getAlpha();
+					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getTile().getFill().getAlpha();
+					antialias = isTask ? config.slayerAA() : config.tileAA();
 
 					lp = npc.getLocalLocation();
 					if (lp != null)
@@ -281,13 +282,13 @@ public class BetterNpcHighlightOverlay extends Overlay
 					}
 					break;
 				case "trueTile":
-					line = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
 						: config.trueTileRave() ? plugin.getRaveColor(config.trueTileRaveSpeed()) : npcInfo.getTrueTile().getColor();
-					fill = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
 						: config.trueTileRave() ? plugin.getRaveColor(config.trueTileRaveSpeed()) : npcInfo.getTrueTile().getFill();
-					lineAlpha = npcInfo.isTask() ? config.taskColor().getAlpha() : npcInfo.getTrueTile().getColor().getAlpha();
-					fillAlpha = npcInfo.isTask() ? config.taskFillColor().getAlpha() : npcInfo.getTrueTile().getFill().getAlpha();
-					antialias = npcInfo.isTask() ? config.slayerAA() : config.trueTileAA();
+					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getTrueTile().getColor().getAlpha();
+					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getTrueTile().getFill().getAlpha();
+					antialias = isTask ? config.slayerAA() : config.trueTileAA();
 
 					lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
 					if (lp != null)
@@ -301,13 +302,13 @@ public class BetterNpcHighlightOverlay extends Overlay
 					}
 					break;
 				case "swTile":
-					line = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
 						: config.swTileRave() ? plugin.getRaveColor(config.swTileRaveSpeed()) : npcInfo.getSwTile().getColor();
-					fill = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
 						: config.swTileRave() ? plugin.getRaveColor(config.swTileRaveSpeed()) : npcInfo.getSwTile().getFill();
-					lineAlpha = npcInfo.isTask() ? config.taskColor().getAlpha() : npcInfo.getSwTile().getColor().getAlpha();
-					fillAlpha = npcInfo.isTask() ? config.taskFillColor().getAlpha() : npcInfo.getSwTile().getFill().getAlpha();
-					antialias = npcInfo.isTask() ? config.slayerAA() : config.swTileAA();
+					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getSwTile().getColor().getAlpha();
+					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getSwTile().getFill().getAlpha();
+					antialias = isTask ? config.slayerAA() : config.swTileAA();
 
 					lp = npc.getLocalLocation();
 					if (lp != null)
@@ -322,13 +323,13 @@ public class BetterNpcHighlightOverlay extends Overlay
 					}
 					break;
 				case "swTrueTile":
-					line = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
 						: config.swTrueTileRave() ? plugin.getRaveColor(config.swTrueTileRaveSpeed()) : npcInfo.getSwTrueTile().getColor();
-					fill = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
 						: config.swTrueTileRave() ? plugin.getRaveColor(config.swTrueTileRaveSpeed()) : npcInfo.getSwTrueTile().getFill();
-					lineAlpha = npcInfo.isTask() ? config.taskColor().getAlpha() : npcInfo.getSwTrueTile().getColor().getAlpha();
-					fillAlpha = npcInfo.isTask() ? config.taskFillColor().getAlpha() : npcInfo.getSwTrueTile().getFill().getAlpha();
-					antialias = npcInfo.isTask() ? config.slayerAA() : config.swTrueTileAA();
+					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getSwTrueTile().getColor().getAlpha();
+					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getSwTrueTile().getFill().getAlpha();
+					antialias = isTask ? config.slayerAA() : config.swTrueTileAA();
 
 					lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
 					if (lp != null)
@@ -341,16 +342,16 @@ public class BetterNpcHighlightOverlay extends Overlay
 					}
 					break;
 				case "outline":
-					line = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
 						: config.outlineRave() ? plugin.getRaveColor(config.outlineRaveSpeed()) : npcInfo.getOutline().getColor();
 
 					modelOutlineRenderer.drawOutline(npc, config.outlineWidth(), line, config.outlineFeather());
 					break;
 				case "area":
 					Color color = npcInfo.getArea().getFill() != null ? npcInfo.getArea().getFill() : npcInfo.getArea().getColor();
-					fill = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
 						: config.areaRave() ? plugin.getRaveColor(config.areaRaveSpeed()) : color;
-					fillAlpha = npcInfo.isTask() ? config.taskColor().getAlpha() : color.getAlpha();
+					fillAlpha = isTask ? config.taskFillColor().getAlpha() : color.getAlpha();
 
 					Shape area = npc.getConvexHull();
 					if (area != null)
@@ -361,12 +362,12 @@ public class BetterNpcHighlightOverlay extends Overlay
 					}
 					break;
 				case "clickbox":
-					line = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
 						: config.clickboxRave() ? plugin.getRaveColor(config.clickboxRaveSpeed()) : npcInfo.getClickbox().getColor();
-					fill = npcInfo.isTask() ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
+					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
 						: config.clickboxRave() ? plugin.getRaveColor(config.clickboxRaveSpeed()) : npcInfo.getClickbox().getFill();
-					lineAlpha = npcInfo.isTask() ? config.taskColor().getAlpha() : npcInfo.getClickbox().getColor().getAlpha();
-					fillAlpha = npcInfo.isTask() ? config.taskFillColor().getAlpha() : npcInfo.getClickbox().getFill().getAlpha();
+					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getClickbox().getColor().getAlpha();
+					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getClickbox().getFill().getAlpha();
 
 					lp = npc.getLocalLocation();
 					if (lp != null)
