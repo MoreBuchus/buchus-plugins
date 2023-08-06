@@ -1,5 +1,31 @@
+/*
+ * Copyright (c) 2022, Buchus <http://github.com/MoreBuchus>
+ * Copyright (c) 2023, geheur <http://github.com/geheur>
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice, this
+ *    list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR
+ * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 package com.betternpchighlight;
 
+import java.awt.geom.Point2D;
 import net.runelite.api.Point;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -116,11 +142,10 @@ public class BetterNpcHighlightOverlay extends Overlay
 							if (WildcardMatcher.matches(str, npc.getName().toLowerCase()))
 							{
 								String text = npc.getName();
-								Point textLoc = npc.getCanvasTextLocation(graphics, text, npc.getLogicalHeight() + 20);
+								Point textLoc = npc.getCanvasTextLocation(graphics, text, npc.getLogicalHeight() + 40);
 								if (textLoc != null)
 								{
-									Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
-									OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
+									drawTextBackground(graphics, textLoc, text);
 									OverlayUtil.renderTextLocation(graphics, textLoc, text, plugin.getSpecificColor(npcInfo));
 									break;
 								}
@@ -142,12 +167,17 @@ public class BetterNpcHighlightOverlay extends Overlay
 					LocalPoint lp = npc.getLocalLocation();
 					if (lp != null)
 					{
-						Point point = npc.getCanvasTextLocation(graphics, "N: " + npc.getName() + " | ID: " + npc.getId(), npc.getLogicalHeight() + 40);
 						Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, npcComposition.getSize());
 						if (tilePoly != null)
 						{
 							renderPoly(graphics, Color.GRAY, new Color(0, 0, 0, 0), 255, 0, tilePoly, config.tileWidth(), true);
-							OverlayUtil.renderTextLocation(graphics, point, "N: " + npc.getName() + " | ID: " + npc.getId(), Color.WHITE);
+							String text = "N: " + npc.getName() + " | ID: " + npc.getId();
+							Point textLoc = npc.getCanvasTextLocation(graphics, text, npc.getLogicalHeight() + 40);
+							if (textLoc != null)
+							{
+								drawTextBackground(graphics, textLoc, text);
+								OverlayUtil.renderTextLocation(graphics, textLoc, text, Color.WHITE);
+							}
 						}
 					}
 				}
@@ -204,8 +234,7 @@ public class BetterNpcHighlightOverlay extends Overlay
 						Point textLoc = Perspective.getCanvasTextLocation(client, graphics, centerLp, text, 0);
 						if (textLoc != null)
 						{
-							Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
-							OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
+							drawTextBackground(graphics, textLoc, text);
 							if (raveColor != Color.WHITE)
 							{
 								OverlayUtil.renderTextLocation(graphics, textLoc, text, new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(205) + 50));
@@ -225,8 +254,8 @@ public class BetterNpcHighlightOverlay extends Overlay
 	/**
 	 * Create overlays for NPCs to highlight.
 	 *
-	 * @param graphics graphics
-	 * @param npcInfo NPCInfo
+	 * @param graphics  graphics
+	 * @param npcInfo   NPCInfo
 	 * @param highlight Style to highlight the NPC
 	 */
 	protected void renderNpcOverlay(Graphics2D graphics, NPCInfo npcInfo, String highlight)
@@ -277,7 +306,18 @@ public class BetterNpcHighlightOverlay extends Overlay
 						tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
 						if (tilePoly != null)
 						{
-							renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.tileWidth(), antialias);
+							switch (config.tileLines())
+							{
+								case REG:
+									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.tileWidth(), antialias);
+									break;
+								case DASH:
+									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.tileWidth(), size, antialias);
+									break;
+								case CORNER:
+									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.tileWidth(), antialias);
+									break;
+							}
 						}
 					}
 					break;
@@ -297,7 +337,18 @@ public class BetterNpcHighlightOverlay extends Overlay
 						tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
 						if (tilePoly != null)
 						{
-							renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.trueTileWidth(), antialias);
+							switch (config.trueTileLines())
+							{
+								case REG:
+									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.trueTileWidth(), antialias);
+									break;
+								case DASH:
+									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.trueTileWidth(), size, antialias);
+									break;
+								case CORNER:
+									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.trueTileWidth(), antialias);
+									break;
+							}
 						}
 					}
 					break;
@@ -318,7 +369,18 @@ public class BetterNpcHighlightOverlay extends Overlay
 						tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
 						if (tilePoly != null)
 						{
-							renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTileWidth(), antialias);
+							switch (config.swTileLines())
+							{
+								case REG:
+									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTileWidth(), antialias);
+									break;
+								case DASH:
+									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTileWidth(), size, antialias);
+									break;
+								case CORNER:
+									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTileWidth(), antialias);
+									break;
+							}
 						}
 					}
 					break;
@@ -337,7 +399,18 @@ public class BetterNpcHighlightOverlay extends Overlay
 						tilePoly = Perspective.getCanvasTilePoly(client, lp);
 						if (tilePoly != null)
 						{
-							renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTrueTileWidth(), antialias);
+							switch (config.swTrueTileLines())
+							{
+								case REG:
+									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTrueTileWidth(), antialias);
+									break;
+								case DASH:
+									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTrueTileWidth(), size, antialias);
+									break;
+								case CORNER:
+									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTrueTileWidth(), antialias);
+									break;
+							}
 						}
 					}
 					break;
@@ -383,6 +456,7 @@ public class BetterNpcHighlightOverlay extends Overlay
 					{
 						line = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
 						fill = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
+						int tileMode = new Random().nextInt(3);
 
 						if (plugin.turboModeStyle == 0)
 						{
@@ -392,7 +466,18 @@ public class BetterNpcHighlightOverlay extends Overlay
 								tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
 								if (tilePoly != null)
 								{
-									renderPoly(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+									if (tileMode == 0)
+									{
+										renderPoly(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+									}
+									else if (tileMode == 1)
+									{
+										renderPolygonDashed(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, size,true);
+									}
+									else
+									{
+										renderPolygonCorners(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+									}
 								}
 							}
 						}
@@ -405,7 +490,18 @@ public class BetterNpcHighlightOverlay extends Overlay
 								tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
 								if (tilePoly != null)
 								{
-									renderPoly(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+									if (tileMode == 0)
+									{
+										renderPoly(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+									}
+									else if (tileMode == 1)
+									{
+										renderPolygonDashed(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, size,true);
+									}
+									else
+									{
+										renderPolygonCorners(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+									}
 								}
 							}
 						}
@@ -419,7 +515,18 @@ public class BetterNpcHighlightOverlay extends Overlay
 								tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
 								if (tilePoly != null)
 								{
-									renderPoly(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+									if (tileMode == 0)
+									{
+										renderPoly(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+									}
+									else if (tileMode == 1)
+									{
+										renderPolygonDashed(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, size,true);
+									}
+									else
+									{
+										renderPolygonCorners(graphics, line, fill, line.getAlpha(), fill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
+									}
 								}
 							}
 						}
@@ -477,6 +584,113 @@ public class BetterNpcHighlightOverlay extends Overlay
 			graphics.draw(area);
 			graphics.setColor(new Color(fill.getRed(), fill.getGreen(), fill.getBlue(), fillAlpha));
 			graphics.fill(area);
+		}
+	}
+
+	/**
+	 * Draws only the corners of NPC tile highlights - Made by Geheur
+	 *
+	 * @param graphics
+	 * @param outlineColor
+	 * @param fillColor
+	 * @param lineAlpha
+	 * @param fillAlpha
+	 * @param poly
+	 * @param width
+	 * @param antiAlias
+	 */
+	private static void renderPolygonCorners(Graphics2D graphics, Color outlineColor, Color fillColor, int lineAlpha, int fillAlpha, Shape poly, double width, boolean antiAlias)
+	{
+		if (poly instanceof Polygon)
+		{
+			Polygon p = (Polygon) poly;
+			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, antiAlias ? RenderingHints.VALUE_ANTIALIAS_ON : RenderingHints.VALUE_ANTIALIAS_OFF);
+			graphics.setColor(new Color(outlineColor.getRed(), outlineColor.getGreen(), outlineColor.getBlue(), lineAlpha));
+			graphics.setStroke(new BasicStroke((float) width));
+
+			int divisor = 7;
+			for (int i = 0; i < p.npoints; i++)
+			{
+				int ptx = p.xpoints[i];
+				int pty = p.ypoints[i];
+				int prev = (i - 1) < 0 ? 3 : (i - 1);
+				int next = (i + 1) > 3 ? 0 : (i + 1);
+				int ptxN = ((p.xpoints[next]) - ptx) / divisor + ptx;
+				int ptyN = ((p.ypoints[next]) - pty) / divisor + pty;
+				int ptxP = ((p.xpoints[prev]) - ptx) / divisor + ptx;
+				int ptyP = ((p.ypoints[prev]) - pty) / divisor + pty;
+				graphics.drawLine(ptx, pty, ptxN, ptyN);
+				graphics.drawLine(ptx, pty, ptxP, ptyP);
+			}
+
+			graphics.setColor(new Color(fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue(), fillAlpha));
+			graphics.fill(poly);
+		}
+	}
+
+	/**
+	 * Draws the corners and dashed lines along each side of NPC tile highlights - Made by Geheur
+	 *
+	 * @param graphics
+	 * @param outlineColor
+	 * @param fillColor
+	 * @param lineAlpha
+	 * @param fillAlpha
+	 * @param poly
+	 * @param width
+	 * @param tiles
+	 * @param antiAlias
+	 */
+	private static void renderPolygonDashed(Graphics2D graphics, Color outlineColor, Color fillColor, int lineAlpha, int fillAlpha, Shape poly,
+											double width, int tiles, boolean antiAlias)
+	{
+		if (poly instanceof Polygon)
+		{
+			Polygon p = (Polygon) poly;
+			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, antiAlias ? RenderingHints.VALUE_ANTIALIAS_ON : RenderingHints.VALUE_ANTIALIAS_OFF);
+			graphics.setColor(new Color(outlineColor.getRed(), outlineColor.getGreen(), outlineColor.getBlue(), lineAlpha));
+			graphics.setStroke(new BasicStroke((float) width));
+
+			int divisor = 7 * tiles;
+			for (int i = 0; i < p.npoints; i++)
+			{
+				int ptx = p.xpoints[i];
+				int pty = p.ypoints[i];
+				int next = (i + 1) > 3 ? 0 : (i + 1);
+				int ptxN = (p.xpoints[next]) - ptx;
+				int ptyN = (p.ypoints[next]) - pty;
+				float length = (float) Point2D.distance(ptx, pty, ptx + ptxN, pty + ptyN);
+				float dashLength = length * 2f / divisor;
+				float spaceLength = length * 5f / divisor;
+				Stroke s = new BasicStroke((float) width, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10, new float[]{dashLength, spaceLength}, dashLength / 2);
+				graphics.setStroke(s);
+				graphics.drawLine(ptx, pty, ptx + ptxN, pty + ptyN);
+			}
+
+			graphics.setColor(new Color(fillColor.getRed(), fillColor.getGreen(), fillColor.getBlue(), fillAlpha));
+			graphics.fill(poly);
+		}
+	}
+
+	private void drawTextBackground(Graphics2D graphics, Point textLoc, String text)
+	{
+		switch (config.fontBackground())
+		{
+			case OUTLINE:
+			{
+				OverlayUtil.renderTextLocation(graphics, new Point(textLoc.getX(), textLoc.getY() + 1), text, Color.BLACK);
+				OverlayUtil.renderTextLocation(graphics, new Point(textLoc.getX(), textLoc.getY() - 1), text, Color.BLACK);
+				OverlayUtil.renderTextLocation(graphics, new Point(textLoc.getX() + 1, textLoc.getY()), text, Color.BLACK);
+				OverlayUtil.renderTextLocation(graphics, new Point(textLoc.getX() - 1, textLoc.getY()), text, Color.BLACK);
+				break;
+			}
+			case SHADOW:
+			{
+				OverlayUtil.renderTextLocation(graphics, new Point(textLoc.getX() + 1, textLoc.getY() + 1), text, Color.BLACK);
+				break;
+			}
+			default:
+				break;
 		}
 	}
 

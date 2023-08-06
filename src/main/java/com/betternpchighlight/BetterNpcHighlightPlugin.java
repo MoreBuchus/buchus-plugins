@@ -407,6 +407,34 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 						pluginManager.setPluginEnabled(slayerPlugin.get(), true);
 					}
 					break;
+				case "tileColor":
+				case "tileFillColor":
+				case "trueTileColor":
+				case "trueTileFillColor":
+				case "swTileColor":
+				case "swTileFillColor":
+				case "swTrueTileColor":
+				case "swTrueTileFillColor":
+				case "hullColor":
+				case "hullFillColor":
+				case "areaColor":
+				case "outlineColor":
+				case "clickboxColor":
+				case "clickboxFillColor":
+				case "taskColor":
+				case "taskFillColor":
+				case "presetColor1":
+				case "presetFillColor1":
+				case "presetColor2":
+				case "presetFillColor2":
+				case "presetColor3":
+				case "presetFillColor3":
+				case "presetColor4":
+				case "presetFillColor4":
+				case "presetColor5":
+				case "presetFillColor5":
+					recreateList();
+					break;
 			}
 		}
 	}

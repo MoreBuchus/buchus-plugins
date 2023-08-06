@@ -270,6 +270,18 @@ public interface BetterNpcHighlightConfig extends Config
 		return 6000;
 	}
 
+	@ConfigItem(
+		position = 10,
+		keyName = "tileLines",
+		name = "Tile Line Type",
+		description = "Sets the tile outline to regular, dashed, or corners only",
+		section = tileSection
+	)
+	default lineType tileLines()
+	{
+		return lineType.REG;
+	}
+
 	//------------------------------------------------------------//
 	// True Tile Section
 	//------------------------------------------------------------//
@@ -397,6 +409,18 @@ public interface BetterNpcHighlightConfig extends Config
 	default int trueTileRaveSpeed()
 	{
 		return 6000;
+	}
+
+	@ConfigItem(
+		position = 10,
+		keyName = "trueTileLines",
+		name = "True Tile Line Type",
+		description = "Sets the true tile outline to regular, dashed, or corners only",
+		section = trueTileSection
+	)
+	default lineType trueTileLines()
+	{
+		return lineType.REG;
 	}
 
 	//------------------------------------------------------------//
@@ -528,6 +552,18 @@ public interface BetterNpcHighlightConfig extends Config
 		return 6000;
 	}
 
+	@ConfigItem(
+		position = 10,
+		keyName = "swTileLines",
+		name = "South West Tile Line Type",
+		description = "Sets the sw tile outline to regular, dashed, or corners only",
+		section = swTileSection
+	)
+	default lineType swTileLines()
+	{
+		return lineType.REG;
+	}
+
 	//------------------------------------------------------------//
 	// SW True Tile Section
 	//------------------------------------------------------------//
@@ -655,6 +691,18 @@ public interface BetterNpcHighlightConfig extends Config
 	default int swTrueTileRaveSpeed()
 	{
 		return 6000;
+	}
+
+	@ConfigItem(
+		position = 10,
+		keyName = "swTrueTileLines",
+		name = "South West True Tile Line Type",
+		description = "Sets the sw true tile outline to regular, dashed, or corners only",
+		section = swTrueTileSection
+	)
+	default lineType swTrueTileLines()
+	{
+		return lineType.REG;
 	}
 
 	//------------------------------------------------------------//
@@ -1716,6 +1764,17 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@ConfigItem(
 		position = 27,
+		keyName = "fontBackground",
+		name = "Font Background",
+		description = "Puts an outline, shadow, or nothing behind font overlays"
+	)
+	default background fontBackground()
+	{
+		return background.SHADOW;
+	}
+
+	@ConfigItem(
+		position = 28,
 		keyName = "npcMinimapMode",
 		name = "Highlight Minimap",
 		description = "Highlights NPC on minimap and/or displays name"
@@ -1726,7 +1785,7 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 28,
+		position = 29,
 		keyName = "debugNPC",
 		name = "Debug NPC Info",
 		description = "Highlights all NPCs with their Name and ID"
@@ -1769,6 +1828,25 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@Getter
 	@RequiredArgsConstructor
+	enum lineType
+	{
+		REG("Regular"),
+		DASH("Dashed"),
+		CORNER("Corners"),
+		;
+
+		@Getter
+		private final String group;
+
+		@Override
+		public String toString()
+		{
+			return group;
+		}
+	}
+
+	@Getter
+	@RequiredArgsConstructor
 	enum presetColorAmount
 	{
 		ZERO("None"),
@@ -1777,6 +1855,25 @@ public interface BetterNpcHighlightConfig extends Config
 		THREE("Three"),
 		FOUR("Four"),
 		FIVE("Five"),
+		;
+
+		@Getter
+		private final String group;
+
+		@Override
+		public String toString()
+		{
+			return group;
+		}
+	}
+
+	@Getter
+	@RequiredArgsConstructor
+	enum background
+	{
+		OFF("None"),
+		SHADOW("Shadow"),
+		OUTLINE("Outline"),
 		;
 
 		@Getter
