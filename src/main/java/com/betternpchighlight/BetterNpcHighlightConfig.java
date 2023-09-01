@@ -26,6 +26,7 @@ package com.betternpchighlight;
 
 import java.util.Collections;
 import java.util.Set;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import net.runelite.client.config.*;
@@ -1675,6 +1676,51 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@ConfigItem(
 		position = 19,
+		keyName = "drawBeneath",
+		name = "Draw Overlays Beneath NPCs",
+		description = "Overlays will appear behind/below NPCs. GPU plugin must be turned on"
+	)
+	default boolean drawBeneath()
+	{
+		return false;
+	}
+
+	@Range(max = 20)
+	@ConfigItem(
+		position = 20,
+		keyName = "drawBeneathLimit",
+		name = "Draw Beneath Limit",
+		description = "Sets the amount of NPCs to have the overlay draw beneath. The higher the number, the more it affects FPS"
+	)
+	default int drawBeneathLimit()
+	{
+		return 10;
+	}
+
+	@ConfigItem(
+		position = 21,
+		keyName = "drawBeneathList",
+		name = "Draw Beneath List",
+		description = "Sets specific NPCs to have the overlay draw beneath. Empty list will use Draw Beneath Limit"
+	)
+	default String drawBeneathList()
+	{
+		return "";
+	}
+
+	@ConfigItem(
+		position = 22,
+		keyName = "renderDistance",
+		name = "Render Distance",
+		description = "Limits overlays to be drawn to within the chosen distance from the local player. <br>Short = 7 tiles, Medium = 11 tiles"
+	)
+	default renderDistance renderDistance()
+	{
+		return renderDistance.NONE;
+	}
+
+	@ConfigItem(
+		position = 23,
 		keyName = "highlightPets",
 		name = "Highlight pets",
 		description = "Highlights followers/pets that are in any of your lists"
@@ -1685,7 +1731,7 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 20,
+		position = 24,
 		keyName = "deadNpcMenuColor",
 		name = "Dead NPC Menu Color",
 		description = "Highlights names in right click menu entry when an NPC is dead"
@@ -1693,7 +1739,7 @@ public interface BetterNpcHighlightConfig extends Config
 	Color deadNpcMenuColor();
 
 	@ConfigItem(
-		position = 21,
+		position = 25,
 		keyName = "respawnTimer",
 		name = "Respawn Timer",
 		description = "Marks tile and shows timer for when a marker NPC will respawn"
@@ -1705,7 +1751,7 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		position = 22,
+		position = 26,
 		keyName = "respawnTimerColor",
 		name = "Respawn Time Color",
 		description = "Sets the color of the text for Respawn Timer"
@@ -1717,7 +1763,7 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		position = 23,
+		position = 27,
 		keyName = "respawnOutlineColor",
 		name = "Respawn Outline Color",
 		description = "Sets the color of the tile for Respawn Timer"
@@ -1729,7 +1775,7 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		position = 24,
+		position = 28,
 		keyName = "respawnFillColor",
 		name = "Respawn Fill Color",
 		description = "Sets the fill color of the tile for Respawn Timer"
@@ -1741,7 +1787,7 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@Range(min = 1, max = 10)
 	@ConfigItem(
-		position = 25,
+		position = 29,
 		keyName = "respawnTileWidth",
 		name = "Respawn Tile Width",
 		description = "Sets the width of the tile for Respawn Timer"
@@ -1752,7 +1798,7 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 26,
+		position = 30,
 		keyName = "displayName",
 		name = "Display Name",
 		description = "Shows name of NPCs in the list above them"
@@ -1763,7 +1809,7 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 27,
+		position = 31,
 		keyName = "fontBackground",
 		name = "Font Background",
 		description = "Puts an outline, shadow, or nothing behind font overlays"
@@ -1774,7 +1820,7 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 28,
+		position = 32,
 		keyName = "npcMinimapMode",
 		name = "Highlight Minimap",
 		description = "Highlights NPC on minimap and/or displays name"
@@ -1785,7 +1831,7 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 29,
+		position = 33,
 		keyName = "debugNPC",
 		name = "Debug NPC Info",
 		description = "Highlights all NPCs with their Name and ID"
@@ -1802,6 +1848,7 @@ public interface BetterNpcHighlightConfig extends Config
 	@RequiredArgsConstructor
 	enum tagStyleMode
 	{
+		NONE("None", "none"),
 		TILE("Tile", "tile"),
 		TRUE_TILE("True Tile", "trueTile"),
 		SW_TILE("SW Tile", "swTile"),
@@ -1878,6 +1925,24 @@ public interface BetterNpcHighlightConfig extends Config
 
 		@Getter
 		private final String group;
+
+		@Override
+		public String toString()
+		{
+			return group;
+		}
+	}
+
+	@Getter
+	@AllArgsConstructor
+	enum renderDistance
+	{
+		SHORT("Short", 7),
+		MED("Medium", 11),
+		NONE("No Limit", 0); //14 = max distance
+
+		private final String group;
+		private final int distance;
 
 		@Override
 		public String toString()

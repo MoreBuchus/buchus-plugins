@@ -53,6 +53,7 @@ import net.runelite.client.input.KeyManager;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.PluginInstantiationException;
 import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.slayer.SlayerPlugin;
 import net.runelite.client.plugins.slayer.SlayerPluginService;
@@ -147,6 +148,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 	public ArrayList<String> ignoreDeadExclusionIDList = new ArrayList<>();
 	public ArrayList<String> hiddenNames = new ArrayList<>();
 	public ArrayList<String> hiddenIds = new ArrayList<>();
+	public ArrayList<String> beneathNPCs = new ArrayList<>();
 	public Instant lastTickUpdate;
 	public int turboModeStyle = 0;
 	public int turboTileWidth = 0;
@@ -195,14 +197,11 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		splitList(config.ignoreDeadExclusionID(), ignoreDeadExclusionIDList);
 		splitList(config.entityHiderNames(), hiddenNames);
 		splitList(config.entityHiderIds(), hiddenIds);
+		splitList(config.drawBeneathList(), beneathNPCs);
 		hooks.registerRenderableDrawListener(drawListener);
 		keyManager.registerKeyListener(this);
 
-		final Optional<Plugin> slayerPlugin = pluginManager.getPlugins().stream().filter(p -> p.getName().equals("Slayer")).findFirst();
-		if (slayerPlugin.isPresent() && pluginManager.isPluginEnabled(slayerPlugin.get()) && config.slayerHighlight())
-		{
-			pluginManager.setPluginEnabled(slayerPlugin.get(), true);
-		}
+		enableSlayerPlugin();
 
 		if (client.getGameState() == GameState.LOGGED_IN)
 		{
@@ -243,6 +242,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		turboIds.clear();
 		hiddenNames.clear();
 		hiddenIds.clear();
+		beneathNPCs.clear();
 		ignoreDeadExclusionList.clear();
 		ignoreDeadExclusionIDList.clear();
 		namesToDisplay.clear();
@@ -400,12 +400,12 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 					hiddenIds.clear();
 					splitList(config.entityHiderIds(), hiddenIds);
 					break;
+				case "drawBeneathList":
+					beneathNPCs.clear();
+					splitList(config.drawBeneathList(), beneathNPCs);
+					break;
 				case "slayerHighlight":
-					final Optional<Plugin> slayerPlugin = pluginManager.getPlugins().stream().filter(p -> p.getName().equals("Slayer")).findFirst();
-					if (slayerPlugin.isPresent() && pluginManager.isPluginEnabled(slayerPlugin.get()) && config.slayerHighlight())
-					{
-						pluginManager.setPluginEnabled(slayerPlugin.get(), true);
-					}
+					enableSlayerPlugin();
 					break;
 				case "tileColor":
 				case "tileFillColor":
@@ -497,7 +497,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 			if (npc != null)
 			{
 				String option;
-				if (npc.getName() != null)
+				if (npc.getName() != null && config.tagStyleMode() != BetterNpcHighlightConfig.tagStyleMode.NONE)
 				{
 					if (config.tagStyleMode() == BetterNpcHighlightConfig.tagStyleMode.TILE)
 					{
@@ -851,7 +851,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 	@Subscribe(priority = -1)
 	public void onGameTick(GameTick event)
 	{
-		if (!currentTask.equals(slayerPluginService.getTask()))
+		if (checkSlayerPluginEnabled() && !currentTask.equals(slayerPluginService.getTask()))
 		{
 			recreateList();
 		}
@@ -982,6 +982,30 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		return false;
 	}
 
+	public boolean checkSlayerPluginEnabled()
+	{
+		final Optional<Plugin> slayerPlugin = pluginManager.getPlugins().stream().filter(p -> p.getName().equals("Slayer")).findFirst();
+		return slayerPlugin.isPresent() && pluginManager.isPluginEnabled(slayerPlugin.get());
+	}
+
+	public void enableSlayerPlugin()
+	{
+		try
+		{
+			final Optional<Plugin> slayerPlugin = pluginManager.getPlugins().stream().filter(p -> p.getName().equals("Slayer")).findFirst();
+			if (slayerPlugin.isPresent() && !pluginManager.isPluginEnabled(slayerPlugin.get()) && config.slayerHighlight())
+			{
+				pluginManager.setPluginEnabled(slayerPlugin.get(), true);
+				pluginManager.startPlugin(slayerPlugin.get());
+				currentTask = "";
+			}
+		}
+		catch (PluginInstantiationException ex)
+		{
+			log.error("error starting slayer plugin", ex);
+		}
+	}
+
 	/**
 	 * Color of the tag menu (ex. "Tag-Hull")
 	 *
@@ -1039,41 +1063,45 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		{
 			return config.slayerRave() ? getRaveColor(config.slayerRaveSpeed()) : config.taskColor();
 		}
-		else if (n.getTile().isHighlight())
+		else if (n.getTile().isHighlight() && config.tileHighlight())
 		{
 			return config.tileRave() ? getRaveColor(config.tileRaveSpeed()) : n.getTile().getColor();
 		}
-		else if (n.getTrueTile().isHighlight())
+		else if (n.getTrueTile().isHighlight() && config.trueTileHighlight())
 		{
 			return config.trueTileRave() ? getRaveColor(config.trueTileRaveSpeed()) : n.getTrueTile().getColor();
 		}
-		else if (n.getSwTile().isHighlight())
+		else if (n.getSwTile().isHighlight() && config.swTileHighlight())
 		{
 			return config.swTileRave() ? getRaveColor(config.swTileRaveSpeed()) : n.getSwTile().getColor();
 		}
-		else if (n.getSwTrueTile().isHighlight())
+		else if (n.getSwTrueTile().isHighlight() && config.swTrueTileHighlight())
 		{
 			return config.swTrueTileRave() ? getRaveColor(config.swTrueTileRaveSpeed()) : n.getSwTrueTile().getColor();
 		}
-		else if (n.getHull().isHighlight())
+		else if (n.getHull().isHighlight() && config.hullHighlight())
 		{
 			return config.hullRave() ? getRaveColor(config.hullRaveSpeed()) : n.getHull().getColor();
 		}
-		else if (n.getArea().isHighlight())
+		else if (n.getArea().isHighlight() && config.areaHighlight())
 		{
 			return config.areaRave() ? getRaveColor(config.areaRaveSpeed()) : n.getArea().getColor();
 		}
-		else if (n.getOutline().isHighlight())
+		else if (n.getOutline().isHighlight() && config.outlineHighlight())
 		{
 			return config.outlineRave() ? getRaveColor(config.outlineRaveSpeed()) : n.getOutline().getColor();
 		}
-		else if (n.getClickbox().isHighlight())
+		else if (n.getClickbox().isHighlight() && config.clickboxHighlight())
 		{
 			return config.clickboxRave() ? getRaveColor(config.clickboxRaveSpeed()) : n.getClickbox().getColor();
 		}
-		else
+		else if (n.getTurbo().isHighlight() && config.turboHighlight())
 		{
 			return getTurboIndex(n.getNpc().getId(), n.getNpc().getName()) != -1 ? turboColors.get(getTurboIndex(n.getNpc().getId(), n.getNpc().getName())) : Color.WHITE;
+		}
+		else
+		{
+			return null;
 		}
 	}
 
