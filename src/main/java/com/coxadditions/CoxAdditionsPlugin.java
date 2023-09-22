@@ -368,9 +368,9 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	private boolean iceDemonActive = false;
 
 	@Getter
-	private final ArrayList<Integer> chestHighlightIdList = new ArrayList<>();
+	private final ArrayList<String> chestHighlightIdList = new ArrayList<>();
 	@Getter
-	private final ArrayList<Integer> chestHighlightIdList2 = new ArrayList<>();
+	private final ArrayList<String> chestHighlightIdList2 = new ArrayList<>();
 
 	@Getter
 	private boolean hotkeyHeld;
@@ -501,7 +501,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			{
 				try
 				{
-					chestHighlightIdList.add(Integer.valueOf(str.trim()));
+					chestHighlightIdList.add(str.trim());
 				}
 				catch (Exception ex)
 				{
@@ -517,7 +517,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			{
 				try
 				{
-					chestHighlightIdList2.add(Integer.valueOf(str.trim()));
+					chestHighlightIdList2.add(str.trim());
 				}
 				catch (Exception ex)
 				{
@@ -590,7 +590,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 						{
 							try
 							{
-								chestHighlightIdList.add(Integer.valueOf(str.trim()));
+								chestHighlightIdList.add(str.trim());
 							}
 							catch (Exception ex)
 							{
@@ -607,7 +607,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 						{
 							try
 							{
-								chestHighlightIdList2.add(Integer.valueOf(str.trim()));
+								chestHighlightIdList2.add(str.trim());
 							}
 							catch (Exception ex)
 							{

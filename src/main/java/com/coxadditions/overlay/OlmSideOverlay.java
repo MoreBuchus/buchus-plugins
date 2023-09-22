@@ -16,6 +16,7 @@ import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
+import net.runelite.client.util.ColorUtil;
 
 public class OlmSideOverlay extends Overlay
 {
@@ -44,13 +45,13 @@ public class OlmSideOverlay extends Overlay
 				switch (plugin.getOlmPhase())
 				{
 					case "Crystal":
-						color = Color.MAGENTA;
+						color = ColorUtil.colorWithAlpha(Color.MAGENTA, config.olmSideColor().getAlpha());
 						break;
 					case "Acid":
-						color = Color.GREEN;
+						color = ColorUtil.colorWithAlpha(Color.GREEN, config.olmSideColor().getAlpha());
 						break;
 					case "Flame":
-						color = Color.RED;
+						color = ColorUtil.colorWithAlpha(Color.RED, config.olmSideColor().getAlpha());
 						break;
 				}
 			}
@@ -66,7 +67,7 @@ public class OlmSideOverlay extends Overlay
 			Polygon poly = config.olmSide() == CoxAdditionsConfig.olmSideMode.CENTER_TILE ? Perspective.getCanvasTilePoly(client, lp) : Perspective.getCanvasTileAreaPoly(client, lp, 5);
 			if (poly != null)
 			{
-				graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 255));
+				graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()));
 				graphics.setStroke(new BasicStroke(1));
 				graphics.draw(poly);
 				graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 10));

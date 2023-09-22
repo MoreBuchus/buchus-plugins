@@ -177,17 +177,42 @@ public interface CoxAdditionsConfig extends Config
 		return Color.CYAN;
 	}
 
+	@Range(max = 255)
+	@ConfigItem(
+		name = "Olm Phase Fill Opacity",
+		keyName = "olmHighlightFill",
+		description = "Highlight fill opacity for Olm phase highlight",
+		position = 9,
+		section = olmSection
+	)
+	default int olmHighlightFill()
+	{
+		return 30;
+	}
+
 	@Range(min = 1, max = 5)
 	@ConfigItem(
 		name = "Olm Outline Width",
 		keyName = "olmThiCC",
 		description = "Outline width for Olm phase highlight",
-		position = 9,
+		position = 10,
 		section = olmSection
 	)
 	default double olmWidth()
 	{
 		return 2;
+	}
+
+	@ConfigItem(
+		name = "Olm Line Type",
+		keyName = "olmLines",
+		description = "Sets the tile outline to regular, dashed, or corners only for Olm",
+		position = 11,
+		section = olmSection
+	)
+	default lineType olmLines()
+	{
+		return lineType.REG;
 	}
 
 	//Room Section
@@ -264,10 +289,22 @@ public interface CoxAdditionsConfig extends Config
 	}
 
 	@ConfigItem(
+		name = "Anti-Aliasing",
+		keyName = "antiAlias",
+		description = "Turns on anti-aliasing for all overlays. Makes them smoother.",
+		position = 6,
+		section = roomSection
+	)
+	default boolean antiAlias()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		name = "—————— True Tile ——————",
 		keyName = "room divider",
 		description = "",
-		position = 6,
+		position = 7,
 		section = roomSection
 	)
 	void roomDivider();
@@ -276,7 +313,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "True Location List",
 		keyName = "tlList",
 		description = "NPC's in this list will be highlighted with true location. ONLY works with Cox bosses",
-		position = 7,
+		position = 8,
 		section = roomSection
 	)
 	default String tlList()
@@ -289,7 +326,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "True Location Width",
 		keyName = "tlThiCC",
 		description = "Outline width for true location highlight",
-		position = 8,
+		position = 9,
 		section = roomSection
 	)
 	default double tlThiCC()
@@ -297,23 +334,49 @@ public interface CoxAdditionsConfig extends Config
 		return 2;
 	}
 
+	@Alpha
 	@ConfigItem(
 		name = "True Location Color",
 		keyName = "tlColor",
 		description = "Highlight color for true location",
-		position = 9,
+		position = 10,
 		section = roomSection
 	)
 	default Color tlColor()
 	{
-		return new Color(207, 138, 253);
+		return new Color(207, 138, 253, 255);
+	}
+
+	@Alpha
+	@ConfigItem(
+		name = "True Location Fill Color",
+		keyName = "tlFillColor",
+		description = "Fill color for true location",
+		position = 11,
+		section = roomSection
+	)
+	default Color tlFillColor()
+	{
+		return new Color(207, 138, 253, 30);
+	}
+
+	@ConfigItem(
+		name = "True Tile Line Type",
+		keyName = "tileLines",
+		description = "Sets the true tile outline to regular, dashed, or corners only",
+		position = 12,
+		section = roomSection
+	)
+	default lineType tileLines()
+	{
+		return lineType.REG;
 	}
 
 	@ConfigItem(
 		name = "—————— Puzzle Rooms ——————",
 		keyName = "puzzle divider",
 		description = "",
-		position = 10,
+		position = 13,
 		section = roomSection
 	)
 	void puzzleDivider();
@@ -322,7 +385,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "chestGroupsHighlight",
 		name = "Highlight Grub Chests",
 		description = "CoX CM ONLY - Highlights groups of 4 chests",
-		position = 11,
+		position = 14,
 		section = roomSection
 	)
 	default Set<HighlightChestGroups> chestGroupsHighlight()
@@ -334,7 +397,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "chestGroupsHighlightStyle",
 		name = "Chest Highlight Style",
 		description = "Selects the highlight style for 'Highlight Grub Chests'",
-		position = 12,
+		position = 15,
 		section = roomSection
 	)
 	default GrubChestStyle chestGroupsHighlightStyle()
@@ -346,7 +409,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "grubsInfobox",
 		name = "Grubs Counter",
 		description = "Displays an infobox showing the total amount of cavern grubs collected. Works with party",
-		position = 13,
+		position = 16,
 		section = roomSection
 	)
 	default grubsMode grubsInfobox()
@@ -358,7 +421,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "grubsAmount",
 		name = "Grubs Amount",
 		description = "Set to the amount of grubs you/your team want to collect. The cavern grub counter's text will turn green when this number is reached.",
-		position = 14,
+		position = 17,
 		section = roomSection
 	)
 	default int grubsAmount()
@@ -370,7 +433,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Hotkey Swap Smash",
 		keyName = "hotkeySwapSmash",
 		description = "Switches attack and smash when holding the hotkey",
-		position = 15,
+		position = 18,
 		section = roomSection
 	)
 	default boolean hotkeySwapSmash()
@@ -382,7 +445,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "iceDemonHp",
 		name = "Ice Demon HP",
 		description = "Displays Ice Demon HP percent while lighting kindling",
-		position = 16,
+		position = 19,
 		section = roomSection
 	)
 	default boolean iceDemonHp()
@@ -394,7 +457,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "swapCoXKeystone",
 		name = "Left Click Drop Keystone",
 		description = "swaps use with drop for the keystone crystal at tightrope",
-		position = 17,
+		position = 20,
 		section = roomSection
 	)
 	default boolean swapCoXKeystone()
@@ -406,7 +469,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "—————— Combat Rooms ——————",
 		keyName = "combat divider",
 		description = "",
-		position = 18,
+		position = 21,
 		section = roomSection
 	)
 	void combatDivider();
@@ -415,7 +478,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Small Muttadile HP",
 		keyName = "smallMuttaHp",
 		description = "Displays the health percentage of small Muttadile while meat tree is alive",
-		position = 19,
+		position = 22,
 		section = roomSection
 	)
 	default boolean smallMuttaHp()
@@ -427,7 +490,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Vanguard HP Infobox",
 		keyName = "vangInfobox",
 		description = "Displays the hp left on each vanguard",
-		position = 20,
+		position = 23,
 		section = roomSection
 	)
 	default boolean vangInfobox()
@@ -439,7 +502,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "showPanel",
 		name = "Vanguard Overloads Overlay",
 		description = "Shows how many Overloads have been received from Vanguards. Works with party.",
-		position = 21,
+		position = 24,
 		section = roomSection
 	)
 	default boolean showPanel()
@@ -451,7 +514,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "overloadChatMessage",
 		name = "Overload Dropped Chat Message",
 		description = "Prints a chat message when a player receives an Overload from Vanguards. Works with party.",
-		position = 22,
+		position = 25,
 		section = roomSection
 	)
 	default boolean overloadChatMessage()
@@ -609,7 +672,7 @@ public interface CoxAdditionsConfig extends Config
 	@ConfigItem(
 		name = "Highlight Private Chest Items 1",
 		keyName = "highlightChestItems",
-		description = "Highlights items in the list in the storage chest. Must be ids.",
+		description = "Highlights items in the list in the storage chest. Can be names or ids.",
 		position = 14,
 		section = prepSection)
 	default String highlightChestItems()
@@ -632,7 +695,7 @@ public interface CoxAdditionsConfig extends Config
 	@ConfigItem(
 		name = "Highlight Private Chest Items 2",
 		keyName = "highlightChestItems2",
-		description = "Highlights items in the list in the storage chest. Must be ids.",
+		description = "Highlights items in the list in the storage chest. Can be names or ids.",
 		position = 16,
 		section = prepSection)
 	default String highlightChestItems2()
@@ -812,7 +875,8 @@ public interface CoxAdditionsConfig extends Config
 		HULL,
 		OUTLINE,
 		TILE,
-		CLICKBOX
+		CLICKBOX,
+		CORNERS
 	}
 
 	@Getter
@@ -847,6 +911,24 @@ public interface CoxAdditionsConfig extends Config
 		public String toString()
 		{
 			return name;
+		}
+	}
+
+	@Getter
+	@RequiredArgsConstructor
+	enum lineType
+	{
+		REG("Regular"),
+		DASH("Dashed"),
+		CORNER("Corners");
+
+		@Getter
+		private final String group;
+
+		@Override
+		public String toString()
+		{
+			return group;
 		}
 	}
 

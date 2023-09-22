@@ -101,22 +101,22 @@ public class CoxPrepOverlay extends OverlayPanel
 					elems.add(LineComponent.builder()
 						.leftColor(Color.WHITE)
 						.left("    Elders: ")
-						.rightColor(plugin.getTotalElders() >= (config.overloads() * 3) ? Color.GREEN : Color.WHITE)
-						.right(plugin.getTotalElders() + "/" + (config.overloads() * 3))
+						.rightColor(plugin.getTotalElders() >= config.overloads() ? Color.GREEN : Color.WHITE)
+						.right(plugin.getTotalElders() + "/" + config.overloads())
 						.build());
 
 					elems.add(LineComponent.builder()
 						.leftColor(Color.WHITE)
 						.left("    Twisteds: ")
-						.rightColor(plugin.getTotalTwisteds() >= (config.overloads() * 3) ? Color.GREEN : Color.WHITE)
-						.right(plugin.getTotalTwisteds() + "/" + (config.overloads() * 3))
+						.rightColor(plugin.getTotalTwisteds() >= config.overloads() ? Color.GREEN : Color.WHITE)
+						.right(plugin.getTotalTwisteds() + "/" + config.overloads())
 						.build());
 
 					elems.add(LineComponent.builder()
 						.leftColor(Color.WHITE)
 						.left("    Kodais: ")
-						.rightColor(plugin.getTotalKodais() >= (config.overloads() * 3) ? Color.GREEN : Color.WHITE)
-						.right(plugin.getTotalKodais() + "/" + (config.overloads() * 3))
+						.rightColor(plugin.getTotalKodais() >= config.overloads() ? Color.GREEN : Color.WHITE)
+						.right(plugin.getTotalKodais() + "/" + config.overloads())
 						.build());
 
 				}
@@ -124,8 +124,8 @@ public class CoxPrepOverlay extends OverlayPanel
 				elems.add(LineComponent.builder()
 					.leftColor(Color.WHITE)
 					.left("Noxifer: ")
-					.rightColor(plugin.getTotalNox() >= config.overloads() + config.extraNox() ? Color.GREEN : Color.WHITE)
-					.right(plugin.getTotalNox() + "/" + config.overloads() + config.extraNox())
+					.rightColor(plugin.getTotalNox() >= (config.overloads() + config.extraNox()) ? Color.GREEN : Color.WHITE)
+					.right(plugin.getTotalNox() + "/" + (config.overloads() + config.extraNox()))
 					.build());
 
 				if (config.showPots())

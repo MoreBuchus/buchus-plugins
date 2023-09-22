@@ -28,6 +28,7 @@ package com.coxadditions.overlay;
 import com.coxadditions.ChestGroup;
 import com.coxadditions.CoxAdditionsConfig;
 import com.coxadditions.CoxAdditionsPlugin;
+import java.awt.geom.Point2D;
 import net.runelite.api.Point;
 import net.runelite.api.*;
 import net.runelite.api.coords.LocalPoint;
@@ -38,6 +39,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.awt.*;
 import net.runelite.client.ui.overlay.outline.ModelOutlineRenderer;
+import net.runelite.client.util.ColorUtil;
 
 @Singleton
 public class CoxAdditionsOverlay extends Overlay
@@ -46,6 +48,7 @@ public class CoxAdditionsOverlay extends Overlay
 	private final CoxAdditionsPlugin plugin;
 	private final CoxAdditionsConfig config;
 	private final ModelOutlineRenderer modelOutlineRenderer;
+	private final Color NO_FILL = new Color(0, 0, 0, 0);
 
 	@Inject
 	private CoxAdditionsOverlay(final Client client, final CoxAdditionsPlugin plugin, final CoxAdditionsConfig config, final ModelOutlineRenderer modelOutlineRenderer)
@@ -181,7 +184,18 @@ public class CoxAdditionsOverlay extends Overlay
 							{
 								lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64);
 								Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
-								renderPoly(graphics, config.tlColor(), tilePoly, config.tlThiCC());
+								switch (config.tileLines())
+								{
+									case REG:
+										renderPoly(graphics, config.tlColor(), config.tlFillColor(), tilePoly, config.tlThiCC());
+										break;
+									case DASH:
+										renderPolygonDashed(graphics, config.tlColor(), config.tlFillColor(), tilePoly, config.tlThiCC(), size);
+										break;
+									case CORNER:
+										renderPolygonCorners(graphics, config.tlColor(), config.tlFillColor(), tilePoly, config.tlThiCC());
+										break;
+								}
 							}
 						}
 					}
@@ -199,19 +213,35 @@ public class CoxAdditionsOverlay extends Overlay
 					if (tilePoly != null)
 					{
 						Color color = config.olmHighlightColor();
+						Color fill = ColorUtil.colorWithAlpha(config.olmHighlightColor(), config.olmHighlightFill());
 						switch (plugin.getOlmPhase())
 						{
 							case "Crystal":
-								color = Color.MAGENTA;
+								color = ColorUtil.colorWithAlpha(Color.MAGENTA, config.olmHighlightColor().getAlpha());
+								fill = ColorUtil.colorWithAlpha(Color.MAGENTA, config.olmHighlightFill());
 								break;
 							case "Acid":
-								color = Color.GREEN;
+								color = ColorUtil.colorWithAlpha(Color.GREEN, config.olmHighlightColor().getAlpha());
+								fill = ColorUtil.colorWithAlpha(Color.GREEN, config.olmHighlightFill());
 								break;
 							case "Flame":
-								color = Color.RED;
+								color = ColorUtil.colorWithAlpha(Color.RED, config.olmHighlightColor().getAlpha());
+								fill = ColorUtil.colorWithAlpha(Color.RED, config.olmHighlightFill());
 								break;
 						}
-						renderPoly(graphics, color, tilePoly, config.olmWidth());
+
+						switch (config.olmLines())
+						{
+							case REG:
+								renderPoly(graphics, color, fill, tilePoly, config.olmWidth());
+								break;
+							case DASH:
+								renderPolygonDashed(graphics, color, fill, tilePoly, config.olmWidth(), size);
+								break;
+							case CORNER:
+								renderPolygonCorners(graphics, color, fill, tilePoly, config.olmWidth());
+								break;
+						}
 					}
 				}
 			}
@@ -243,7 +273,7 @@ public class CoxAdditionsOverlay extends Overlay
 												Shape hull = obj.getConvexHull();
 												if (hull != null)
 												{
-													renderPoly(graphics, cg.getColor(), hull, 2);
+													renderPoly(graphics, cg.getColor(), NO_FILL, hull, 2);
 												}
 												break;
 											case OUTLINE:
@@ -251,13 +281,17 @@ public class CoxAdditionsOverlay extends Overlay
 												break;
 											case TILE:
 												Polygon tilePoly = Perspective.getCanvasTilePoly(client, obj.getLocalLocation());
-												renderPoly(graphics, cg.getColor(), tilePoly, 2);
+												renderPoly(graphics, cg.getColor(), NO_FILL, tilePoly, 2);
+												break;
+											case CORNERS:
+												Polygon cornerPoly = Perspective.getCanvasTilePoly(client, obj.getLocalLocation());
+												renderPolygonCorners(graphics, cg.getColor(), NO_FILL, cornerPoly, 2);
 												break;
 											case CLICKBOX:
 												Shape clickbox = obj.getClickbox();
 												if (clickbox != null)
 												{
-													renderPoly(graphics, cg.getColor(), clickbox, 2);
+													renderPoly(graphics, cg.getColor(), NO_FILL, clickbox, 2);
 												}
 												break;
 										}
@@ -314,15 +348,81 @@ public class CoxAdditionsOverlay extends Overlay
 		return null;
 	}
 
-	private void renderPoly(Graphics2D graphics, Color color, Shape polygon, double width)
+	private void renderPoly(Graphics2D graphics, Color color, Color fill, Shape polygon, double width)
 	{
 		if (polygon != null)
 		{
+			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, config.antiAlias() ? RenderingHints.VALUE_ANTIALIAS_ON : RenderingHints.VALUE_ANTIALIAS_OFF);
 			graphics.setColor(color);
 			graphics.setStroke(new BasicStroke((float) width));
 			graphics.draw(polygon);
-			graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 0));
+			graphics.setColor(fill);
 			graphics.fill(polygon);
+		}
+	}
+
+	/**
+	 * Draws only the corners of tile highlights - Made by Geheur
+	 */
+	private void renderPolygonCorners(Graphics2D graphics, Color outlineColor, Color fillColor, Shape poly, double width)
+	{
+		if (poly instanceof Polygon)
+		{
+			Polygon p = (Polygon) poly;
+			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, config.antiAlias() ? RenderingHints.VALUE_ANTIALIAS_ON : RenderingHints.VALUE_ANTIALIAS_OFF);
+			graphics.setColor(outlineColor);
+			graphics.setStroke(new BasicStroke((float) width));
+
+			int divisor = 7;
+			for (int i = 0; i < p.npoints; i++)
+			{
+				int ptx = p.xpoints[i];
+				int pty = p.ypoints[i];
+				int prev = (i - 1) < 0 ? 3 : (i - 1);
+				int next = (i + 1) > 3 ? 0 : (i + 1);
+				int ptxN = ((p.xpoints[next]) - ptx) / divisor + ptx;
+				int ptyN = ((p.ypoints[next]) - pty) / divisor + pty;
+				int ptxP = ((p.xpoints[prev]) - ptx) / divisor + ptx;
+				int ptyP = ((p.ypoints[prev]) - pty) / divisor + pty;
+				graphics.drawLine(ptx, pty, ptxN, ptyN);
+				graphics.drawLine(ptx, pty, ptxP, ptyP);
+			}
+
+			graphics.setColor(fillColor);
+			graphics.fill(poly);
+		}
+	}
+
+	/**
+	 * Draws the corners and dashed lines along each side of tile highlights - Made by Geheur
+	 */
+	private void renderPolygonDashed(Graphics2D graphics, Color outlineColor, Color fillColor, Shape poly, double width, int tiles)
+	{
+		if (poly instanceof Polygon)
+		{
+			Polygon p = (Polygon) poly;
+			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, config.antiAlias() ? RenderingHints.VALUE_ANTIALIAS_ON : RenderingHints.VALUE_ANTIALIAS_OFF);
+			graphics.setColor(outlineColor);
+			graphics.setStroke(new BasicStroke((float) width));
+
+			int divisor = 7 * tiles;
+			for (int i = 0; i < p.npoints; i++)
+			{
+				int ptx = p.xpoints[i];
+				int pty = p.ypoints[i];
+				int next = (i + 1) > 3 ? 0 : (i + 1);
+				int ptxN = (p.xpoints[next]) - ptx;
+				int ptyN = (p.ypoints[next]) - pty;
+				float length = (float) Point2D.distance(ptx, pty, ptx + ptxN, pty + ptyN);
+				float dashLength = length * 2f / divisor;
+				float spaceLength = length * 5f / divisor;
+				Stroke s = new BasicStroke((float) width, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10, new float[]{dashLength, spaceLength}, dashLength / 2);
+				graphics.setStroke(s);
+				graphics.drawLine(ptx, pty, ptx + ptxN, pty + ptyN);
+			}
+
+			graphics.setColor(fillColor);
+			graphics.fill(poly);
 		}
 	}
 }
