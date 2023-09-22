@@ -51,7 +51,7 @@ public class NexDimmerOverlay extends Overlay
 		this.config = config;
 		this.client = client;
 		setPosition(OverlayPosition.DYNAMIC);
-		setPriority(OverlayPriority.HIGH);
+		setPriority(OverlayPriority.LOW);
 		setLayer(OverlayLayer.ABOVE_SCENE);
 	}
 
