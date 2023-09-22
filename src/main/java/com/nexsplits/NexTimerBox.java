@@ -1,7 +1,6 @@
 package com.nexsplits;
 
 import com.nexsplits.config.KillTimerMode;
-import com.nexsplits.config.PhaseNameTypeMode;
 import lombok.Getter;
 import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.infobox.InfoBox;
@@ -48,6 +47,6 @@ public class NexTimerBox extends InfoBox
 	@Override
 	public boolean render()
 	{
-		return (config.killTimer() == KillTimerMode.INFOBOX || config.killTimer() == KillTimerMode.BOTH) && plugin.inNexRegion();
+		return (config.killTimer() == KillTimerMode.INFOBOX || config.killTimer() == KillTimerMode.BOTH) && plugin.inNexBossArea();
 	}
 }

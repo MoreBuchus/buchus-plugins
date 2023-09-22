@@ -82,7 +82,7 @@ public class NexSplitsOverlay extends OverlayPanel
 				break;
 		}
 
-		if ((config.killTimer() == KillTimerMode.OVERLAY || config.killTimer() == KillTimerMode.BOTH) && plugin.inNexRegion() && plugin.getStartTick() > -1)
+		if ((config.killTimer() == KillTimerMode.OVERLAY || config.killTimer() == KillTimerMode.BOTH) && plugin.inNexBossArea() && plugin.getStartTick() > -1)
 		{
 			if (!config.overlayInfo().isEmpty())
 			{

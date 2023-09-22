@@ -41,6 +41,7 @@ import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
 import net.runelite.client.config.ConfigSection;
+import net.runelite.client.config.Range;
 
 @ConfigGroup(NexSplitsConfig.GROUP)
 public interface NexSplitsConfig extends Config
@@ -232,5 +233,17 @@ public interface NexSplitsConfig extends Config
 	default CoughMode replaceCough()
 	{
 		return CoughMode.OFF;
+	}
+
+	@Range(min = 0, max = 255)
+	@ConfigItem(
+		keyName = "nexDimmer",
+		name = "Nex Region Dimmer",
+		description = "Saves your eyes while hard grinding. Does nothing if 0",
+		position = 97
+	)
+	default int nexDimmer()
+	{
+		return 0;
 	}
 }

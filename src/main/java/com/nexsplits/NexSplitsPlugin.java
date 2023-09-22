@@ -77,6 +77,9 @@ public class NexSplitsPlugin extends Plugin
 	private NexSplitsOverlay overlay;
 
 	@Inject
+	private NexDimmerOverlay dimmer;
+
+	@Inject
 	private OverlayManager overlayManager;
 
 	@Inject
@@ -143,6 +146,7 @@ public class NexSplitsPlugin extends Plugin
 		reset();
 		resetTimes();
 		overlayManager.add(overlay);
+		overlayManager.add(dimmer);
 
 		if (!TIMES_DIR.exists())
 		{
@@ -156,6 +160,7 @@ public class NexSplitsPlugin extends Plugin
 		reset();
 		resetTimes();
 		overlayManager.remove(overlay);
+		overlayManager.remove(dimmer);
 		infoBoxManager.removeInfoBox(timerBox);
 	}
 
@@ -189,7 +194,7 @@ public class NexSplitsPlugin extends Plugin
 		{
 			if (e.getKey().equals("killTimer"))
 			{
-				if ((config.killTimer() == KillTimerMode.INFOBOX || config.killTimer() == KillTimerMode.BOTH) && inNexRegion() && startTick > -1)
+				if ((config.killTimer() == KillTimerMode.INFOBOX || config.killTimer() == KillTimerMode.BOTH) && inNexBossArea() && startTick > -1)
 				{
 					infoBoxManager.removeInfoBox(timerBox);
 					BufferedImage image = itemManager.getImage(ItemID.NEXLING);
@@ -207,7 +212,7 @@ public class NexSplitsPlugin extends Plugin
 	@Subscribe
 	private void onGameStateChanged(GameStateChanged e)
 	{
-		if (client.getLocalPlayer() != null && !inNexRegion())
+		if (client.getLocalPlayer() != null && !inNexBossArea())
 		{
 			resetTimes();
 			infoBoxManager.removeInfoBox(timerBox);
@@ -217,7 +222,7 @@ public class NexSplitsPlugin extends Plugin
 	@Subscribe(priority = -10.0f)
 	public void onOverheadTextChanged(OverheadTextChanged e)
 	{
-		if (config.replaceCough() != CoughMode.OFF && inNexRegion())
+		if (config.replaceCough() != CoughMode.OFF && inNexBossArea())
 		{
 			if (e.getActor() instanceof Player)
 			{
@@ -527,6 +532,12 @@ public class NexSplitsPlugin extends Plugin
 	public boolean inNexRegion()
 	{
 		LocalPoint player = client.getLocalPlayer().getLocalLocation();
-		return client.isInInstancedRegion() && Arrays.stream(nexRegions).anyMatch(r -> WorldPoint.fromLocalInstance(client, player).getRegionID() == r);
+		return client.isInInstancedRegion() ? Arrays.stream(nexRegions).anyMatch(r -> WorldPoint.fromLocalInstance(client, player).getRegionID() == r)
+			: Arrays.stream(nexRegions).anyMatch(r -> WorldPoint.fromLocal(client, player).getRegionID() == r) ;
+	}
+
+	public boolean inNexBossArea()
+	{
+		return client.isInInstancedRegion() && inNexRegion();
 	}
 }
