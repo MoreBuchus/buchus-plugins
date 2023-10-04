@@ -92,8 +92,7 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 			}
 
 			// Allows notifications to appear in chat if the chat box is open.
-			boolean hidden = client.getVarcIntValue(41) == 1337;
-			if (config.notifyWithOpenChat() && !hidden)
+			if (config.notifyWithOpenChat() && !isChatClosed())
 			{
 				return;
 			}
@@ -151,10 +150,15 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 				e.consume();
 			}
 
-			clientThread.invokeLater(() -> {
-				//Opens chatbox to the selected tab
-				client.runScript(175, 1, config.defaultTab().getTab());
-			});
+			if (isChatClosed()) 
+			{
+				clientThread.invokeLater(() -> client.runScript(175, 1, config.defaultTab().getTab());
+			}
+			else
+			{
+				var tabToClose = getChatboxId();
+				clientThread.invokeLater(() -> client.runScript(175, 1, tabToClose);
+			}
 		}
 	}
 
@@ -165,6 +169,16 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 		{
 			consumeKeys = false;
 		}
+	}
+
+	private boolean isChatClosed()
+	{
+		return client.getVarcIntValue(41) == 1337;
+	}
+
+	private int getChatboxId()
+	{
+		return client.getVarcIntValue(41);
 	}
 }
 
