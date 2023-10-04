@@ -152,12 +152,12 @@ public class ToggleChatPlugin extends Plugin implements KeyListener
 
 			if (isChatClosed()) 
 			{
-				clientThread.invokeLater(() -> client.runScript(175, 1, config.defaultTab().getTab());
+				clientThread.invokeLater(() -> client.runScript(175, 1, config.defaultTab().getTab()));
 			}
 			else
 			{
-				var tabToClose = getChatboxId();
-				clientThread.invokeLater(() -> client.runScript(175, 1, tabToClose);
+				int tabToClose = getChatboxId();
+				clientThread.invokeLater(() -> client.runScript(175, 1, tabToClose));
 			}
 		}
 	}
