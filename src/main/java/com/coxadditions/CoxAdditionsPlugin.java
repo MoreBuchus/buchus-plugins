@@ -106,8 +106,7 @@ import java.util.function.Predicate;
 @PluginDescriptor(
 	name = "CoX Additions",
 	description = "Additional plugins for the Chambers of Xeric",
-	tags = {"xeric", "olm", "chambers", "cox", "buchus"},
-	enabledByDefault = false
+	tags = {"xeric", "olm", "chambers", "cox", "buchus"}
 )
 @Slf4j
 public class CoxAdditionsPlugin extends Plugin implements KeyListener
