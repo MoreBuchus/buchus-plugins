@@ -43,8 +43,7 @@ import java.awt.event.KeyEvent;
 @PluginDescriptor(
 	name = "Toggle Chat",
 	description = "Uses a hotkey to open/close chat",
-	tags = {"hotkey", "toggle", "chat"},
-	enabledByDefault = false
+	tags = {"hotkey", "toggle", "chat"}
 )
 public class ToggleChatPlugin extends Plugin implements KeyListener
 {
