@@ -33,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -69,6 +70,8 @@ import net.runelite.client.party.WSClient;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDependency;
 import net.runelite.client.plugins.PluginDescriptor;
+import net.runelite.client.plugins.PluginInstantiationException;
+import net.runelite.client.plugins.PluginManager;
 import net.runelite.client.plugins.party.PartyPlugin;
 import net.runelite.client.plugins.specialcounter.SpecialCounterUpdate;
 import net.runelite.client.plugins.specialcounter.SpecialWeapon;
@@ -109,6 +112,9 @@ public class DefenceTrackerPlugin extends Plugin
 
 	@Inject
 	private ItemManager itemManager;
+
+	@Inject
+	private PluginManager pluginManager;
 
 	@Inject
 	private InfoBoxManager infoBoxManager;
@@ -179,6 +185,8 @@ public class DefenceTrackerPlugin extends Plugin
 	protected void startUp() throws Exception
 	{
 		reset();
+		enableRequiredPlugins("Party");
+		enableRequiredPlugins("Special Attack Counter");
 		wsClient.registerMessage(DefenceTrackerUpdate.class);
 	}
 
@@ -508,59 +516,71 @@ public class DefenceTrackerPlugin extends Plugin
 
 	private void calculateDefence(SpecialWeapon weapon, int hit)
 	{
-		if (weapon == SpecialWeapon.DRAGON_WARHAMMER)
+		switch (weapon)
 		{
-			if (hit == 0)
-			{
-				if (client.getVarbitValue(Varbits.IN_RAID) == 1 && boss.equalsIgnoreCase("Tekton"))
+			case DRAGON_WARHAMMER:
+				if (hit == 0)
 				{
-					bossDef -= bossDef * .05;
-				}
-			}
-			else
-			{
-				bossDef -= bossDef * .30;
-			}
-		}
-		else if (weapon == SpecialWeapon.BANDOS_GODSWORD)
-		{
-			if (hit == 0)
-			{
-				if (client.getVarbitValue(Varbits.IN_RAID) == 1 && boss.equalsIgnoreCase("Tekton"))
-				{
-					bossDef -= 10;
-				}
-			}
-			else
-			{
-				if (boss.equalsIgnoreCase("Corporeal Beast") || (inBossRegion() && boss.equalsIgnoreCase("Pestilent Bloat") && !bloatDown))
-				{
-					bossDef -= hit * 2;
+					if (client.getVarbitValue(Varbits.IN_RAID) == 1 && boss.equalsIgnoreCase("Tekton"))
+					{
+						bossDef -= bossDef * .05;
+					}
 				}
 				else
 				{
-					bossDef -= hit;
+					bossDef -= bossDef * .30;
 				}
-			}
-		}
-		else if ((weapon == SpecialWeapon.ARCLIGHT || weapon == SpecialWeapon.DARKLIGHT) && hit > 0)
-		{
-			if (boss.equalsIgnoreCase("K'ril Tsutsaroth") || boss.equalsIgnoreCase("Abyssal Sire"))
-			{
-				bossDef -= BossInfo.getBaseDefence(boss) * .10;
-			}
-			else
-			{
-				bossDef -= BossInfo.getBaseDefence(boss) * .05;
-			}
-		}
-		else if (weapon == SpecialWeapon.BARRELCHEST_ANCHOR)
-		{
-			bossDef -= hit * .10;
-		}
-		else if (weapon == SpecialWeapon.BONE_DAGGER || weapon == SpecialWeapon.DORGESHUUN_CROSSBOW)
-		{
-			bossDef -= hit;
+				break;
+			case BANDOS_GODSWORD:
+				if (hit == 0)
+				{
+					if (client.getVarbitValue(Varbits.IN_RAID) == 1 && boss.equalsIgnoreCase("Tekton"))
+					{
+						bossDef -= 10;
+					}
+				}
+				else
+				{
+					if (boss.equalsIgnoreCase("Corporeal Beast") || (inBossRegion() && boss.equalsIgnoreCase("Pestilent Bloat") && !bloatDown))
+					{
+						bossDef -= hit * 2;
+					}
+					else
+					{
+						bossDef -= hit;
+					}
+				}
+				break;
+			case ARCLIGHT:
+			case DARKLIGHT:
+				if (hit > 0)
+				{
+					if (boss.equalsIgnoreCase("K'ril Tsutsaroth") || boss.equalsIgnoreCase("Abyssal Sire"))
+					{
+						bossDef -= BossInfo.getBaseDefence(boss) * .10;
+					}
+					else
+					{
+						bossDef -= BossInfo.getBaseDefence(boss) * .05;
+					}
+				}
+				break;
+			case BARRELCHEST_ANCHOR:
+				bossDef -= hit * .10;
+				break;
+			case BONE_DAGGER:
+			case DORGESHUUN_CROSSBOW:
+				bossDef -= hit;
+				break;
+			case ACCURSED_SCEPTRE:
+				if (hit > 0)
+				{
+					if (bossDef > (BossInfo.getBaseDefence(boss) * .85))
+					{
+						bossDef = BossInfo.getBaseDefence(boss) * .85;
+					}
+				}
+				break;
 		}
 
 		if (boss.equalsIgnoreCase("Sotetseg") && bossDef < 100)
@@ -612,5 +632,22 @@ public class DefenceTrackerPlugin extends Plugin
 	public boolean isInCoxLobby()
 	{
 		return client.getMapRegions() != null && client.getMapRegions().length > 0 && Arrays.stream(client.getMapRegions()).anyMatch((s) -> s == 4919);
+	}
+
+	public void enableRequiredPlugins(String pluginName)
+	{
+		try
+		{
+			final Optional<Plugin> plugin = pluginManager.getPlugins().stream().filter(p -> p.getName().equals(pluginName)).findFirst();
+			if (plugin.isPresent() && !pluginManager.isPluginEnabled(plugin.get()))
+			{
+				pluginManager.setPluginEnabled(plugin.get(), true);
+				pluginManager.startPlugin(plugin.get());
+			}
+		}
+		catch (PluginInstantiationException ex)
+		{
+			log.error("error starting " + pluginName + " plugin", ex);
+		}
 	}
 }
