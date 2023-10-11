@@ -173,12 +173,15 @@ public class BetterNpcHighlightOverlay extends Overlay
 					closestNPCs = new ArrayList<>();
 					for (NPCInfo npcInfo : plugin.npcList)
 					{
-						for (String str : plugin.beneathNPCs)
+						if (!npcInfo.getNpc().isDead() && !npcUtil.isDying(npcInfo.getNpc()))
 						{
-							if (npcInfo.getNpc().getName() != null && WildcardMatcher.matches(str, npcInfo.getNpc().getName().toLowerCase()))
+							for (String str : plugin.beneathNPCs)
 							{
-								closestNPCs.add(npcInfo);
-								break;
+								if (npcInfo.getNpc().getName() != null && WildcardMatcher.matches(str, npcInfo.getNpc().getName().toLowerCase()))
+								{
+									closestNPCs.add(npcInfo);
+									break;
+								}
 							}
 						}
 					}
