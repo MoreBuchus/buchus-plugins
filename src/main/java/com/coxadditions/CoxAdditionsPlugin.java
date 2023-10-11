@@ -32,8 +32,12 @@ import com.coxadditions.overlay.InstanceTimerOverlay;
 import com.coxadditions.overlay.OlmHpPanelOverlay;
 import com.coxadditions.overlay.OlmPhasePanel;
 import com.coxadditions.overlay.OlmSideOverlay;
+import com.coxadditions.overlay.RaidsPotsStatusOverlay;
 import com.coxadditions.overlay.VangPotsOverlay;
 import com.coxadditions.overlay.VanguardInfoBox;
+import com.coxadditions.party.PartyGrubsUpdate;
+import com.coxadditions.party.PartyOverloadUpdate;
+import com.coxadditions.party.PartyRaidsPotsUpdate;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Provides;
@@ -87,6 +91,7 @@ import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.party.PartyService;
 import net.runelite.client.party.WSClient;
+import net.runelite.client.party.events.UserPart;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.FontManager;
@@ -151,6 +156,9 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 
 	@Inject
 	private CoxPrepOverlay prepOverlay;
+
+	@Inject
+	private RaidsPotsStatusOverlay raidsPotsStatusOverlay;
 
 	@Inject
 	private InfoBoxManager infoBoxManager;
@@ -263,7 +271,21 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	@Getter
 	private int enhRegenRate = 0;
 	@Getter
+	private final int enhVar = 5417;
+	@Getter
 	private EnhanceInfobox enhanceInfobox;
+
+	//Overload
+	@Getter
+	private int overloadTicks = -1;
+	@Getter
+	private int totalOvlCycles = 0;
+	@Getter
+	private final int ovlVar = 5418;
+
+	//Party Pots
+	@Getter
+	private final ArrayList<RaidsPlayers> playersInParty = new ArrayList<>();
 
 	//Instance Timer
 	@Getter
@@ -389,6 +411,8 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 
 	private void reset()
 	{
+		playersInParty.clear();
+
 		coxHerb1 = null;
 		coxHerbTimer1 = 16;
 		coxHerb2 = null;
@@ -533,6 +557,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		keyManager.registerKeyListener(this);
 		wsClient.registerMessage(PartyOverloadUpdate.class);
 		wsClient.registerMessage(PartyGrubsUpdate.class);
+		wsClient.registerMessage(PartyRaidsPotsUpdate.class);
 		overlayManager.add(overlay);
 		overlayManager.add(olmSideOverlay);
 		overlayManager.add(vanguardInfobox);
@@ -543,6 +568,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		overlayManager.add(vangPotsOverlay);
 		overlayManager.add(phasePanel);
 		overlayManager.add(prepOverlay);
+		overlayManager.add(raidsPotsStatusOverlay);
 	}
 
 	@Override
@@ -553,6 +579,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		keyManager.unregisterKeyListener(this);
 		wsClient.unregisterMessage(PartyOverloadUpdate.class);
 		wsClient.unregisterMessage(PartyGrubsUpdate.class);
+		wsClient.unregisterMessage(PartyRaidsPotsUpdate.class);
 		overlayManager.remove(overlay);
 		overlayManager.remove(olmSideOverlay);
 		overlayManager.remove(vanguardInfobox);
@@ -563,6 +590,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		overlayManager.remove(vangPotsOverlay);
 		overlayManager.remove(phasePanel);
 		overlayManager.remove(prepOverlay);
+		overlayManager.remove(raidsPotsStatusOverlay);
 	}
 
 	@Subscribe
@@ -640,6 +668,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				case "overlayFontName":
 				case "overlayFontSize":
 				case "overlayFontWeight":
+				case "overlayFontBackground":
 					loadFont(true);
 					break;
 				case "panelFontType":
@@ -752,15 +781,49 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				}
 			}
 
-			if (client.getVarbitValue(5417) > 0)
+			if (client.getVarbitValue(enhVar) > 0)
 			{
 				addInfobox("Enhance");
 			}
-			else if (client.getVarbitValue(5417) == 0)
+			else if (client.getVarbitValue(enhVar) == 0)
 			{
 				removeInfobox("Enhance");
 			}
 			enhanceTicks--;
+			overloadTicks--;
+
+			if (client.getLocalPlayer() != null)
+			{
+				if (partyService.isInParty() && partyService.getLocalMember() != null)
+				{
+					//Handle pot data on game tick to not flood party with updates every game tick
+					for (RaidsPlayers raider : playersInParty)
+					{
+						if (raider.isOvlActive())
+						{
+							raider.updatePotStatus("OVL", raider.getOvlTicks() - 1);
+							if (raider.getOvlTicks() < 0)
+							{
+								raider.setOvlActive(false);
+							}
+						}
+
+						if (raider.isEnhActive())
+						{
+							raider.updatePotStatus("ENH", raider.getEnhTicks() - 1);
+							if (raider.getEnhTicks() < 0)
+							{
+								raider.setEnhActive(false);
+							}
+						}
+					}
+					playersInParty.removeIf(p -> !p.isEnhActive() && !p.isOvlActive());
+				}
+				else if (!partyService.isInParty() && !playersInParty.isEmpty())
+				{
+					playersInParty.clear();
+				}
+			}
 
 			inPrep = room() == InstanceTemplates.RAIDS_FARMING || room() == InstanceTemplates.RAIDS_FARMING2;
 			inThieving = room() == InstanceTemplates.RAIDS_THIEVING;
@@ -783,6 +846,60 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				instanceTimer = 3;
 			}
 		}
+	}
+
+	public void sendPotStatusInfo(int ticks, String pot)
+	{
+		if (partyService.isInParty() && partyService.getLocalMember() != null)
+		{
+			partyService.send(new PartyRaidsPotsUpdate(ticks, pot));
+		}
+	}
+
+	//Add/Update party members to/in the list
+	private void addRaidersInParty(long memberID, String memberName, int ticks, String pot)
+	{
+		if (!memberName.equals("<unknown>"))
+		{
+			if (playersInParty.stream().noneMatch(p -> p.getId() == memberID && p.getPlayer().equals(memberName)))
+			{
+				RaidsPlayers raider = new RaidsPlayers(memberName, memberID);
+				raider.updatePotStatus(pot, ticks);
+				playersInParty.add(raider);
+			}
+			else
+			{
+				playersInParty.stream().filter(p -> p.getId() == memberID && p.getPlayer().equals(memberName)).findFirst().ifPresent(rp -> rp.updatePotStatus(pot, ticks));
+			}
+		}
+	}
+
+	@Subscribe
+	public void onPartyRaidsPotsUpdate(PartyRaidsPotsUpdate e)
+	{
+		//Only update for players that are not the local player
+		if (partyService.getLocalMember().getMemberId() != e.getMemberId())
+		{
+			String name = partyService.getMemberById(e.getMemberId()).getDisplayName();
+			if (name != null)
+			{
+				if (e.getTicks() == -73 && e.getPot().equals("DEAD"))
+				{
+					playersInParty.removeIf(p -> p.getId() == e.getMemberId());
+				}
+				else
+				{
+					addRaidersInParty(e.getMemberId(), name, e.getTicks(), e.getPot());
+				}
+			}
+		}
+	}
+
+	@Subscribe
+	public void onUserPart(final UserPart e)
+	{
+		//Name is unknown if the player is not logged in -> use ID
+		playersInParty.removeIf(p -> p.getId() == e.getMemberId());
 	}
 
 	@Subscribe
@@ -1131,25 +1248,35 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	@Subscribe
 	private void onActorDeath(ActorDeath e)
 	{
-		if (inRaid && e.getActor() instanceof NPC)
+		if (inRaid)
 		{
-			NPC npc = (NPC) e.getActor();
-
-			if (npc.getName() != null)
+			if (e.getActor() instanceof NPC)
 			{
-				if (npc.getName().toLowerCase().contains("great olm (left claw)"))
+				NPC npc = (NPC) e.getActor();
+
+				if (npc.getName() != null)
 				{
-					meleeHand = null;
-					meleeHandHp = 600;
-					meleeHandLastHealthScale = 100;
-					meleeHandLastRatio = 100;
+					if (npc.getName().toLowerCase().contains("great olm (left claw)"))
+					{
+						meleeHand = null;
+						meleeHandHp = 600;
+						meleeHandLastHealthScale = 100;
+						meleeHandLastRatio = 100;
+					}
+					else if (npc.getName().toLowerCase().contains("great olm (right claw)"))
+					{
+						mageHand = null;
+						mageHandHp = 600;
+						mageHandLastHealthScale = 100;
+						mageHandLastRatio = 100;
+					}
 				}
-				else if (npc.getName().toLowerCase().contains("great olm (right claw)"))
+			}
+			else if (e.getActor() instanceof Player)
+			{
+				if (e.getActor().getName() != null && e.getActor().getName().equals(client.getLocalPlayer().getName()))
 				{
-					mageHand = null;
-					mageHandHp = 600;
-					mageHandLastHealthScale = 100;
-					mageHandLastRatio = 100;
+					sendPotStatusInfo(-73, "DEAD");
 				}
 			}
 		}
@@ -1273,7 +1400,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 
 	public int getMaxEnhanceCycles()
 	{
-		return (int) Math.floor((float)(client.getRealSkillLevel(Skill.PRAYER) / 2) + 31);
+		return (int) Math.floor((float) (client.getRealSkillLevel(Skill.PRAYER) / 2) + 31);
 	}
 
 	public int getEnhanceRegenRate()
@@ -1288,13 +1415,20 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 
 		if (inRaid)
 		{
-			if ((client.getVarbitValue(5417) > 0 && totalEnhCycles == 0) || (client.getVarbitValue(5417) != totalEnhCycles))
+			if ((client.getVarbitValue(enhVar) > 0 && totalEnhCycles == 0) || (client.getVarbitValue(enhVar) != totalEnhCycles))
 			{
 				maxEnhCycles = getMaxEnhanceCycles();
 				enhRegenRate = getEnhanceRegenRate();
-				totalEnhCycles = client.getVarbitValue(5417);
-				enhanceTicks = client.getVarbitValue(5417) * getEnhanceRegenRate();
+				totalEnhCycles = client.getVarbitValue(enhVar);
+				enhanceTicks = client.getVarbitValue(enhVar) * getEnhanceRegenRate();
 				addInfobox("Enhance");
+				sendPotStatusInfo(enhanceTicks, "ENH");
+			}
+			else if ((client.getVarbitValue(ovlVar) > 0 && totalOvlCycles == 0) || (client.getVarbitValue(ovlVar) != totalOvlCycles))
+			{
+				totalOvlCycles = client.getVarbitValue(ovlVar);
+				overloadTicks = client.getVarbitValue(ovlVar) * 25;
+				sendPotStatusInfo(overloadTicks, "OVL");
 			}
 			else
 			{
@@ -1310,6 +1444,8 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		}
 		else
 		{
+			playersInParty.clear();
+
 			meleeHand = null;
 			mageHand = null;
 			meleeHandHp = 600;

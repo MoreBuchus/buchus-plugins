@@ -148,12 +148,33 @@ public class CoxHPOverlay extends Overlay
 
 		if (point != null)
 		{
-			Point pointShadow = new Point(point.getX() + 1, point.getY() + 1);
 			Font oldFont = graphics.getFont();
 			graphics.setFont(plugin.getOverlayFont());
-			OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
+			drawTextBackground(graphics, point, text);
 			OverlayUtil.renderTextLocation(graphics, point, text, percent ? getHPColor(health) : getHPColor((float) ratio / 600 * 100));
 			graphics.setFont(oldFont);
+		}
+	}
+
+	private void drawTextBackground(Graphics2D graphics, Point textLoc, String text)
+	{
+		switch (config.overlayFontBackground())
+		{
+			case OUTLINE:
+			{
+				OverlayUtil.renderTextLocation(graphics, new Point(textLoc.getX(), textLoc.getY() + 1), text, Color.BLACK);
+				OverlayUtil.renderTextLocation(graphics, new Point(textLoc.getX(), textLoc.getY() - 1), text, Color.BLACK);
+				OverlayUtil.renderTextLocation(graphics, new Point(textLoc.getX() + 1, textLoc.getY()), text, Color.BLACK);
+				OverlayUtil.renderTextLocation(graphics, new Point(textLoc.getX() - 1, textLoc.getY()), text, Color.BLACK);
+				break;
+			}
+			case SHADOW:
+			{
+				OverlayUtil.renderTextLocation(graphics, new Point(textLoc.getX() + 1, textLoc.getY() + 1), text, Color.BLACK);
+				break;
+			}
+			default:
+				break;
 		}
 	}
 }

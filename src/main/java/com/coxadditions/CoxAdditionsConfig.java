@@ -69,7 +69,9 @@ public interface CoxAdditionsConfig extends Config
 	)
 	String fontSection = "font";
 
-	//Olm Section
+	//------------------------------------------------------------//
+	// Olm Section
+	//------------------------------------------------------------//
 	@ConfigItem(
 		name = "Olm Side Highlight",
 		keyName = "olmSide",
@@ -215,7 +217,9 @@ public interface CoxAdditionsConfig extends Config
 		return lineType.REG;
 	}
 
-	//Room Section
+	//------------------------------------------------------------//
+	// Room Section
+	//------------------------------------------------------------//
 	@ConfigItem(
 		name = "Instance Timer",
 		keyName = "instanceTimer",
@@ -277,7 +281,7 @@ public interface CoxAdditionsConfig extends Config
 	}
 
 	@ConfigItem(
-		name = "Detailed Prayer Enhance",
+		name = "Prayer Enh. Timer",
 		keyName = "detailedPrayerEnhance",
 		description = "Displays a detailed prayer enhance timer in CoX",
 		position = 5,
@@ -289,10 +293,46 @@ public interface CoxAdditionsConfig extends Config
 	}
 
 	@ConfigItem(
+		name = "Raids Pots Status Overlay",
+		keyName = "raidsPotsStatusOverlay",
+		description = "Displays how many overload and enhance ticks each player has left. Must be in party to see other players",
+		position = 6,
+		section = roomSection
+	)
+	default boolean raidsPotsStatusOverlay()
+	{
+		return false;
+	}
+
+	@ConfigItem(
+		name = "Pots Height",
+		keyName = "raidsPotsHeight",
+		description = "The height at which to display the Raids Pots Status Overlay",
+		position = 7,
+		section = roomSection
+	)
+	default RaidsPotsLoc raidsPotsHeight()
+	{
+		return RaidsPotsLoc.CENTER;
+	}
+
+	@ConfigItem(
+		name = "Raids Pots Icon Size",
+		keyName = "raidsPotsIconSize",
+		description = "Changes the size of the raids pots icon",
+		position = 8,
+		section = roomSection
+	)
+	default int raidsPotsIconSize()
+	{
+		return 15;
+	}
+
+	@ConfigItem(
 		name = "Anti-Aliasing",
 		keyName = "antiAlias",
 		description = "Turns on anti-aliasing for all overlays. Makes them smoother.",
-		position = 6,
+		position = 9,
 		section = roomSection
 	)
 	default boolean antiAlias()
@@ -304,7 +344,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "—————— True Tile ——————",
 		keyName = "room divider",
 		description = "",
-		position = 7,
+		position = 10,
 		section = roomSection
 	)
 	void roomDivider();
@@ -313,7 +353,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "True Location List",
 		keyName = "tlList",
 		description = "NPC's in this list will be highlighted with true location. ONLY works with Cox bosses",
-		position = 8,
+		position = 11,
 		section = roomSection
 	)
 	default String tlList()
@@ -326,7 +366,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "True Location Width",
 		keyName = "tlThiCC",
 		description = "Outline width for true location highlight",
-		position = 9,
+		position = 12,
 		section = roomSection
 	)
 	default double tlThiCC()
@@ -339,7 +379,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "True Location Color",
 		keyName = "tlColor",
 		description = "Highlight color for true location",
-		position = 10,
+		position = 13,
 		section = roomSection
 	)
 	default Color tlColor()
@@ -352,7 +392,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "True Location Fill Color",
 		keyName = "tlFillColor",
 		description = "Fill color for true location",
-		position = 11,
+		position = 14,
 		section = roomSection
 	)
 	default Color tlFillColor()
@@ -364,7 +404,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "True Tile Line Type",
 		keyName = "tileLines",
 		description = "Sets the true tile outline to regular, dashed, or corners only",
-		position = 12,
+		position = 15,
 		section = roomSection
 	)
 	default lineType tileLines()
@@ -376,7 +416,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "—————— Puzzle Rooms ——————",
 		keyName = "puzzle divider",
 		description = "",
-		position = 13,
+		position = 16,
 		section = roomSection
 	)
 	void puzzleDivider();
@@ -385,7 +425,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "chestGroupsHighlight",
 		name = "Highlight Grub Chests",
 		description = "CoX CM ONLY - Highlights groups of 4 chests",
-		position = 14,
+		position = 17,
 		section = roomSection
 	)
 	default Set<HighlightChestGroups> chestGroupsHighlight()
@@ -397,7 +437,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "chestGroupsHighlightStyle",
 		name = "Chest Highlight Style",
 		description = "Selects the highlight style for 'Highlight Grub Chests'",
-		position = 15,
+		position = 18,
 		section = roomSection
 	)
 	default GrubChestStyle chestGroupsHighlightStyle()
@@ -409,7 +449,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "grubsInfobox",
 		name = "Grubs Counter",
 		description = "Displays an infobox showing the total amount of cavern grubs collected. Works with party",
-		position = 16,
+		position = 19,
 		section = roomSection
 	)
 	default grubsMode grubsInfobox()
@@ -421,7 +461,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "grubsAmount",
 		name = "Grubs Amount",
 		description = "Set to the amount of grubs you/your team want to collect. The cavern grub counter's text will turn green when this number is reached.",
-		position = 17,
+		position = 20,
 		section = roomSection
 	)
 	default int grubsAmount()
@@ -433,7 +473,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Hotkey Swap Smash",
 		keyName = "hotkeySwapSmash",
 		description = "Switches attack and smash when holding the hotkey",
-		position = 18,
+		position = 21,
 		section = roomSection
 	)
 	default boolean hotkeySwapSmash()
@@ -445,7 +485,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "iceDemonHp",
 		name = "Ice Demon HP",
 		description = "Displays Ice Demon HP percent while lighting kindling",
-		position = 19,
+		position = 22,
 		section = roomSection
 	)
 	default boolean iceDemonHp()
@@ -457,7 +497,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "swapCoXKeystone",
 		name = "Left Click Drop Keystone",
 		description = "swaps use with drop for the keystone crystal at tightrope",
-		position = 20,
+		position = 23,
 		section = roomSection
 	)
 	default boolean swapCoXKeystone()
@@ -469,7 +509,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "—————— Combat Rooms ——————",
 		keyName = "combat divider",
 		description = "",
-		position = 21,
+		position = 24,
 		section = roomSection
 	)
 	void combatDivider();
@@ -478,7 +518,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Small Muttadile HP",
 		keyName = "smallMuttaHp",
 		description = "Displays the health percentage of small Muttadile while meat tree is alive",
-		position = 22,
+		position = 25,
 		section = roomSection
 	)
 	default boolean smallMuttaHp()
@@ -490,7 +530,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Vanguard HP Infobox",
 		keyName = "vangInfobox",
 		description = "Displays the hp left on each vanguard",
-		position = 23,
+		position = 26,
 		section = roomSection
 	)
 	default boolean vangInfobox()
@@ -502,7 +542,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "showPanel",
 		name = "Vanguard Overloads Overlay",
 		description = "Shows how many Overloads have been received from Vanguards. Works with party.",
-		position = 24,
+		position = 27,
 		section = roomSection
 	)
 	default boolean showPanel()
@@ -514,7 +554,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "overloadChatMessage",
 		name = "Overload Dropped Chat Message",
 		description = "Prints a chat message when a player receives an Overload from Vanguards. Works with party.",
-		position = 25,
+		position = 28,
 		section = roomSection
 	)
 	default boolean overloadChatMessage()
@@ -522,7 +562,9 @@ public interface CoxAdditionsConfig extends Config
 		return true;
 	}
 
-	//Prep Section
+	//------------------------------------------------------------//
+	// Prep Section
+	//------------------------------------------------------------//
 	@ConfigItem(
 		name = "CoX Herb Timer",
 		keyName = "coxHerbTimer",
@@ -663,7 +705,8 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "highlightChest",
 		description = "Highlight items in your private chest based off the lists",
 		position = 13,
-		section = prepSection)
+		section = prepSection
+	)
 	default HighlightChestMode highlightChest()
 	{
 		return HighlightChestMode.OFF;
@@ -674,7 +717,8 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "highlightChestItems",
 		description = "Highlights items in the list in the storage chest. Can be names or ids.",
 		position = 14,
-		section = prepSection)
+		section = prepSection
+	)
 	default String highlightChestItems()
 	{
 		return "";
@@ -686,7 +730,8 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "highlightChestItemsColor",
 		description = "Sets color of highlight chest items",
 		position = 15,
-		section = prepSection)
+		section = prepSection
+	)
 	default Color highlightChestItemsColor()
 	{
 		return Color.WHITE;
@@ -697,7 +742,8 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "highlightChestItems2",
 		description = "Highlights items in the list in the storage chest. Can be names or ids.",
 		position = 16,
-		section = prepSection)
+		section = prepSection
+	)
 	default String highlightChestItems2()
 	{
 		return "";
@@ -715,7 +761,9 @@ public interface CoxAdditionsConfig extends Config
 		return Color.WHITE;
 	}
 
-	//Font Section
+	//------------------------------------------------------------//
+	// Font Section
+	//------------------------------------------------------------//
 	@ConfigItem(
 		name = "Overlay Font Type",
 		keyName = "overlayFontType",
@@ -765,10 +813,22 @@ public interface CoxAdditionsConfig extends Config
 	}
 
 	@ConfigItem(
+		name = "Overlay Font Background",
+		keyName = "overlayFontBackground",
+		description = "Puts an outline, shadow, or nothing behind font overlays",
+		position = 4,
+		section = fontSection
+	)
+	default background overlayFontBackground()
+	{
+		return background.SHADOW;
+	}
+
+	@ConfigItem(
 		name = "—————— Panel ——————",
 		keyName = "panel divider",
 		description = "",
-		position = 4,
+		position = 5,
 		section = fontSection
 	)
 	void panelDivider();
@@ -777,7 +837,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Panel Font Type",
 		keyName = "panelFontType",
 		description = "",
-		position = 5,
+		position = 6,
 		section = fontSection
 	)
 	default FontType panelFontType()
@@ -789,7 +849,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Panel Font Name",
 		keyName = "panelFontName",
 		description = "Custom font override for panels/infoboxes",
-		position = 6,
+		position = 7,
 		section = fontSection
 	)
 	default String panelFontName()
@@ -801,7 +861,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Panel Font Size",
 		keyName = "panelFontSize",
 		description = "",
-		position = 7,
+		position = 8,
 		section = fontSection
 	)
 	default int panelFontSize()
@@ -813,7 +873,7 @@ public interface CoxAdditionsConfig extends Config
 		name = "Panel Font Weight",
 		keyName = "panelFontWeight",
 		description = "Sets the custom font weight for panels/infoboxes",
-		position = 8,
+		position = 9,
 		section = fontSection
 	)
 	default FontWeight panelFontWeight()
@@ -821,7 +881,9 @@ public interface CoxAdditionsConfig extends Config
 		return FontWeight.PLAIN;
 	}
 
-	//Enums
+	//------------------------------------------------------------//
+	// Enums
+	//------------------------------------------------------------//
 	enum CoXHerbTimerMode
 	{
 		OFF,
@@ -934,6 +996,25 @@ public interface CoxAdditionsConfig extends Config
 
 	@Getter
 	@RequiredArgsConstructor
+	enum RaidsPotsLoc
+	{
+		PRAYER("Above Prayer Icon"),
+		HEAD("Head of Player"),
+		CENTER("Center of Player"),
+		FEET("Bottom of Player");
+
+		@Getter
+		private final String location;
+
+		@Override
+		public String toString()
+		{
+			return location;
+		}
+	}
+
+	@Getter
+	@RequiredArgsConstructor
 	enum FontType
 	{
 		SMALL("RS Small"),
@@ -952,9 +1033,10 @@ public interface CoxAdditionsConfig extends Config
 
 	enum FontWeight
 	{
-		PLAIN(0),
-		BOLD(1),
-		ITALIC(2);
+		PLAIN(Font.PLAIN),
+		BOLD(Font.BOLD),
+		ITALIC(Font.ITALIC),
+		BOLD_ITALIC(Font.BOLD | Font.ITALIC);
 
 		@Getter
 		private final int weight;
@@ -962,6 +1044,24 @@ public interface CoxAdditionsConfig extends Config
 		FontWeight(int i)
 		{
 			weight = i;
+		}
+	}
+
+	@Getter
+	@RequiredArgsConstructor
+	enum background
+	{
+		OFF("None"),
+		SHADOW("Shadow"),
+		OUTLINE("Outline");
+
+		@Getter
+		private final String group;
+
+		@Override
+		public String toString()
+		{
+			return group;
 		}
 	}
 }

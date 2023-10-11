@@ -1,4 +1,4 @@
-package com.coxadditions;
+package com.coxadditions.party;
 
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
@@ -8,9 +8,8 @@ import net.runelite.client.party.messages.PartyMemberMessage;
 @Value
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
-public class PartyGrubsUpdate extends PartyMemberMessage
+public class PartyOverloadUpdate extends PartyMemberMessage
 {
 	String player;
 	int world;
-	int grubs;
 }
