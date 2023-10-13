@@ -1,7 +1,7 @@
 # Tzhaar HP Tracker
 Detailed HP tracking for all Tzhaar NPCs.
 
-###Features:
+### Features:
 * Tracks HP for both Fight Caves and Inferno NPCs
 * Custom font options
 * 3 HP overlay locations:
@@ -24,7 +24,7 @@ Detailed HP tracking for all Tzhaar NPCs.
     * Highlight the entrance to the Fight Caves and Inferno if the player is on the wrong spellbook
     * Both
 
-###Third Party Compliance
+### Third Party Compliance
 * This plugin is compliant with [Jagex's third-party client terms of service](https://secure.runescape.com/m=news/third-party-client-guidelines?oldschool=1).
 * This plugin tracks current Tzhaar NPC HP and predicts hits. It also recolors menus and highlights NPCs based on HP. 
 * Plugins that also use the above features are: 
