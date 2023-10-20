@@ -168,6 +168,7 @@ public class TzhaarHPTrackerPlugin extends Plugin
 		npcs.clear();
 		hiddenNPCs.clear();
 		currentWave.clear();
+		loadFont();
 		overlayManager.add(overlay);
 		overlayManager.add(reminderOverlay);
 		hooks.registerRenderableDrawListener(drawListener);

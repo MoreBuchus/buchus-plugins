@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, l2- <https://github.com/l2->
+ * Copyright (c) 2021, InfernoStats <https://github.com/InfernoStats>
  * Copyright (c) 2023, Buchus <http://github.com/MoreBuchus>
  * All rights reserved.
  *
