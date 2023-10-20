@@ -3,7 +3,7 @@ Detailed HP tracking for all Tzhaar NPCs.
 
 ![image](icon.png)
 
-###Features:
+### Features:
 * Tracks HP for both Fight Caves and Inferno NPCs
 * Custom font options
 * 3 HP overlay locations:
