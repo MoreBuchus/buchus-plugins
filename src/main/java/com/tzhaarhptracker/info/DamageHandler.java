@@ -247,6 +247,8 @@ public class DamageHandler extends InfoHandler
 								{
 									n.setDeathTick(0);
 								}
+
+								n.setQueuedDamage(Math.max(0, n.getQueuedDamage() - hitsplat));
 							}
 						}
 					}
@@ -650,7 +652,8 @@ public class DamageHandler extends InfoHandler
 		if (!isAoe || clump.size() == 1 || client.getVarbitValue(Varbits.MULTICOMBAT_AREA) == 0 || (style == WeaponStyle.SCYTHES && attackStyle != AttackStyle.CASTING))
 		{
 			// Handle normally (clump size = 1) or single combat if AoE
-			handleDead(target, damage >= target.getHp());
+			target.setQueuedDamage(target.getQueuedDamage() + damage);
+			handleDead(target, target.getQueuedDamage() >= target.getHp());
 		}
 		else
 		{

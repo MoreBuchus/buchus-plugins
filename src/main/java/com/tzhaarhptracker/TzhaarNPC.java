@@ -45,6 +45,7 @@ public class TzhaarNPC
 	private int spawnTick;
 	private int deathTick;
 	private boolean healed = false;
+	private int queuedDamage = 0;
 
 	public TzhaarNPC(NPC npc, int currentHp, int maxHp, int tick)
 	{
