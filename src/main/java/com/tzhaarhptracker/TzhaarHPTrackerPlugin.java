@@ -117,7 +117,7 @@ public class TzhaarHPTrackerPlugin extends Plugin
 	@Getter
 	private static final Set<String> INFERNO_NPC = ImmutableSet.of(
 		"jal-nib", "jal-mejrah", "jal-ak", "jal-akrek-xil", "jal-akrek-mej", "jal-akrek-ket", "jal-imkot", "jal-xil", "jal-zek",
-		"jaltok-jad", "yt-hurkot", "tzkal-zuk", "jal-mejjak"
+		"jaltok-jad", "yt-hurkot", "tzkal-zuk", "jal-mejjak", "<col=00ffff>rocky support</col>"
 	);
 
 	@Getter

@@ -166,6 +166,18 @@ public interface TzhaarHPTrackerConfig extends Config
 
 	@ConfigItem(
 		position = 10,
+		keyName = "showPillarHp",
+		name = "Show Pillar HP",
+		description = "Show hp for Inferno pillars",
+		section = highlightSection
+	)
+	default HpLocation showPillarHp()
+	{
+		return HpLocation.OFF;
+	}
+
+	@ConfigItem(
+		position = 11,
 		keyName = "dynamicHpColor",
 		name = "Dynamic HP Color",
 		description = "Changes the color of the HP dynamically",
@@ -177,7 +189,7 @@ public interface TzhaarHPTrackerConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 11,
+		position = 12,
 		keyName = "recolorMenu",
 		name = "Recolor Menu",
 		description = "Recolors the right click menus",
@@ -189,7 +201,7 @@ public interface TzhaarHPTrackerConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 12,
+		position = 13,
 		keyName = "hideDead",
 		name = "Hide Dead NPCs",
 		description = "Hides Tzhaar NPCs that are predicted to die",
@@ -202,7 +214,7 @@ public interface TzhaarHPTrackerConfig extends Config
 
 	@Units(" ms")
 	@ConfigItem(
-		position = 13,
+		position = 14,
 		keyName = "lagProtection",
 		name = "Lag Protection",
 		description = "Unhides hidden NPCs after a big lag spike",

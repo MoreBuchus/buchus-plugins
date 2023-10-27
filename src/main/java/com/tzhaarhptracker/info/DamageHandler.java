@@ -71,6 +71,7 @@ import com.tzhaarhptracker.attackstyles.WeaponType;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 import org.apache.commons.lang3.ObjectUtils;
+import static net.runelite.api.NpcID.*;
 
 @Slf4j
 public class DamageHandler extends InfoHandler
@@ -303,7 +304,7 @@ public class DamageHandler extends InfoHandler
 				{
 					int currentTick = client.getTickCount();
 					int spawnTick = n.getSpawnTick();
-					if (currentTick - spawnTick >= 100)
+					if (currentTick - spawnTick >= 100 && n.getNpc().getId() != ROCKY_SUPPORT)
 					{
 						if (n.getHp() != n.getMaxHp())
 						{

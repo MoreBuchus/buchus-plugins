@@ -42,6 +42,7 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 import net.runelite.client.ui.overlay.OverlayPriority;
 import net.runelite.client.ui.overlay.OverlayUtil;
 import net.runelite.client.ui.overlay.outline.ModelOutlineRenderer;
+import static net.runelite.api.NpcID.*;
 
 public class TzhaarHPTrackerOverlay extends Overlay
 {
@@ -98,14 +99,90 @@ public class TzhaarHPTrackerOverlay extends Overlay
 					{
 						int size = npcComposition.getSize();
 
-						if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.TILE))
+						//Only highlights NPCs - not pillars
+						if (n.getNpc().getId() != ROCKY_SUPPORT)
 						{
-							LocalPoint lp = n.getNpc().getLocalLocation();
-							if (lp != null)
+							if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.TILE))
 							{
-								Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
-								if (tilePoly != null)
+								LocalPoint lp = n.getNpc().getLocalLocation();
+								if (lp != null)
 								{
+									Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
+									if (tilePoly != null)
+									{
+										switch (config.tileLines())
+										{
+											case REG:
+												renderPoly(graphics, line, fill, tilePoly, config.highlightThiCC());
+												break;
+											case DASH:
+												renderPolygonDashed(graphics, line, fill, tilePoly, config.highlightThiCC(), size);
+												break;
+											case CORNER:
+												renderPolygonCorners(graphics, line, fill, tilePoly, config.highlightThiCC());
+												break;
+										}
+									}
+								}
+							}
+
+							if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.TRUE_TILE))
+							{
+								LocalPoint lp = LocalPoint.fromWorld(client, n.getNpc().getWorldLocation());
+								if (lp != null)
+								{
+									lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64);
+									Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
+									if (tilePoly != null)
+									{
+										switch (config.tileLines())
+										{
+											case REG:
+												renderPoly(graphics, line, fill, tilePoly, config.highlightThiCC());
+												break;
+											case DASH:
+												renderPolygonDashed(graphics, line, fill, tilePoly, config.highlightThiCC(), size);
+												break;
+											case CORNER:
+												renderPolygonCorners(graphics, line, fill, tilePoly, config.highlightThiCC());
+												break;
+										}
+									}
+								}
+							}
+
+							if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.SW_TILE))
+							{
+								LocalPoint lp = n.getNpc().getLocalLocation();
+								if (lp != null)
+								{
+									int x = lp.getX() - (size - 1) * 128 / 2;
+									int y = lp.getY() - (size - 1) * 128 / 2;
+									Polygon tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
+									if (tilePoly != null)
+									{
+										switch (config.tileLines())
+										{
+											case REG:
+												renderPoly(graphics, line, fill, tilePoly, config.highlightThiCC());
+												break;
+											case DASH:
+												renderPolygonDashed(graphics, line, fill, tilePoly, config.highlightThiCC(), size);
+												break;
+											case CORNER:
+												renderPolygonCorners(graphics, line, fill, tilePoly, config.highlightThiCC());
+												break;
+										}
+									}
+								}
+							}
+
+							if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.SW_TRUE_TILE))
+							{
+								LocalPoint lp = LocalPoint.fromWorld(client, n.getNpc().getWorldLocation());
+								if (lp != null)
+								{
+									Polygon tilePoly = Perspective.getCanvasTilePoly(client, lp);
 									switch (config.tileLines())
 									{
 										case REG:
@@ -120,95 +197,24 @@ public class TzhaarHPTrackerOverlay extends Overlay
 									}
 								}
 							}
-						}
 
-						if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.TRUE_TILE))
-						{
-							LocalPoint lp = LocalPoint.fromWorld(client, n.getNpc().getWorldLocation());
-							if (lp != null)
+							if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.HULL))
 							{
-								lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64);
-								Polygon tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
-								if (tilePoly != null)
+								Shape hull = n.getNpc().getConvexHull();
+								if (hull != null)
 								{
-									switch (config.tileLines())
-									{
-										case REG:
-											renderPoly(graphics, line, fill, tilePoly, config.highlightThiCC());
-											break;
-										case DASH:
-											renderPolygonDashed(graphics, line, fill, tilePoly, config.highlightThiCC(), size);
-											break;
-										case CORNER:
-											renderPolygonCorners(graphics, line, fill, tilePoly, config.highlightThiCC());
-											break;
-									}
+									renderPoly(graphics, line, fill, hull, config.highlightThiCC());
 								}
 							}
-						}
 
-						if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.SW_TILE))
-						{
-							LocalPoint lp = n.getNpc().getLocalLocation();
-							if (lp != null)
+							if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.OUTLINE))
 							{
-								int x = lp.getX() - (size - 1) * 128 / 2;
-								int y = lp.getY() - (size - 1) * 128 / 2;
-								Polygon tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
-								if (tilePoly != null)
-								{
-									switch (config.tileLines())
-									{
-										case REG:
-											renderPoly(graphics, line, fill, tilePoly, config.highlightThiCC());
-											break;
-										case DASH:
-											renderPolygonDashed(graphics, line, fill, tilePoly, config.highlightThiCC(), size);
-											break;
-										case CORNER:
-											renderPolygonCorners(graphics, line, fill, tilePoly, config.highlightThiCC());
-											break;
-									}
-								}
+								modelOutlineRenderer.drawOutline(n.getNpc(), (int) config.highlightThiCC(), line, 4);
 							}
 						}
 
-						if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.SW_TRUE_TILE))
-						{
-							LocalPoint lp = LocalPoint.fromWorld(client, n.getNpc().getWorldLocation());
-							if (lp != null)
-							{
-								Polygon tilePoly = Perspective.getCanvasTilePoly(client, lp);
-								switch (config.tileLines())
-								{
-									case REG:
-										renderPoly(graphics, line, fill, tilePoly, config.highlightThiCC());
-										break;
-									case DASH:
-										renderPolygonDashed(graphics, line, fill, tilePoly, config.highlightThiCC(), size);
-										break;
-									case CORNER:
-										renderPolygonCorners(graphics, line, fill, tilePoly, config.highlightThiCC());
-										break;
-								}
-							}
-						}
-
-						if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.HULL))
-						{
-							Shape hull = n.getNpc().getConvexHull();
-							if (hull != null)
-							{
-								renderPoly(graphics, line, fill, hull, config.highlightThiCC());
-							}
-						}
-
-						if (config.highlightStyle().contains(TzhaarHPTrackerConfig.HighlightStyle.OUTLINE))
-						{
-							modelOutlineRenderer.drawOutline(n.getNpc(), (int) config.highlightThiCC(), line, 4);
-						}
-
-						if (config.showHp() != TzhaarHPTrackerConfig.HpLocation.OFF)
+						if ((config.showHp() != TzhaarHPTrackerConfig.HpLocation.OFF && n.getNpc().getId() != ROCKY_SUPPORT)
+							|| (config.showPillarHp() != TzhaarHPTrackerConfig.HpLocation.OFF && n.getNpc().getId() == ROCKY_SUPPORT))
 						{
 							drawHp(graphics, stackedNpcs, n);
 						}
@@ -328,17 +334,34 @@ public class TzhaarHPTrackerOverlay extends Overlay
 
 		final int zOffset;
 		int npcOffset = firstStack != null ? firstStack.getLogicalHeight() : n.getNpc().getLogicalHeight();
-		switch (config.showHp())
+		if (n.getNpc().getId() != ROCKY_SUPPORT)
 		{
-			case CENTER:
-				zOffset = npcOffset / 2;
-				break;
-			case FEET:
-				zOffset = 0;
-				break;
-			default:
-				//Zuk is too tall for above HP bar to be seen by most players -> Set it to center if HP bar is selected
-				zOffset = !Objects.equals(n.getNpc().getName(), "TzKal-Zuk") ? npcOffset + ACTOR_OVERHEAD_TEXT_MARGIN : npcOffset / 2;
+			switch (config.showHp())
+			{
+				case CENTER:
+					zOffset = npcOffset / 2;
+					break;
+				case FEET:
+					zOffset = 0;
+					break;
+				default:
+					//Zuk is too tall for above HP bar to be seen by most players -> Set it to center if HP bar is selected
+					zOffset = !Objects.equals(n.getNpc().getName(), "TzKal-Zuk") ? npcOffset + ACTOR_OVERHEAD_TEXT_MARGIN : npcOffset / 2;
+			}
+		}
+		else
+		{
+			switch (config.showPillarHp())
+			{
+				case CENTER:
+					zOffset = npcOffset / 2;
+					break;
+				case FEET:
+					zOffset = 0;
+					break;
+				default:
+					zOffset = npcOffset + ACTOR_OVERHEAD_TEXT_MARGIN;
+			}
 		}
 		stackedNpcs.add(n.getNpc());
 		String hp = n.getHp() < 0 ? "0" : Integer.toString(n.getHp());

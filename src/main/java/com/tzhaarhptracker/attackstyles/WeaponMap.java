@@ -11,7 +11,7 @@ public class WeaponMap
 	{
 		//Melee
 		StyleMap.put(ItemID._3RD_AGE_AXE, WeaponStyle.MELEE);
-		StyleMap.put(ItemID._3RD_AGE_2H_AXE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID._3RD_AGE_FELLING_AXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID._3RD_AGE_LONGSWORD, WeaponStyle.MELEE);
 		StyleMap.put(ItemID._3RD_AGE_PICKAXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.ABYSSAL_BLUDGEON, WeaponStyle.MELEE);
@@ -30,7 +30,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.ABYSSAL_WHIP_OR, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.ADAMANT_2H_SWORD, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.ADAMANT_AXE, WeaponStyle.MELEE);
-		StyleMap.put(ItemID.ADAMANT_2H_AXE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.ADAMANT_FELLING_AXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.ADAMANT_BATTLEAXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.ADAMANT_CANE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.ADAMANT_CLAWS, WeaponStyle.MELEE);
@@ -80,7 +80,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.BIRTHDAY_CAKE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.BLACK_2H_SWORD, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.BLACK_AXE, WeaponStyle.MELEE);
-		StyleMap.put(ItemID.BLACK_2H_AXE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.BLACK_FELLING_AXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.BLACK_BATTLEAXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.BLACK_CANE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.BLACK_CLAWS, WeaponStyle.MELEE);
@@ -127,7 +127,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.BRINE_SABRE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.BRONZE_2H_SWORD, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.BRONZE_AXE, WeaponStyle.MELEE);
-		StyleMap.put(ItemID.BRONZE_2H_AXE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.BRONZE_FELLING_AXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.BRONZE_BATTLEAXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.BRONZE_CLAWS, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.BRONZE_DAGGER, WeaponStyle.MELEE);
@@ -165,10 +165,10 @@ public class WeaponMap
 		StyleMap.put(ItemID.CORRUPTED_VOIDWAKER, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.CRIER_BELL, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.CRYSTAL_AXE, WeaponStyle.MELEE);
-		StyleMap.put(ItemID.CRYSTAL_2H_AXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.CRYSTAL_AXE_23862, WeaponStyle.MELEE);
-		StyleMap.put(ItemID.CRYSTAL_2H_AXE_28223, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.CRYSTAL_AXE_INACTIVE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.CRYSTAL_FELLING_AXE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.CRYSTAL_FELLING_AXE_INACTIVE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.CRYSTAL_HALBERD, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.CRYSTAL_HALBERD_110, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.CRYSTAL_HALBERD_110_I, WeaponStyle.MELEE);
@@ -220,7 +220,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.DRAGON_2H_SWORD_20559, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.DRAGON_2H_SWORD_CR, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.DRAGON_AXE, WeaponStyle.MELEE);
-		StyleMap.put(ItemID.DRAGON_2H_AXE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.DRAGON_FELLING_AXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.DRAGON_AXE_OR, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.DRAGON_BATTLEAXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.DRAGON_BATTLEAXE_CR, WeaponStyle.MELEE);
@@ -338,7 +338,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.INQUISITORS_MACE_27198, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.IRON_2H_SWORD, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.IRON_AXE, WeaponStyle.MELEE);
-		StyleMap.put(ItemID.IRON_2H_AXE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.IRON_FELLING_AXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.IRON_BATTLEAXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.IRON_CLAWS, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.IRON_DAGGER, WeaponStyle.MELEE);
@@ -387,7 +387,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.MERFOLK_TRIDENT, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.MITHRIL_2H_SWORD, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.MITHRIL_AXE, WeaponStyle.MELEE);
-		StyleMap.put(ItemID.MITHRIL_2H_AXE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.MITHRIL_FELLING_AXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.MITHRIL_BATTLEAXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.MITHRIL_CLAWS, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.MITHRIL_DAGGER, WeaponStyle.MELEE);
@@ -447,7 +447,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.RUBBER_CHICKEN_22666, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.RUNE_2H_SWORD, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.RUNE_AXE, WeaponStyle.MELEE);
-		StyleMap.put(ItemID.RUNE_2H_AXE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.RUNE_FELLING_AXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.RUNE_BATTLEAXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.RUNE_BATTLEAXE_20552, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.RUNE_CANE, WeaponStyle.MELEE);
@@ -505,7 +505,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.STATIUSS_WARHAMMER_BHINACTIVE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.STEEL_2H_SWORD, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.STEEL_AXE, WeaponStyle.MELEE);
-		StyleMap.put(ItemID.STEEL_2H_AXE, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.STEEL_FELLING_AXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.STEEL_BATTLEAXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.STEEL_CLAWS, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.STEEL_DAGGER, WeaponStyle.MELEE);
