@@ -215,40 +215,58 @@ public class DamageHandler extends InfoHandler
 
 				for (TzhaarNPC n : plugin.getNpcs())
 				{
-					if (n.getNpc().equals(splatNpc) && (!Objects.equals(n.getNpc().getName(), "TzKal-Zuk") || !zukWidgetActive()))
+					if (n.getNpc().equals(splatNpc))
 					{
-						if (e.getHitsplat().getHitsplatType() == HitsplatID.HEAL)
+						if (!Objects.equals(n.getNpc().getName(), "TzKal-Zuk") || !zukWidgetActive())
 						{
-							n.addHp(hitsplat);
+							if (e.getHitsplat().getHitsplatType() == HitsplatID.HEAL)
+							{
+								n.addHp(hitsplat);
+							}
+							else
+							{
+								if (hitsplat != 0)
+								{
+									if (!n.isHealed())
+									{
+										n.removeHp(hitsplat);
+										//Only set to dead if it has not been set to dead yet
+										if (!n.isDead())
+										{
+											//n.setDead(n.getHp() <= 0);
+											handleDead(n, n.getHp() <= 0);
+										}
+									}
+
+									//Set the death tick on hitsplat when it is predicted to die
+									if (n.isDead())
+									{
+										n.setDeathTick(client.getTickCount());
+									}
+
+									//If the npc is not set to dead, but the death tick was tracked -> reset to 0
+									if (!n.isDead() && n.getDeathTick() > 0)
+									{
+										n.setDeathTick(0);
+									}
+
+									n.setQueuedDamage(Math.max(0, n.getQueuedDamage() - hitsplat));
+								}
+							}
 						}
+						//Track death tick for Zuk if HP widget is active
 						else
 						{
-							if (hitsplat != 0)
+							//Set the death tick on hitsplat when it is predicted to die
+							if (n.isDead())
 							{
-								if (!n.isHealed())
-								{
-									n.removeHp(hitsplat);
-									//Only set to dead if it has not been set to dead yet
-									if (!n.isDead())
-									{
-										//n.setDead(n.getHp() <= 0);
-										handleDead(n, n.getHp() <= 0);
-									}
-								}
+								n.setDeathTick(client.getTickCount());
+							}
 
-								//Set the death tick on hitsplat when it is predicted to die
-								if (n.isDead())
-								{
-									n.setDeathTick(client.getTickCount());
-								}
-
-								//If the npc is not set to dead, but the death tick was tracked -> reset to 0
-								if (!n.isDead() && n.getDeathTick() > 0)
-								{
-									n.setDeathTick(0);
-								}
-
-								n.setQueuedDamage(Math.max(0, n.getQueuedDamage() - hitsplat));
+							//If the npc is not set to dead, but the death tick was tracked -> reset to 0
+							if (!n.isDead() && n.getDeathTick() > 0)
+							{
+								n.setDeathTick(0);
 							}
 						}
 					}
@@ -450,13 +468,10 @@ public class DamageHandler extends InfoHandler
 		{
 			if (e.getSource() == client.getLocalPlayer())
 			{
-				Actor opponent = e.getTarget();
-				lastOpponent = opponent;
-
-				if (opponent instanceof NPC)
+				if (e.getTarget() instanceof NPC)
 				{
-					NPC npc = (NPC) opponent;
-
+					NPC npc = (NPC) e.getTarget();
+					lastOpponent = npc;
 					lastOpponentID = npc.getId();
 				}
 				else
