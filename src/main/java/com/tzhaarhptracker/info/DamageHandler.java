@@ -254,7 +254,7 @@ public class DamageHandler extends InfoHandler
 								}
 							}
 						}
-						//Track death tick for Zuk if HP widget is active
+						//Track death tick and queued damage for Zuk if HP widget is active
 						else
 						{
 							//Set the death tick on hitsplat when it is predicted to die
@@ -268,6 +268,8 @@ public class DamageHandler extends InfoHandler
 							{
 								n.setDeathTick(0);
 							}
+
+							n.setQueuedDamage(Math.max(0, n.getQueuedDamage() - hitsplat));
 						}
 					}
 				}
