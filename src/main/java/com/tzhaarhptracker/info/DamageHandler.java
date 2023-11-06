@@ -748,7 +748,7 @@ public class DamageHandler extends InfoHandler
 	// Set Zuk's hp off of the widget
 	private int getZukHPfromWidget()
 	{
-		Widget widget = client.getWidget(39059465);
+		Widget widget = client.getWidget(596, 9);
 		if (widget != null && !widget.isHidden())
 		{
 			return Integer.parseInt(widget.getText().substring(0, widget.getText().indexOf("/")).trim());
@@ -759,7 +759,7 @@ public class DamageHandler extends InfoHandler
 	// Check if the hp widget is active for Zuk
 	private boolean zukWidgetActive()
 	{
-		Widget widget = client.getWidget(39059465);
+		Widget widget = client.getWidget(596, 9);
 		return widget != null && !widget.isHidden();
 	}
 }
