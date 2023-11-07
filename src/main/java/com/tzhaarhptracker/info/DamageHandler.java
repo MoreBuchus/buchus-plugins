@@ -53,9 +53,9 @@ import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.VarbitChanged;
 import net.runelite.api.kit.KitType;
+import net.runelite.api.widgets.InterfaceID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetID;
-import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.game.NpcUtil;
@@ -414,7 +414,7 @@ public class DamageHandler extends InfoHandler
 				case NPC_FOURTH_OPTION:
 				case NPC_FIFTH_OPTION:
 					lastOpponent = e.getMenuEntry().getNpc();
-					if (e.getMenuAction() == MenuAction.WIDGET_TARGET_ON_NPC && WidgetInfo.TO_GROUP(client.getSelectedWidget().getId()) == WidgetID.SPELLBOOK_GROUP_ID)
+					if (e.getMenuAction() == MenuAction.WIDGET_TARGET_ON_NPC && WidgetUtil.componentToInterface(client.getSelectedWidget().getId()) == InterfaceID.SPELLBOOK)
 					{
 						attackStyle = (client.getVarbitValue(Varbits.DEFENSIVE_CASTING_MODE) == 1 || attackStyle == AttackStyle.DEFENSIVE_CASTING) ?
 							AttackStyle.DEFENSIVE_CASTING : AttackStyle.CASTING;
