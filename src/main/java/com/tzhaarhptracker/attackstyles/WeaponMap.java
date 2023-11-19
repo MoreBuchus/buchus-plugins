@@ -216,6 +216,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.DHAROKS_GREATAXE_50, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.DHAROKS_GREATAXE_75, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.DINHS_BULWARK, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.DINHS_BLAZING_BULWARK, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.DRAGON_2H_SWORD, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.DRAGON_2H_SWORD_20559, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.DRAGON_2H_SWORD_CR, WeaponStyle.MELEE);
@@ -548,6 +549,15 @@ public class WeaponMap
 		StyleMap.put(ItemID.TRAILBLAZER_PICKAXE, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.TRAILBLAZER_RUNE_TROPHY, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.TRAILBLAZER_STEEL_TROPHY, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.TRAILBLAZER_RELOADED_ADAMANT_TROPHY, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.TRAILBLAZER_RELOADED_BANNER, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.TRAILBLAZER_RELOADED_BRONZE_TROPHY, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.TRAILBLAZER_RELOADED_DRAGON_TROPHY, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.TRAILBLAZER_RELOADED_IRON_TROPHY, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.TRAILBLAZER_RELOADED_MITHRIL_TROPHY, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.TRAILBLAZER_RELOADED_RUNE_TROPHY, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.TRAILBLAZER_RELOADED_STEEL_TROPHY, WeaponStyle.MELEE);
+		StyleMap.put(ItemID.TRAILBLAZER_RELOADED_TORCH, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.TROLLWEISS, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.TWISTED_BANNER, WeaponStyle.MELEE);
 		StyleMap.put(ItemID.TZHAARKETEM, WeaponStyle.MELEE);
@@ -648,6 +658,8 @@ public class WeaponMap
 		StyleMap.put(ItemID.BLACK_KNIFEP, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.BLACK_KNIFEP_5658, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.BLACK_KNIFEP_5665, WeaponStyle.RANGE);
+		StyleMap.put(ItemID.BLAZING_BLOWPIPE, WeaponStyle.RANGE);
+		StyleMap.put(ItemID.BLAZING_BLOWPIPE_EMPTY, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.BLURITE_CROSSBOW, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.BRONZE_CROSSBOW, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.BRONZE_DART, WeaponStyle.RANGE);
@@ -802,6 +814,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.RUNE_KNIFEP_5660, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.RUNE_KNIFEP_5667, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.RUNE_THROWNAXE, WeaponStyle.RANGE);
+		StyleMap.put(ItemID.SAGES_AXE, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.SEERCULL, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.SHORTBOW, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.SIGNED_OAK_BOW, WeaponStyle.RANGE);
