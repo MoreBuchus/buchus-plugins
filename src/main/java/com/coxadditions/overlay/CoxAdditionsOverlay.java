@@ -114,8 +114,8 @@ public class CoxAdditionsOverlay extends Overlay
 						progressPie.setFill(colorFill);
 						progressPie.setBorderColor(config.coxHerbTimerColor());
 						progressPie.setPosition(position);
-						int ticks = 16 - plugin.getCoxHerbTimer1();
-						double progress = 1 - (ticks / 16.0);
+						int ticks = 11 - plugin.getCoxHerbTimer1();
+						double progress = 1 - (ticks / 11.0);
 						progressPie.setProgress(progress);
 						progressPie.render(graphics);
 					}
@@ -129,8 +129,8 @@ public class CoxAdditionsOverlay extends Overlay
 						progressPie.setFill(colorFill);
 						progressPie.setBorderColor(config.coxHerbTimerColor());
 						progressPie.setPosition(position);
-						int ticks = 16 - plugin.getCoxHerbTimer2();
-						double progress = 1 - (ticks / 16.0);
+						int ticks = 11 - plugin.getCoxHerbTimer2();
+						double progress = 1 - (ticks / 11.0);
 						progressPie.setProgress(progress);
 						progressPie.render(graphics);
 					}

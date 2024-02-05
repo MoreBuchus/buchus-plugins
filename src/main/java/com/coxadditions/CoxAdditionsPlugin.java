@@ -413,9 +413,9 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		playersInParty.clear();
 
 		coxHerb1 = null;
-		coxHerbTimer1 = 16;
+		coxHerbTimer1 = 11;
 		coxHerb2 = null;
-		coxHerbTimer2 = 16;
+		coxHerbTimer2 = 11;
 
 		totalBuchus = 0;
 		totalGolpar = 0;
@@ -912,12 +912,12 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				if (coxHerb1 == null)
 				{
 					coxHerb1 = obj;
-					coxHerbTimer1 = 16;
+					coxHerbTimer1 = 11;
 				}
 				else
 				{
 					coxHerb2 = obj;
-					coxHerbTimer2 = 16;
+					coxHerbTimer2 = 11;
 				}
 			}
 			else if (obj.getId() >= 30000 && obj.getId() <= 30008)
@@ -925,12 +925,12 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				if (coxHerb1 == null)
 				{
 					coxHerb1 = obj;
-					coxHerbTimer1 = 16;
+					coxHerbTimer1 = 11;
 				}
 				else
 				{
 					coxHerb2 = obj;
-					coxHerbTimer2 = 16;
+					coxHerbTimer2 = 11;
 				}
 			}
 			else if (obj.getId() == 29745) //Chest with Grubs
@@ -1460,9 +1460,9 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			smallMutta = null;
 
 			coxHerb1 = null;
-			coxHerbTimer1 = 16;
+			coxHerbTimer1 = 11;
 			coxHerb2 = null;
-			coxHerbTimer2 = 16;
+			coxHerbTimer2 = 11;
 
 			totalBuchus = 0;
 			totalGolpar = 0;
