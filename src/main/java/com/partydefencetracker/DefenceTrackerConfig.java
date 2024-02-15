@@ -32,11 +32,10 @@ import net.runelite.client.config.Range;
 @ConfigGroup("defencetracker")
 public interface DefenceTrackerConfig extends Config
 {
-	@Range(max = 50, min = 1)
 	@ConfigItem(
 			name = "Low Defence Threshold",
 			keyName = "lowDef",
-			description = "Sets when you want the defence to appear as yellow (low defence).",
+			description = "Sets when you want the defence to appear as yellow (low defence). Set to 0 to disable color",
 			position = 1
 	)
 	default int lowDef()
