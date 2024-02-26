@@ -47,18 +47,34 @@ public class CoxHPOverlay extends Overlay
 		{
 			boolean solo = client.getVarbitValue(Varbits.RAID_PARTY_SIZE) == 1;
 
-			if (config.smallMuttaHp() && plugin.isSmallMuttaAlive() && !plugin.getSmallMutta().isDead()
-				&& plugin.room() == InstanceTemplates.RAIDS_MUTTADILES)
+			if (plugin.room() == InstanceTemplates.RAIDS_MUTTADILES)
 			{
-				NPC smallMutta = plugin.getSmallMutta();
-				if (smallMutta.getHealthRatio() > 0 || (plugin.getLastRatio() != 0 && plugin.getLastHealthScale() != 0))
+				if (config.smallMuttaHp() && plugin.isSmallMuttaAlive() && !plugin.getSmallMutta().isDead())
 				{
-					if (smallMutta.getHealthRatio() > 0)
+					NPC smallMutta = plugin.getSmallMutta();
+					if (smallMutta.getHealthRatio() > 0 || (plugin.getLastRatio() != 0 && plugin.getLastHealthScale() != 0))
 					{
-						plugin.setLastRatio(smallMutta.getHealthRatio());
-						plugin.setLastHealthScale(smallMutta.getHealthScale());
+						if (smallMutta.getHealthRatio() > 0)
+						{
+							plugin.setLastRatio(smallMutta.getHealthRatio());
+							plugin.setLastHealthScale(smallMutta.getHealthScale());
+						}
+						drawHp(graphics, plugin.getSmallMutta(), plugin.getSmallMutta().getLogicalHeight() + 40, plugin.getLastRatio(), plugin.getLastHealthScale(), true);
 					}
-					drawHp(graphics, plugin.getSmallMutta(), plugin.getSmallMutta().getLogicalHeight() + 40, plugin.getLastRatio(), plugin.getLastHealthScale(), true);
+				}
+
+				if (config.bigMuttaHp() && !plugin.isSmallMuttaAlive() && plugin.getBigMutta() != null)
+				{
+					NPC bigMutta = plugin.getBigMutta();
+					if (bigMutta.getHealthRatio() > 0 || (plugin.getBigMuttaLastRatio() != 0 && plugin.getBigMuttaLastHealthScale() != 0))
+					{
+						if (bigMutta.getHealthRatio() > 0)
+						{
+							plugin.setBigMuttaLastRatio(bigMutta.getHealthRatio());
+							plugin.setBigMuttaLastHealthScale(bigMutta.getHealthScale());
+						}
+						drawHp(graphics, plugin.getBigMutta(), plugin.getBigMutta().getLogicalHeight() + 40, plugin.getBigMuttaLastRatio(), plugin.getBigMuttaLastHealthScale(), true);
+					}
 				}
 			}
 

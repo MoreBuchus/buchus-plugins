@@ -527,10 +527,22 @@ public interface CoxAdditionsConfig extends Config
 	}
 
 	@ConfigItem(
+		name = "Big Muttadile HP",
+		keyName = "bigMuttaHp",
+		description = "Displays the health percentage of big Muttadile after the small Muttadile is dead",
+		position = 26,
+		section = roomSection
+	)
+	default boolean bigMuttaHp()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		name = "Vanguard HP Infobox",
 		keyName = "vangInfobox",
 		description = "Displays the hp left on each vanguard",
-		position = 26,
+		position = 27,
 		section = roomSection
 	)
 	default boolean vangInfobox()
@@ -542,7 +554,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "showPanel",
 		name = "Vanguard Overloads Overlay",
 		description = "Shows how many Overloads have been received from Vanguards. Works with party.",
-		position = 27,
+		position = 28,
 		section = roomSection
 	)
 	default boolean showPanel()
@@ -554,7 +566,7 @@ public interface CoxAdditionsConfig extends Config
 		keyName = "overloadChatMessage",
 		name = "Overload Dropped Chat Message",
 		description = "Prints a chat message when a player receives an Overload from Vanguards. Works with party.",
-		position = 28,
+		position = 29,
 		section = roomSection
 	)
 	default boolean overloadChatMessage()

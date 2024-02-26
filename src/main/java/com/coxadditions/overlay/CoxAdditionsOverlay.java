@@ -82,12 +82,15 @@ public class CoxAdditionsOverlay extends Overlay
 						GameObject herb = plugin.getCoxHerb1();
 						String text = Integer.toString(plugin.getCoxHerbTimer1());
 						Point textLoc = herb.getCanvasTextLocation(graphics, text, 50);
-						Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
-						Font oldFont = graphics.getFont();
-						graphics.setFont(plugin.getOverlayFont());
-						OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
-						OverlayUtil.renderTextLocation(graphics, textLoc, text, config.coxHerbTimerColor());
-						graphics.setFont(oldFont);
+						if (textLoc != null)
+						{
+							Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
+							Font oldFont = graphics.getFont();
+							graphics.setFont(plugin.getOverlayFont());
+							OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
+							OverlayUtil.renderTextLocation(graphics, textLoc, text, config.coxHerbTimerColor());
+							graphics.setFont(oldFont);
+						}
 					}
 
 					if (plugin.getCoxHerb2() != null)
@@ -95,12 +98,15 @@ public class CoxAdditionsOverlay extends Overlay
 						GameObject herb = plugin.getCoxHerb2();
 						String text = Integer.toString(plugin.getCoxHerbTimer2());
 						Point textLoc = herb.getCanvasTextLocation(graphics, text, 50);
-						Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
-						Font oldFont = graphics.getFont();
-						graphics.setFont(plugin.getOverlayFont());
-						OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
-						OverlayUtil.renderTextLocation(graphics, textLoc, text, config.coxHerbTimerColor());
-						graphics.setFont(oldFont);
+						if (textLoc != null)
+						{
+							Point pointShadow = new Point(textLoc.getX() + 1, textLoc.getY() + 1);
+							Font oldFont = graphics.getFont();
+							graphics.setFont(plugin.getOverlayFont());
+							OverlayUtil.renderTextLocation(graphics, pointShadow, text, Color.BLACK);
+							OverlayUtil.renderTextLocation(graphics, textLoc, text, config.coxHerbTimerColor());
+							graphics.setFont(oldFont);
+						}
 					}
 				}
 				else if (config.coxHerbTimer() == CoxAdditionsConfig.CoXHerbTimerMode.PIE)
@@ -114,8 +120,8 @@ public class CoxAdditionsOverlay extends Overlay
 						progressPie.setFill(colorFill);
 						progressPie.setBorderColor(config.coxHerbTimerColor());
 						progressPie.setPosition(position);
-						int ticks = 16 - plugin.getCoxHerbTimer1();
-						double progress = 1 - (ticks / 16.0);
+						int ticks = 11 - plugin.getCoxHerbTimer1();
+						double progress = 1 - (ticks / 11.0);
 						progressPie.setProgress(progress);
 						progressPie.render(graphics);
 					}
@@ -129,8 +135,8 @@ public class CoxAdditionsOverlay extends Overlay
 						progressPie.setFill(colorFill);
 						progressPie.setBorderColor(config.coxHerbTimerColor());
 						progressPie.setPosition(position);
-						int ticks = 16 - plugin.getCoxHerbTimer2();
-						double progress = 1 - (ticks / 16.0);
+						int ticks = 11 - plugin.getCoxHerbTimer2();
+						double progress = 1 - (ticks / 11.0);
 						progressPie.setProgress(progress);
 						progressPie.render(graphics);
 					}

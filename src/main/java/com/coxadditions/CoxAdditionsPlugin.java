@@ -71,6 +71,7 @@ import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
 import net.runelite.api.events.GameObjectDespawned;
 import net.runelite.api.events.GameObjectSpawned;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.GraphicsObjectCreated;
 import net.runelite.api.events.ItemContainerChanged;
@@ -91,6 +92,7 @@ import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
 import net.runelite.client.party.PartyService;
 import net.runelite.client.party.WSClient;
+import net.runelite.client.party.events.UserJoin;
 import net.runelite.client.party.events.UserPart;
 import net.runelite.client.plugins.Plugin;
 import net.runelite.client.plugins.PluginDescriptor;
@@ -272,6 +274,8 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	@Getter
 	private final int enhVar = 5417;
 	@Getter
+	private boolean queueEnhUpdate = false;
+	@Getter
 	private EnhanceInfobox enhanceInfobox;
 
 	//Overload
@@ -281,6 +285,11 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	private int totalOvlCycles = 0;
 	@Getter
 	private final int ovlVar = 5418;
+	@Getter
+	private boolean queueOvlUpdate = false;
+
+	@Getter
+	private GameState lastGS = null;
 
 	//Party Pots
 	@Getter
@@ -335,6 +344,16 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	@Getter
 	@Setter
 	private int lastHealthScale = 100;
+
+	//Big Muttadile
+	@Getter
+	private NPC bigMutta = null;
+	@Getter
+	@Setter
+	private int bigMuttaLastRatio = 100;
+	@Getter
+	@Setter
+	private int bigMuttaLastHealthScale = 100;
 
 	//True Tile
 	@Getter
@@ -413,9 +432,9 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		playersInParty.clear();
 
 		coxHerb1 = null;
-		coxHerbTimer1 = 16;
+		coxHerbTimer1 = 11;
 		coxHerb2 = null;
-		coxHerbTimer2 = 16;
+		coxHerbTimer2 = 11;
 
 		totalBuchus = 0;
 		totalGolpar = 0;
@@ -471,6 +490,10 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		smallMutta = null;
 		lastRatio = 100;
 		lastHealthScale = 100;
+
+		bigMutta = null;
+		bigMuttaLastRatio = 100;
+		bigMuttaLastHealthScale = 100;
 
 		ids.add(MAGE);
 		ids.add(RANGE);
@@ -713,6 +736,12 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		{
 			olmPhase = "Flame";
 		}
+		else if (msg.startsWith("you drink some of your") && inRaid
+			&& (msg.contains("overload") || msg.contains("prayer enhance")))
+		{
+			queueOvlUpdate = msg.contains("overload");
+			queueEnhUpdate = msg.contains("prayer enhance");
+		}
 	}
 
 	@Subscribe
@@ -847,6 +876,21 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 		}
 	}
 
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged e)
+	{
+		if (e.getGameState() == GameState.LOGGING_IN)
+		{
+			lastGS = e.getGameState();
+		}
+		else if (e.getGameState() == GameState.LOGGED_IN && lastGS == GameState.LOGGING_IN)
+		{
+			queueOvlUpdate = true;
+			queueEnhUpdate = true;
+			lastGS = e.getGameState();
+		}
+	}
+
 	public void sendPotStatusInfo(int ticks, String pot)
 	{
 		if (partyService.isInParty() && partyService.getLocalMember() != null)
@@ -895,6 +939,16 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 	}
 
 	@Subscribe
+	public void onUserJoin(final UserJoin e)
+	{
+		if (inRaid)
+		{
+			queueOvlUpdate = overloadTicks > 0;
+			queueEnhUpdate = enhanceTicks > 0;
+		}
+	}
+
+	@Subscribe
 	public void onUserPart(final UserPart e)
 	{
 		//Name is unknown if the player is not logged in -> use ID
@@ -912,12 +966,12 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				if (coxHerb1 == null)
 				{
 					coxHerb1 = obj;
-					coxHerbTimer1 = 16;
+					coxHerbTimer1 = 11;
 				}
 				else
 				{
 					coxHerb2 = obj;
-					coxHerbTimer2 = 16;
+					coxHerbTimer2 = 11;
 				}
 			}
 			else if (obj.getId() >= 30000 && obj.getId() <= 30008)
@@ -925,12 +979,12 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				if (coxHerb1 == null)
 				{
 					coxHerb1 = obj;
-					coxHerbTimer1 = 16;
+					coxHerbTimer1 = 11;
 				}
 				else
 				{
 					coxHerb2 = obj;
-					coxHerbTimer2 = 16;
+					coxHerbTimer2 = 11;
 				}
 			}
 			else if (obj.getId() == 29745) //Chest with Grubs
@@ -1138,6 +1192,10 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 					smallMuttaAlive = true;
 					smallMutta = npc;
 					break;
+				case NpcID.MUTTADILE: //Big muttadile in water
+				case NpcID.MUTTADILE_7563: //Big muttadile
+					bigMutta = npc;
+					break;
 			}
 
 			if (name != null)
@@ -1206,6 +1264,12 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 					smallMutta = null;
 					lastHealthScale = 0;
 					lastRatio = 0;
+					break;
+				case NpcID.MUTTADILE: //Big muttadile in water
+				case NpcID.MUTTADILE_7563: //Big muttadile
+					bigMutta = null;
+					bigMuttaLastHealthScale = 0;
+					bigMuttaLastRatio = 0;
 					break;
 			}
 
@@ -1421,13 +1485,23 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				totalEnhCycles = client.getVarbitValue(enhVar);
 				enhanceTicks = client.getVarbitValue(enhVar) * getEnhanceRegenRate();
 				addInfobox("Enhance");
-				sendPotStatusInfo(enhanceTicks, "ENH");
+
+				if (queueEnhUpdate)
+				{
+					sendPotStatusInfo(enhanceTicks, "ENH");
+					queueEnhUpdate = false;
+				}
 			}
 			else if ((client.getVarbitValue(ovlVar) > 0 && totalOvlCycles == 0) || (client.getVarbitValue(ovlVar) != totalOvlCycles))
 			{
 				totalOvlCycles = client.getVarbitValue(ovlVar);
 				overloadTicks = client.getVarbitValue(ovlVar) * 25;
-				sendPotStatusInfo(overloadTicks, "OVL");
+
+				if (queueOvlUpdate)
+				{
+					sendPotStatusInfo(overloadTicks, "OVL");
+					queueOvlUpdate = false;
+				}
 			}
 			else
 			{
@@ -1459,10 +1533,14 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 			lastHealthScale = 100;
 			smallMutta = null;
 
+			bigMuttaLastRatio = 100;
+			bigMuttaLastHealthScale = 100;
+			bigMutta = null;
+
 			coxHerb1 = null;
-			coxHerbTimer1 = 16;
+			coxHerbTimer1 = 11;
 			coxHerb2 = null;
-			coxHerbTimer2 = 16;
+			coxHerbTimer2 = 11;
 
 			totalBuchus = 0;
 			totalGolpar = 0;
