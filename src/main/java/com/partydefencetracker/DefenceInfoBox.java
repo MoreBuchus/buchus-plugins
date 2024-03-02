@@ -36,17 +36,24 @@ public class DefenceInfoBox extends InfoBox
     @Override
     public Color getTextColor()
     {
-        if (count == 0)
-        {
-            return Color.GREEN;
-        }
-        else if (count >= 1 && count <= config.lowDef())
-        {
-            return Color.YELLOW;
-        }
-        else
-        {
-            return Color.WHITE;
-        }
+		if (config.disableIBColor())
+		{
+			return Color.WHITE;
+		}
+		else
+		{
+			if (count == 0)
+			{
+				return config.cappedDefColor();
+			}
+			else if (count >= 1 && count <= config.lowDef())
+			{
+				return config.lowDefColor();
+			}
+			else
+			{
+				return config.highDefColor();
+			}
+		}
     }
 }
