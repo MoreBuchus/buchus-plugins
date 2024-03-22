@@ -122,6 +122,8 @@ public class DefenceTrackerPlugin extends Plugin
 	@Inject
 	private CoXLayoutSolver layoutSolver;
 
+	private static final int COX_SCALED_PARTY_SIZE_VARBIT = 9540;
+
 	private String boss = "";
 	private int bossIndex = 0;
 	private double bossDef = -1;
@@ -506,7 +508,7 @@ public class DefenceTrackerPlugin extends Plugin
 		}
 		else if (coxBosses.contains(boss))
 		{
-			bossDef = bossDef * (1 + (.01 * (client.getVarbitValue(Varbits.RAID_PARTY_SIZE) - 1)));
+			bossDef = bossDef * (1 + (.01 * (client.getVarbitValue(COX_SCALED_PARTY_SIZE_VARBIT) - 1)));
 			if (inCm)
 			{
 				bossDef = bossDef * (boss.contains("Tekton") ? 1.2 : 1.5);
