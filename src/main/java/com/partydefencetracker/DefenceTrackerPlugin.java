@@ -122,6 +122,8 @@ public class DefenceTrackerPlugin extends Plugin
 	@Inject
 	private CoXLayoutSolver layoutSolver;
 
+	private static final int COX_SCALED_PARTY_SIZE_VARBIT = 9540;
+
 	private String boss = "";
 	private int bossIndex = 0;
 	private double bossDef = -1;
@@ -174,7 +176,7 @@ public class DefenceTrackerPlugin extends Plugin
 		put("Zulrah", new ArrayList<>(Arrays.asList(9007, 9008)));
 	}};
 
-	private final List<String> coxBosses = Arrays.asList("Great Olm (Left claw)", "Ice demon", "Skeletal Mystic", "Tekton", "Vasa Nistirio");
+	private final List<String> coxBosses = Arrays.asList("Abyssal portal", "Deathly mage", "Deathly ranger", "Great Olm", "Great Olm (Left claw)", "Great Olm (Right claw", "Ice demon", "Skeletal Mystic", "Tekton", "Vasa Nistirio", "Lizardman shaman");
 
 	@Provides
 	DefenceTrackerConfig provideConfig(ConfigManager configManager)
@@ -506,7 +508,7 @@ public class DefenceTrackerPlugin extends Plugin
 		}
 		else if (coxBosses.contains(boss))
 		{
-			bossDef = bossDef * (1 + (.01 * (client.getVarbitValue(Varbits.RAID_PARTY_SIZE) - 1)));
+			bossDef = bossDef * (1 + (.01 * (client.getVarbitValue(COX_SCALED_PARTY_SIZE_VARBIT) - 1)));
 			if (inCm)
 			{
 				bossDef = bossDef * (boss.contains("Tekton") ? 1.2 : 1.5);
