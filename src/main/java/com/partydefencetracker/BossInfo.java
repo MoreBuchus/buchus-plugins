@@ -4,6 +4,7 @@ import lombok.Getter;
 
 enum BossInfo
 {
+	ABYSSAL_PORTAL("Abyssal portal", 176),
 	ABYSSAL_SIRE("Abyssal Sire", 250),
 	ALCHEMICAL_HYDRA("Alchemical Hydra", 100),
 	AKKHA("Akkha", 80),
@@ -24,6 +25,7 @@ enum BossInfo
 	GENERAL_GRAARDOR("General Graardor", 250),
 	GIANT_MOLE("Giant Mole", 200),
 	GREAT_OLM("Great Olm (Left claw)", 175),
+	GUARDIAN("Guardian", 100),
 	ICE_DEMON("Ice Demon", 160),
 	KALPHITE_QUEEN("Kalphite Queen", 300),
 	KEPHRI("Kephri", 20),
