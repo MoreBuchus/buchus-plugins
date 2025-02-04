@@ -36,13 +36,7 @@ import java.text.DecimalFormat;
 import java.util.Optional;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import net.runelite.api.ChatMessageType;
-import net.runelite.api.Client;
-import net.runelite.api.GameState;
-import net.runelite.api.NPC;
-import net.runelite.api.NpcID;
-import net.runelite.api.Point;
-import net.runelite.api.Varbits;
+import net.runelite.api.*;
 import net.runelite.api.events.ActorDeath;
 import net.runelite.api.events.ChatMessage;
 import net.runelite.api.events.ClientTick;
@@ -51,8 +45,9 @@ import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
 import net.runelite.api.events.ScriptPostFired;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.VarPlayer;
+import net.runelite.api.widgets.ComponentID;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.RuneLite;
 import net.runelite.client.callback.ClientThread;
 import net.runelite.client.chat.ChatColorType;
@@ -122,6 +117,7 @@ public class CoxAnalyticsPlugin extends Plugin
 	private static final String RAID_COMPLETE_MESSAGE = "Congratulations - your raid is complete!";
 	private static final String COMBAT_ROOM_COMPLETE_MESSAGE = "Combat room ";
 	private static final String PUZZLE_ROOM_COMPLETE_MESSAGE = "Puzzle ";
+	private static final int RAID_PARTY_SIZE = 5424;
 
 	@Getter
 	private boolean inCox;
@@ -411,9 +407,8 @@ public class CoxAnalyticsPlugin extends Plugin
 				else if (msg.startsWith(RAID_COMPLETE_MESSAGE))
 				{
 					int totalPoints = client.getVarbitValue(Varbits.TOTAL_POINTS);
-					int personalPoints = client.getVarbitValue(Varbits.PERSONAL_POINTS);
-					int scale = client.getVarbitValue(Varbits.RAID_PARTY_SIZE);
-
+					int personalPoints = client.getVarpValue(VarPlayer.RAIDS_PERSONAL_POINTS);
+					int scale = client.getVarbitValue(RAID_PARTY_SIZE);
 					endTicks = coxTimeVar();
 					getFloorTimes();
 					splits += "Olm: " + olmTime + "<br>Raid Completed: " + raidTime(endTicks) + " | Team Size: " + scale + "<br>";
@@ -478,7 +473,7 @@ public class CoxAnalyticsPlugin extends Plugin
 
 	private int getOlmPhases()
 	{
-		int scale = client.getVarbitValue(Varbits.RAID_PARTY_SIZE);
+		int scale = client.getVarbitValue(RAID_PARTY_SIZE);
 		return 3 + (scale / 8);
 	}
 
@@ -500,7 +495,7 @@ public class CoxAnalyticsPlugin extends Plugin
 			//Needs to run the script, otherwise it only updates the time every ~4 seconds
 			client.runScript(2289, 0, 0, 0);
 
-			Widget widget = client.getWidget(WidgetInfo.RAIDS_POINTS_INFOBOX);
+			Widget widget = client.getWidget(ComponentID.RAIDS_POINTS_INFOBOX);
 			Point mousePosition = client.getMouseCanvasPosition();
 
 			if (widget != null && !widget.isHidden() && widget.getBounds().contains(mousePosition.getX(), mousePosition.getY()))
@@ -518,7 +513,7 @@ public class CoxAnalyticsPlugin extends Plugin
 	{
 		if (event.getScriptId() == COX_POINT_WIDGET_SCRIPT && inCox)
 		{
-			Widget widget = client.getWidget(WidgetInfo.RAIDS_POINTS_INFOBOX);
+			Widget widget = client.getWidget(ComponentID.RAIDS_POINTS_INFOBOX);
 
 			if (widget != null && !widget.isHidden())
 			{
@@ -531,7 +526,7 @@ public class CoxAnalyticsPlugin extends Plugin
 	{
 		if (client.getGameState() == GameState.LOGGED_IN && inCox)
 		{
-			final Widget widget = client.getWidget(WidgetInfo.RAIDS_POINTS_INFOBOX);
+			final Widget widget = client.getWidget(ComponentID.RAIDS_POINTS_INFOBOX);
 			if (widget != null)
 			{
 				widget.setHidden(hidden);

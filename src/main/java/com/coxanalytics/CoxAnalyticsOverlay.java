@@ -3,6 +3,7 @@ package com.coxanalytics;
 import com.coxanalytics.config.CustomOverlayInfo;
 import net.runelite.api.Client;
 import net.runelite.api.Point;
+import net.runelite.api.VarPlayer;
 import net.runelite.api.Varbits;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.overlay.OverlayLayer;
@@ -45,7 +46,7 @@ public class CoxAnalyticsOverlay extends OverlayPanel
 		if (plugin.isInCox() && config.replaceWidget())
 		{
 			int totalPoints = client.getVarbitValue(Varbits.TOTAL_POINTS);
-			int personalPoints = client.getVarbitValue(Varbits.PERSONAL_POINTS);
+			int personalPoints = client.getVarpValue(VarPlayer.RAIDS_PERSONAL_POINTS);
 
 			switch (config.fontType())
 			{
