@@ -551,7 +551,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				}
 				catch (Exception ex)
 				{
-					System.out.println(ex.getMessage());
+					//System.out.println(ex.getMessage());
 				}
 			}
 		}
@@ -567,7 +567,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 				}
 				catch (Exception ex)
 				{
-					System.out.println(ex.getMessage());
+					//System.out.println(ex.getMessage());
 				}
 			}
 		}
@@ -644,7 +644,7 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 							}
 							catch (Exception ex)
 							{
-								System.out.println(ex.getMessage());
+								//System.out.println(ex.getMessage());
 							}
 						}
 					}
@@ -659,9 +659,10 @@ public class CoxAdditionsPlugin extends Plugin implements KeyListener
 							{
 								chestHighlightIdList2.add(str.trim());
 							}
+
 							catch (Exception ex)
 							{
-								System.out.println(ex.getMessage());
+								//System.out.println(ex.getMessage());
 							}
 						}
 					}
