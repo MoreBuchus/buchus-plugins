@@ -790,7 +790,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 			{
 				if (n.spawnPoint == null && n.diedOnTick != -1)
 				{
-					WorldPoint wp = client.isInInstancedRegion() ? WorldPoint.fromLocalInstance(client, npc.getLocalLocation()) : WorldPoint.fromLocal(client, npc.getLocalLocation());
+					WorldPoint wp = WorldPoint.fromLocalInstance(client, npc.getLocalLocation());
 					if (n.spawnLocations.contains(wp))
 					{
 						n.spawnPoint = wp;
@@ -882,7 +882,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 				&& client.getLocalPlayer().getPlayerComposition() != null)
 			{
 				npcList.clear();
-				for (NPC npc : client.getNpcs())
+				for (NPC npc : client.getTopLevelWorldView().npcs())
 				{
 					NPCInfo npcInfo = checkValidNPC(npc);
 					if (npcInfo != null)
