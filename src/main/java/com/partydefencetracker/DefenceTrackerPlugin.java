@@ -463,7 +463,7 @@ public class DefenceTrackerPlugin extends Plugin
 							infoBoxManager.addInfoBox(shadowBarrageBox);
 						}
 						shadowBarrageHit = true; // non-stackable reduction
-						bossDef -= bossDef * .15;
+						bossDef -= bossDef * .165;
 
 						updateDefInfobox();
 					}
