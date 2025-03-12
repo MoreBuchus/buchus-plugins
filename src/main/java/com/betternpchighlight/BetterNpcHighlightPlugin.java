@@ -873,7 +873,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 			&& client.getLocalPlayer().getPlayerComposition() != null)
 		{
 			npcList.clear();
-			for (NPC npc : client.getTopLevelWorldView().npcs())
+			for (NPC npc : client.getTopLevelWorldView().npcs().stream().collect(Collectors.toCollection(ArrayList::new)))
 			{
 				NPCInfo npcInfo = checkValidNPC(npc);
 				if (npcInfo != null)
