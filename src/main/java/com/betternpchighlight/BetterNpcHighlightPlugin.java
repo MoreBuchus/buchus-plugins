@@ -922,9 +922,9 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 			}
 		}
 
-		if (npc.getName() != null)
+		if (npc.getComposition().getName() != null)
 		{
-			String name = npc.getName().toLowerCase();
+			String name = npc.getComposition().getName().toLowerCase();
 			for (String entry : strList)
 			{
 				String nameStr = entry;
@@ -947,9 +947,9 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 
 	public boolean checkSpecificNameList(ArrayList<String> strList, NPC npc)
 	{
-		if (npc.getName() != null)
+		if (npc.getComposition().getName() != null)
 		{
-			String name = npc.getName().toLowerCase();
+			String name = npc.getComposition().getName().toLowerCase();
 			for (String entry : strList)
 			{
 				String nameStr = entry;
