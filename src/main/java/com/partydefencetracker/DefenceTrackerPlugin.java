@@ -238,6 +238,8 @@ public class DefenceTrackerPlugin extends Plugin
 				if (animation == 1816 && boss.equalsIgnoreCase("sotetseg") && inBossRegion())
 				{
 					infoBoxManager.removeInfoBox(box);
+					infoBoxManager.removeInfoBox(shadowBarrageBox);
+					shadowBarrageHit = false;
 					bossDef = 200;
 				}
 			}
@@ -461,7 +463,7 @@ public class DefenceTrackerPlugin extends Plugin
 							infoBoxManager.addInfoBox(shadowBarrageBox);
 						}
 						shadowBarrageHit = true; // non-stackable reduction
-						bossDef -= bossDef * .15;
+						bossDef -= bossDef * .165;
 
 						updateDefInfobox();
 					}
