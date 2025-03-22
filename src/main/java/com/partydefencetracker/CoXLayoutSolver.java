@@ -35,6 +35,7 @@ import net.runelite.api.Point;
 import net.runelite.api.Tile;
 import net.runelite.api.VarPlayer;
 import net.runelite.api.Varbits;
+import net.runelite.api.WorldView;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -167,6 +168,7 @@ public class CoXLayoutSolver
 
 	private Raid buildRaid(Raid from)
 	{
+		WorldView wv = client.getTopLevelWorldView();
 		Raid raid = from;
 
 		if (raid == null)
@@ -186,7 +188,7 @@ public class CoXLayoutSolver
 			}
 
 			raid = new Raid(
-				new WorldPoint(client.getBaseX() + gridBase.getX(), client.getBaseY() + gridBase.getY(), LOBBY_PLANE),
+				new WorldPoint(wv.getBaseX() + gridBase.getX(), wv.getBaseY() + gridBase.getY(), LOBBY_PLANE),
 				lobbyIndex
 			);
 		}
@@ -206,8 +208,8 @@ public class CoXLayoutSolver
 			x = raid.getGridBase().getX() + x * ROOM_MAX_SIZE;
 			y = raid.getGridBase().getY() - y * ROOM_MAX_SIZE;
 
-			x = x - client.getBaseX();
-			y = y - client.getBaseY();
+			x = x - wv.getBaseX();
+			y = y - wv.getBaseY();
 
 			if (x < (1 - ROOM_MAX_SIZE) || x >= SCENE_SIZE)
 			{
@@ -223,7 +225,7 @@ public class CoXLayoutSolver
 				y = 1;
 			}
 
-			Tile tile = client.getScene().getTiles()[plane][x][y];
+			Tile tile = wv.getScene().getTiles()[plane][x][y];
 
 			if (tile == null)
 			{
@@ -239,7 +241,7 @@ public class CoXLayoutSolver
 
 	private Point findLobbyBase()
 	{
-		Tile[][] tiles = client.getScene().getTiles()[LOBBY_PLANE];
+		Tile[][] tiles = client.getTopLevelWorldView().getScene().getTiles()[LOBBY_PLANE];
 
 		for (int x = 0; x < SCENE_SIZE; x++)
 		{
@@ -262,7 +264,7 @@ public class CoXLayoutSolver
 
 	private RaidRoom determineRoom(Tile base)
 	{
-		int chunkData = client.getInstanceTemplateChunks()[base.getPlane()][(base.getSceneLocation().getX()) / 8][base.getSceneLocation().getY() / 8];
+		int chunkData = client.getTopLevelWorldView().getInstanceTemplateChunks()[base.getPlane()][(base.getSceneLocation().getX()) / 8][base.getSceneLocation().getY() / 8];
 		InstanceTemplates template = InstanceTemplates.findMatch(chunkData);
 
 		if (template == null)
@@ -321,7 +323,7 @@ public class CoXLayoutSolver
 		}
 		int x;
 		int y;
-		Tile[][] tiles = client.getScene().getTiles()[LOBBY_PLANE];
+		Tile[][] tiles = client.getTopLevelWorldView().getScene().getTiles()[LOBBY_PLANE];
 		if (tiles[gridBase.getX()][gridBase.getY() + ROOM_MAX_SIZE] == null)
 		{
 			y = 0;

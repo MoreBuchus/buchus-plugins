@@ -30,10 +30,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import javax.inject.Inject;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -155,7 +157,7 @@ public class DefenceTrackerPlugin extends Plugin
 
 	private final List<SpecialCounterUpdate> specialList = new ArrayList<>();
 
-	Map<String, ArrayList<Integer>> bossRegions = new HashMap<String, ArrayList<Integer>>()
+	Map<String, ArrayList<Integer>> bossRegions = new HashMap<>()
 	{{
 		put("The Maiden of Sugadinti", new ArrayList<>(Collections.singletonList(12613)));
 		put("Pestilent Bloat", new ArrayList<>(Collections.singletonList(13125)));
@@ -181,7 +183,8 @@ public class DefenceTrackerPlugin extends Plugin
 		put("Zulrah", new ArrayList<>(Arrays.asList(9007, 9008)));
 	}};
 
-	private final List<String> coxBosses = Arrays.asList("Abyssal portal", "Deathly mage", "Deathly ranger", "Great Olm", "Great Olm (Left claw)", "Great Olm (Right claw", "Ice demon", "Skeletal Mystic", "Tekton", "Vasa Nistirio", "Lizardman shaman");
+	private final Set<String> coxBosses = new HashSet<>(List.of("Abyssal portal", "Deathly mage", "Deathly ranger", "Great Olm", "Great Olm (Left claw)", "Great Olm (Right claw", "Ice demon", "Skeletal Mystic", "Tekton", "Vasa Nistirio", "Lizardman shaman"));
+  	private final Set<String> coxBossesSpecialOffensiveScaling = new HashSet<>(List.of("Abyssal portal", "Deathly ranger"));
 
 	@Provides
 	DefenceTrackerConfig provideConfig(ConfigManager configManager)
@@ -261,7 +264,7 @@ public class DefenceTrackerPlugin extends Plugin
 		int world = e.getWorld();
 		SpecialWeapon weapon = e.getWeapon();
 		int index = e.getNpcIndex();
-		NPC npc = client.getCachedNPCs()[index];
+		NPC npc = client.getTopLevelWorldView().npcs().byIndex(index);
 
 		clientThread.invoke(() ->
 		{
@@ -598,7 +601,14 @@ public class DefenceTrackerPlugin extends Plugin
 		if (coxBosses.contains(boss))
 		{
 			int partySize = getCoxPartySize();
-			scaledMagicLevel = scaledMagicLevel * (((int) (Math.sqrt(partySize - 1))) * 7 + partySize + 99) / 100;
+			if (coxBossesSpecialOffensiveScaling.contains(boss))
+			{
+				scaledMagicLevel = (int) (scaledMagicLevel * (((int) Math.sqrt(partySize - 1) + ((partySize - 1) * 7 / 10 + 100)) / 100.0));
+			}
+			else
+			{
+				scaledMagicLevel = scaledMagicLevel * (((int) (Math.sqrt(partySize - 1))) * 7 + partySize + 99) / 100;
+			}
 			if (inCm)
 			{
 				scaledMagicLevel = (int) (1.5 * scaledMagicLevel);
@@ -746,7 +756,8 @@ public class DefenceTrackerPlugin extends Plugin
 
 	public boolean isInCoxLobby()
 	{
-		return client.getMapRegions() != null && client.getMapRegions().length > 0 && Arrays.stream(client.getMapRegions()).anyMatch((s) -> s == 4919);
+		int[] regions = client.getTopLevelWorldView().getMapRegions();
+		return regions != null && regions.length > 0 && Arrays.stream(regions).anyMatch((s) -> s == 4919);
 	}
 
 	private int getCoxPartySize()
