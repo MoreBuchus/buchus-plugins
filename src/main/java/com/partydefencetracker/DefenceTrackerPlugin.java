@@ -185,7 +185,15 @@ public class DefenceTrackerPlugin extends Plugin
 	}};
 
 	private final Set<String> coxBosses = new HashSet<>(List.of("Abyssal portal", "Deathly mage", "Deathly ranger", "Great Olm", "Great Olm (Left claw)", "Great Olm (Right claw", "Ice demon", "Skeletal Mystic", "Tekton", "Vasa Nistirio", "Lizardman shaman"));
-  	private final Set<String> coxBossesSpecialOffensiveScaling = new HashSet<>(List.of("Abyssal portal", "Deathly ranger"));
+	private final Set<String> coxBossesSpecialOffensiveScaling = new HashSet<>(List.of("Abyssal portal", "Deathly ranger"));
+	private final Map<String, Integer> toaBossesWithDefenceLevels = new HashMap<>() {{
+	        put("Zebak", 70);
+	        put("Kephri", 80);
+	        put("Ba-Ba", 80);
+	        put("Akkha", 80);
+	        put("Tumeken's Warden", 150);
+	        put("Elidinis' Warden", 150);
+    	}};
 
 	@Provides
 	DefenceTrackerConfig provideConfig(ConfigManager configManager)
@@ -256,6 +264,7 @@ public class DefenceTrackerPlugin extends Plugin
 			{
 				infoBoxManager.removeInfoBox(box);
 				bossDef = 60;
+				toaBossesWithDefenceLevels.put(boss, 180);
 			}
 		}
 	}
@@ -633,7 +642,15 @@ public class DefenceTrackerPlugin extends Plugin
 				}
 				else
 				{
-					bossDef -= bossDef * .30;
+					if (client.getVarbitValue(Varbits.IN_RAID) == 1 && toaBossesWithDefenceLevels.containsKey(boss))
+					{
+						int actualBossDefence = toaBossesWithDefenceLevels.get(boss);
+						bossDef -= actualBossDefence * .30;
+					}
+					else
+					{
+						bossDef -= bossDef * .30;
+					}
 				}
 				break;
 			case ELDER_MAUL:
@@ -646,7 +663,15 @@ public class DefenceTrackerPlugin extends Plugin
 				}
 				else
 				{
-					bossDef -= bossDef * .35;
+					if (client.getVarbitValue(Varbits.IN_RAID) == 1 && toaBossesWithDefenceLevels.containsKey(boss))
+					{
+						int actualBossDefence = toaBossesWithDefenceLevels.get(boss);
+						bossDef -= actualBossDefence * .35;
+					}
+					else
+					{
+						bossDef -= bossDef * .35;
+					}
 				}
 				break;
 			case BANDOS_GODSWORD:
