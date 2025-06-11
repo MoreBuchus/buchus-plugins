@@ -134,7 +134,6 @@ public class DefenceTrackerPlugin extends Plugin
 	private VulnerabilityInfoBox vulnBox = null;
 	private SpritePixels vuln = null;
 	private ShadowBarrageInfoBox shadowBarrageBox = null;
-	private SpritePixels shadowBarrage = null;
 	private boolean shadowBarrageHit = false;
 
 	private RedKerisInfoBox redKerisBox = null;
@@ -223,7 +222,6 @@ public class DefenceTrackerPlugin extends Plugin
 		redKerisBox = null;
 		redKerisTicks = 0;
 		shadowBarrageBox = null;
-		shadowBarrage = null;
 		shadowBarrageHit = false;
 		bloatDown = false;
 		queuedNpc = null;
@@ -241,6 +239,8 @@ public class DefenceTrackerPlugin extends Plugin
 				if (animation == 1816 && boss.equalsIgnoreCase("sotetseg") && inBossRegion())
 				{
 					infoBoxManager.removeInfoBox(box);
+					infoBoxManager.removeInfoBox(shadowBarrageBox);
+					shadowBarrageHit = false;
 					bossDef = 200;
 				}
 			}
@@ -464,7 +464,7 @@ public class DefenceTrackerPlugin extends Plugin
 							infoBoxManager.addInfoBox(shadowBarrageBox);
 						}
 						shadowBarrageHit = true; // non-stackable reduction
-						bossDef -= bossDef * .15;
+						bossDef -= bossDef * .165;
 
 						updateDefInfobox();
 					}
