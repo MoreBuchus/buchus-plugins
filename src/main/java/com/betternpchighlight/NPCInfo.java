@@ -3,7 +3,6 @@ package com.betternpchighlight;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.NPC;
-import net.runelite.client.plugins.slayer.SlayerPluginService;
 
 @Getter
 @Setter
@@ -21,20 +20,76 @@ public class NPCInfo
 	HighlightColor turbo;
 	boolean isTask;
 	boolean ignoreDead;
+	boolean hideNpc;
+	boolean drawOverlayBeneathNpc;
+	boolean displayNameAboveNpc;
 
-	public NPCInfo(NPC npc, BetterNpcHighlightPlugin plugin, SlayerPluginService slayerPluginService, BetterNpcHighlightConfig config)
+	/**
+	 * Main constructor - creates NPCInfo with default (off) highlight states
+	 */
+	public NPCInfo(NPC npc)
 	{
 		this.npc = npc;
-		this.tile = plugin.checkSpecificList(plugin.tileNames, plugin.tileIds, npc, config.tileColor(), config.tileFillColor());
-		this.trueTile = plugin.checkSpecificList(plugin.trueTileNames, plugin.trueTileIds, npc, config.trueTileColor(), config.trueTileFillColor());
-		this.swTile = plugin.checkSpecificList(plugin.swTileNames, plugin.swTileIds, npc, config.swTileColor(), config.swTileFillColor());
-		this.swTrueTile = plugin.checkSpecificList(plugin.swTrueTileNames, plugin.swTrueTileIds, npc, config.swTrueTileColor(), config.swTrueTileFillColor());
-		this.hull = plugin.checkSpecificList(plugin.hullNames, plugin.hullIds, npc, config.hullColor(), config.hullFillColor());
-		this.area = plugin.checkSpecificList(plugin.areaNames, plugin.areaIds, npc, config.areaColor(), null);
-		this.outline = plugin.checkSpecificList(plugin.outlineNames, plugin.outlineIds, npc, config.outlineColor(), null);
-		this.clickbox = plugin.checkSpecificList(plugin.clickboxNames, plugin.clickboxIds, npc, config.clickboxColor(), config.clickboxFillColor());
-		this.turbo = plugin.checkSpecificList(plugin.turboNames, plugin.turboIds, npc, null, null);
-		this.isTask = plugin.checkSlayerPluginEnabled() && slayerPluginService != null && slayerPluginService.getTargets().contains(npc);
-		this.ignoreDead = plugin.checkSpecificNameList(plugin.ignoreDeadExclusionList, npc) || plugin.checkSpecificIdList(plugin.ignoreDeadExclusionIDList, npc);
+		// Initialize with default "off" values
+		this.tile = new HighlightColor(false, null, null);
+		this.trueTile = new HighlightColor(false, null, null);
+		this.swTile = new HighlightColor(false, null, null);
+		this.swTrueTile = new HighlightColor(false, null, null);
+		this.hull = new HighlightColor(false, null, null);
+		this.area = new HighlightColor(false, null, null);
+		this.outline = new HighlightColor(false, null, null);
+		this.clickbox = new HighlightColor(false, null, null);
+		this.turbo = new HighlightColor(false, null, null);
+		this.isTask = false;
+		this.ignoreDead = false;
+		this.hideNpc = false;
+		this.drawOverlayBeneathNpc = false;
+		this.displayNameAboveNpc = false;
+	}
+
+	/**
+	 * Check if this NPC has any active highlights
+	 */
+	public boolean hasAnyHighlight()
+	{
+		return tile.isHighlight() || trueTile.isHighlight() || swTile.isHighlight() ||
+				swTrueTile.isHighlight() || hull.isHighlight() || area.isHighlight() ||
+				outline.isHighlight() || clickbox.isHighlight() || turbo.isHighlight() ||
+				isTask;
+	}
+
+	/**
+	 * Get the primary highlight type for this NPC (used for priority ordering)
+	 */
+	public String getPrimaryHighlightType()
+	{
+		if (isTask) return "Task";
+		if (tile.isHighlight()) return "Tile";
+		if (trueTile.isHighlight()) return "True Tile";
+		if (swTile.isHighlight()) return "SW Tile";
+		if (swTrueTile.isHighlight()) return "SW True Tile";
+		if (hull.isHighlight()) return "Hull";
+		if (area.isHighlight()) return "Area";
+		if (outline.isHighlight()) return "Outline";
+		if (clickbox.isHighlight()) return "Clickbox";
+		if (turbo.isHighlight()) return "Turbo";
+		return "None";
+	}
+
+	/**
+	 * Get the primary highlight color for this NPC
+	 */
+	public HighlightColor getPrimaryHighlight()
+	{
+		if (tile.isHighlight()) return tile;
+		if (trueTile.isHighlight()) return trueTile;
+		if (swTile.isHighlight()) return swTile;
+		if (swTrueTile.isHighlight()) return swTrueTile;
+		if (hull.isHighlight()) return hull;
+		if (area.isHighlight()) return area;
+		if (outline.isHighlight()) return outline;
+		if (clickbox.isHighlight()) return clickbox;
+		if (turbo.isHighlight()) return turbo;
+		return null;
 	}
 }

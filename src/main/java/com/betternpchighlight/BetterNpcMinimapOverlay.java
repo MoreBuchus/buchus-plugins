@@ -4,7 +4,6 @@ import net.runelite.api.Client;
 import net.runelite.api.NPC;
 import net.runelite.api.NPCComposition;
 import net.runelite.api.Point;
-import net.runelite.client.plugins.slayer.SlayerPluginService;
 import net.runelite.client.ui.overlay.*;
 import javax.inject.Inject;
 import java.awt.*;
@@ -33,6 +32,11 @@ public class BetterNpcMinimapOverlay extends Overlay
 	{
 		for (NPCInfo npcInfo : plugin.npcList)
 		{
+			if (npcInfo.isHideNpc())
+			{
+				continue;
+			}
+
 			NPC npc = npcInfo.getNpc();
 			if (npc.getName() != null && config.npcMinimapMode() != BetterNpcHighlightConfig.npcMinimapMode.OFF)
 			{

@@ -1111,23 +1111,36 @@ public interface BetterNpcHighlightConfig extends Config
 
 	@Alpha
 	@ConfigItem(
-		position = 5,
-		keyName = "clickboxFillColor",
-		name = "Fill Color",
-		description = "Sets the fill color of NPC clickbox highlights",
-		section = clickboxSection
+			position = 5,
+			keyName = "clickboxFillColor",
+			name = "Fill Color",
+			description = "Sets the fill color of NPC clickbox highlights",
+			section = clickboxSection
 	)
 	default Color clickboxFillColor()
 	{
 		return new Color(0, 255, 255, 20);
 	}
 
+	@Range(min = 0, max = 50)
 	@ConfigItem(
-		position = 6,
-		keyName = "clickboxAA",
-		name = "Anti-Aliasing",
-		description = "Turns on anti-aliasing for the clickboxes. Makes them smoother.",
-		section = clickboxSection
+			position = 6,
+			keyName = "clickboxWidth",
+			name = "Highlight Width",
+			description = "Sets the width of NPC clickbox highlights",
+			section = clickboxSection
+	)
+	default double clickboxWidth()
+	{
+		return 1;
+	}
+
+	@ConfigItem(
+			position = 7,
+			keyName = "clickboxAA",
+			name = "Anti-Aliasing",
+			description = "Turns on anti-aliasing for the clickboxes. Makes them smoother.",
+			section = clickboxSection
 	)
 	default boolean clickboxAA()
 	{
@@ -1135,11 +1148,11 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 7,
-		keyName = "clickboxRave",
-		name = "Enable Rave Mode",
-		description = "Sets all clickbox overlays to Rave Mode",
-		section = clickboxSection
+			position = 8,
+			keyName = "clickboxRave",
+			name = "Enable Rave Mode",
+			description = "Sets all clickbox overlays to Rave Mode",
+			section = clickboxSection
 	)
 	default boolean clickboxRave()
 	{
@@ -1147,11 +1160,11 @@ public interface BetterNpcHighlightConfig extends Config
 	}
 
 	@ConfigItem(
-		position = 8,
-		keyName = "clickboxRaveSpeed",
-		name = "Rave Speed",
-		description = "Sets the speed the overlays rave at",
-		section = clickboxSection
+			position = 9,
+			keyName = "clickboxRaveSpeed",
+			name = "Rave Speed",
+			description = "Sets the speed the overlays rave at",
+			section = clickboxSection
 	)
 	@Units(Units.MILLISECONDS)
 	default int clickboxRaveSpeed()
