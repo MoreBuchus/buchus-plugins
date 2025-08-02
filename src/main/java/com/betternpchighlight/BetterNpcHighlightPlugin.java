@@ -229,6 +229,8 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 						NPCInfo info = buildNpcInfoFromPanelEntries(npc, entries);
 						if (info != null && (info.hasAnyHighlight() || info.isHideNpc() || info.isDisplayNameAboveNpc() || info.isDrawOverlayBeneathNpc())) {
 							npcList.add(info);
+							System.out.println(info.toString());
+							System.out.println(info.getNpc().getName() + " " + info.isDrawOverlayBeneathNpc());
 						}
 					}
 				}

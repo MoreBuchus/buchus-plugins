@@ -67,23 +67,6 @@ public class BetterNpcHighlightOverlay extends Overlay
 
 	public Dimension render(Graphics2D graphics)
 	{
-		// Corrected "Draw Beneath NPC" logic
-		if (client.isGpu() && client.getLocalPlayer() != null)
-		{
-			final LocalPoint lp = client.getLocalPlayer().getLocalLocation();
-			if (lp != null)
-			{
-				final List<NPCInfo> npcsToDrawBeneath = plugin.npcList.stream()
-					.filter(NPCInfo::isDrawOverlayBeneathNpc)
-					.filter(n -> n.getNpc().getLocalLocation() != null && !n.getNpc().isDead() && !npcUtil.isDying(n.getNpc()))
-					.sorted(Comparator.comparingInt(n -> n.getNpc().getLocalLocation().distanceTo(lp)))
-					.limit(config.drawBeneathLimit())
-					.collect(Collectors.toList());
-
-				npcsToDrawBeneath.forEach(nInfo -> removeActor(graphics, nInfo.getNpc()));
-			}
-		}
-
 		for (NPCInfo npcInfo : plugin.npcList)
 		{
 			NPC npc = npcInfo.getNpc();
@@ -167,6 +150,24 @@ public class BetterNpcHighlightOverlay extends Overlay
 						}
 					}
 				}
+			}
+		}
+
+		// New "Draw Beneath NPC" logic
+		if (client.isGpu() && client.getLocalPlayer() != null)
+		{
+			final LocalPoint lp = client.getLocalPlayer().getLocalLocation();
+			if (lp != null)
+			{
+				final List<NPCInfo> npcsToDrawBeneath = plugin.npcList.stream()
+						.filter(NPCInfo::isDrawOverlayBeneathNpc)
+						.filter(n -> n.getNpc().getLocalLocation() != null && !n.getNpc().isDead() && !npcUtil.isDying(n.getNpc()))
+						.sorted(Comparator.comparingInt(n -> n.getNpc().getLocalLocation().distanceTo(lp)))
+						.limit(config.drawBeneathLimit())
+						.collect(Collectors.toList());
+				npcsToDrawBeneath.forEach(nInfo -> System.out.println("NPC to draw beneath: " + nInfo.getNpc().getName()));
+
+				npcsToDrawBeneath.forEach(nInfo -> removeActor(graphics, nInfo.getNpc()));
 			}
 		}
 
@@ -741,19 +742,8 @@ public class BetterNpcHighlightOverlay extends Overlay
 	//Copied from Skretzo
 	private static boolean isInvisible(Model model)
 	{
-		// Fixed: Add null check for model
-		if (model == null) {
-			return true;
-		}
-
-		// Fixed: Add null check for face colors array
-		int[] faceColors = model.getFaceColors3();
-		if (faceColors == null) {
-			return true;
-		}
-
 		// If all the values in model.getFaceColors3() are -1 then the model is invisible
-		for (int value : faceColors)
+		for (int value : model.getFaceColors3())
 		{
 			if (value != -1)
 			{
@@ -773,21 +763,11 @@ public class BetterNpcHighlightOverlay extends Overlay
 		Object origAA = graphics.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 		Model model = actor.getModel();
-
-		// Fixed: Add null check for model
-		if (model == null) {
-			return;
-		}
-
+		System.out.println(model);
 		int vCount = model.getVerticesCount();
 		float[] x3d = model.getVerticesX();
 		float[] y3d = model.getVerticesY();
 		float[] z3d = model.getVerticesZ();
-
-		// Fixed: Add null checks for vertex arrays
-		if (x3d == null || y3d == null || z3d == null) {
-			return;
-		}
 
 		int[] x2d = new int[vCount];
 		int[] y2d = new int[vCount];
@@ -799,14 +779,11 @@ public class BetterNpcHighlightOverlay extends Overlay
 			if (composition != null)
 			{
 				size = composition.getSize();
+				System.out.println(size);
 			}
 		}
 
 		final LocalPoint lp = actor.getLocalLocation();
-		// Fixed: Add null check for local point
-		if (lp == null) {
-			return;
-		}
 
 		final int localX = lp.getX();
 		final int localY = lp.getY();
@@ -840,22 +817,11 @@ public class BetterNpcHighlightOverlay extends Overlay
 		int[] ty = model.getFaceIndices2();
 		int[] tz = model.getFaceIndices3();
 
-		// Fixed: Add null checks for face index arrays
-		if (tx == null || ty == null || tz == null) {
-			return;
-		}
-
 		Composite orig = graphics.getComposite();
 		graphics.setComposite(AlphaComposite.Clear);
 		graphics.setColor(Color.WHITE);
 		for (int i = 0; i < tCount; i++)
 		{
-			// Fixed: Add bounds checking for face indices
-			if (tx[i] >= vCount || ty[i] >= vCount || tz[i] >= vCount ||
-					tx[i] < 0 || ty[i] < 0 || tz[i] < 0) {
-				continue;
-			}
-
 			// Cull tris facing away from the camera
 			if (getTriDirection(x2d[tx[i]], y2d[tx[i]], x2d[ty[i]], y2d[ty[i]], x2d[tz[i]], y2d[tz[i]]) >= 0)
 			{
