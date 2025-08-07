@@ -1,22 +1,21 @@
 package com.betternpchighlight;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.*;
-import javax.swing.DefaultCellEditor;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
+import java.awt.geom.Area;
 import java.io.*;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.EventObject;
+import java.util.HashSet;
 import java.util.List;
-import java.util.regex.Pattern;
+import java.util.Set;
+import java.util.Collections;
+import java.util.Map;
+import java.util.HashMap;
 
 import com.google.common.collect.ImmutableList;
 import net.runelite.client.ui.ColorScheme;
@@ -26,16 +25,16 @@ import net.runelite.client.config.ConfigManager;
 import net.runelite.client.ui.components.colorpicker.ColorPickerManager;
 import net.runelite.client.ui.components.colorpicker.RuneliteColorPicker;
 import net.runelite.client.ui.components.IconTextField;
+import net.runelite.client.util.ImageUtil;
 
 public class BetterNpcHighlightPanel extends PluginPanel {
 
-    private JTable npcTable;
-    private NpcTableModel tableModel;
-    private Runnable onTableChanged;
+    private ScrollablePanel cardsPanel;
+    private JScrollPane cardsScrollPane;
+    private Runnable onDataChanged;
     private final ColorPickerManager colorPickerManager;
-    private final Color hoveredColor = ColorScheme.DARK_GRAY_COLOR;
-    private final Color selectedColor = new Color(60, 60, 60, 255);
-    private TableRowSorter<NpcTableModel> rowSorter;
+    private final List<NpcCard> npcCards = new ArrayList<>();
+
     private static final ImmutableList<String> STYLE_TAGS = ImmutableList.of(
             "Tile",
             "True Tile",
@@ -48,9 +47,19 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             "Turbo"
     );
 
-    private static final String HIDE_NPC_TEXT = "Hide NPC (Entity Hider)";
-    private static final String DRAW_UNDER_TEXT = "Draw overlay beneath NPC";
-    private static final String DISPLAY_NAME_TEXT = "Display name above NPC";
+    private static final int MAX_STYLE_ROWS = 9;
+
+    private static final int luminanceOnHover = -80;
+    private static final int luminanceOffHover = -130;
+    private static final int luminanceOff = -150;
+
+    private static final IconSet ENTITY_HIDER_ICONS = loadIconSet("/entity_hider_on.png", luminanceOnHover, luminanceOff, luminanceOffHover);
+    private static final IconSet DRAW_BENEATH_ICONS = loadIconSet("/draw_beneath.png", luminanceOnHover, luminanceOff, luminanceOffHover);
+    private static final IconSet DISPLAY_NAME_ICONS = loadIconSet("/display_name.png", luminanceOnHover, luminanceOff, luminanceOffHover);
+    private static final IconSet HIGHLIGHT_DEAD_ICONS = loadIconSet("/highlight_dead.png", luminanceOnHover, luminanceOff, luminanceOffHover);
+    private static final IconSet ADD_ICONS = loadIconSet("/add_icon.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
+    private static final IconSet REMOVE_ICONS = loadIconSet("/remove_icon.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
+    private static final IconSet DELETE_ICONS = loadIconSet("/delete_icon.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
 
     public BetterNpcHighlightPanel(ColorPickerManager colorPickerManager) {
         super(false);
@@ -60,44 +69,37 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
     private void initComponents() {
         setLayout(new BorderLayout());
-        setBorder(new EmptyBorder(8, 6, 0, 6));
+        setBorder(new EmptyBorder(0, 4, 0, 4));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        // Create wrapper panel that will contain everything
-        JPanel contentWrapperPane = new JPanel();
-        contentWrapperPane.setLayout(new BorderLayout());
-        contentWrapperPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        // Create main content panel
+        JPanel contentPanel = new JPanel(new BorderLayout());
+        contentPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-        // South anchored panel for buttons (fixed at top)
-        JPanel southPanel = new JPanel(new BorderLayout());
-        southPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        southPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
-        // Make sure it doesn't expand vertically
-        southPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, southPanel.getPreferredSize().height));
+        // Create top panel with search and buttons
+        JPanel topPanel = createTopPanel();
+        contentPanel.add(topPanel, BorderLayout.NORTH);
 
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        buttonPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        // Create cards panel
+        createCardsPanel();
+        contentPanel.add(cardsScrollPane, BorderLayout.CENTER);
 
-        JButton importBtn = createStyledButton("Import");
-        importBtn.addActionListener(e -> importEntries());
+        // Create bottom panel with action buttons
+        JPanel bottomPanel = createBottomPanel();
+        contentPanel.add(bottomPanel, BorderLayout.SOUTH);
 
-        JButton exportBtn = createStyledButton("Export");
-        exportBtn.addActionListener(e -> exportEntries());
+        add(contentPanel, BorderLayout.CENTER);
 
-        JButton clearBtn = createStyledButton("Clear All");
-        clearBtn.addActionListener(e -> clearAllEntries());
+        // Add initial empty card
+        addNewCard();
+    }
 
-        buttonPanel.add(importBtn);
-        buttonPanel.add(exportBtn);
-        buttonPanel.add(clearBtn);
-        southPanel.add(buttonPanel, BorderLayout.CENTER);
+    private JPanel createTopPanel() {
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        topPanel.setBorder(new EmptyBorder(5, 5, 10, 5));
 
-        // Add the fixed button panel to wrapper
-        contentWrapperPane.add(southPanel, BorderLayout.SOUTH);
-
-        // Create the table
-        setupTable();
-
+        // Search field
         IconTextField searchField = new IconTextField();
         searchField.setPreferredSize(new Dimension(300, 30));
         searchField.setIcon(IconTextField.Icon.SEARCH);
@@ -106,13 +108,15 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         searchField.getDocument().addDocumentListener(new DocumentListener() {
             private void updateFilter() {
-                String text = searchField.getText();
-                if (text.isEmpty()) {
-                    rowSorter.setRowFilter(null);
-                } else {
-                    // Filters columns 0 and 1 (nameOrId and tagStyle)
-                    rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + Pattern.quote(text), 0, 1));
+                String text = searchField.getText().toLowerCase();
+                for (NpcCard card : npcCards) {
+                    boolean visible = text.isEmpty() ||
+                            card.getNameText().toLowerCase().contains(text) ||
+                            card.getAllTagStyles().toLowerCase().contains(text);
+                    card.setVisible(visible);
                 }
+                cardsPanel.revalidate();
+                cardsPanel.repaint();
             }
             @Override
             public void insertUpdate(DocumentEvent e) { updateFilter(); }
@@ -124,33 +128,50 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         STYLE_TAGS.forEach(searchField.getSuggestionListModel()::addElement);
 
-        JPanel northPanel = new JPanel(new BorderLayout(5, 5));
-        northPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
-        northPanel.add(searchField, BorderLayout.CENTER);
-        contentWrapperPane.add(northPanel, BorderLayout.NORTH);
+        topPanel.add(searchField, BorderLayout.CENTER);
+        return topPanel;
+    }
 
-        // Create scroll pane for table
-        JScrollPane tableScrollPane = new JScrollPane(npcTable);
-        tableScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        tableScrollPane.getViewport().setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        tableScrollPane.setBorder(BorderFactory.createLineBorder(new Color(57, 57, 57, 255), 1, true));
-        tableScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
-        tableScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    private void createCardsPanel() {
+        cardsPanel = new ScrollablePanel();
+        cardsPanel.setLayout(new BoxLayout(cardsPanel, BoxLayout.Y_AXIS));
+        cardsPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        cardsPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
 
-        JPanel corner = new JPanel();
-        corner.setBackground(ColorScheme.BRAND_ORANGE);
-        corner.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(57, 57, 57, 255)));
-        tableScrollPane.setCorner(JScrollPane.UPPER_RIGHT_CORNER, corner);
+        cardsScrollPane = new JScrollPane(cardsPanel);
+        cardsScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        cardsScrollPane.getViewport().setBackground(ColorScheme.DARK_GRAY_COLOR);
+        cardsScrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
+        cardsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    }
 
-        // Add table container to wrapper - this will expand to fill remaining space
-        contentWrapperPane.add(tableScrollPane, BorderLayout.CENTER);
+    private JPanel createBottomPanel() {
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        bottomPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        // Add the content wrapper to main panel
-        add(contentWrapperPane, BorderLayout.CENTER);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
+        buttonPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        // Setup listeners
-        setupTableChangeListener();
-        setupContextMenu();
+        JButton addBtn = createStyledButton("Add NPC");
+        addBtn.addActionListener(e -> addNewCard());
+
+        JButton importBtn = createStyledButton("Import");
+        importBtn.addActionListener(e -> importEntries());
+
+        JButton exportBtn = createStyledButton("Export");
+        exportBtn.addActionListener(e -> exportEntries());
+
+        JButton clearBtn = createStyledButton("Clear All");
+        clearBtn.addActionListener(e -> clearAllEntries());
+
+        buttonPanel.add(addBtn);
+        buttonPanel.add(importBtn);
+        buttonPanel.add(exportBtn);
+        buttonPanel.add(clearBtn);
+
+        bottomPanel.add(buttonPanel, BorderLayout.CENTER);
+        return bottomPanel;
     }
 
     private JButton createStyledButton(String text) {
@@ -179,456 +200,167 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         return button;
     }
 
-    private void setupTable() {
-        tableModel = new NpcTableModel();
-        tableModel.setParentTable(npcTable);
-        npcTable = new JTable(tableModel) {
-            @Override
-            public Component prepareRenderer(TableCellRenderer renderer, int row, int column) {
-                Component c = super.prepareRenderer(renderer, row, column);
+    private void addNewCard() {
+        NpcCard card = new NpcCard();
+        npcCards.add(card);
+        cardsPanel.add(card);
+        cardsPanel.add(Box.createVerticalStrut(5)); // Spacing between cards
+        cardsPanel.revalidate();
+        cardsPanel.repaint();
 
-                Object hoveredRowObj = npcTable.getClientProperty("hoveredRow");
-                int hoveredRow = (hoveredRowObj instanceof Integer) ? (Integer) hoveredRowObj : -1;
-                boolean isHovered = row == hoveredRow;
-                boolean isSelected = npcTable.isRowSelected(row); // Check if row is selected
-
-                Color baseColor;
-                if (isSelected) {
-                    // Selected row gets selection color
-                    baseColor = selectedColor;
-                    c.setForeground(Color.WHITE);
-                } else if (isHovered) {
-                    baseColor = hoveredColor;
-                    c.setForeground(Color.WHITE);
-                } else {
-                    baseColor = (row % 2 == 0)
-                            ? ColorScheme.DARKER_GRAY_COLOR
-                            : new Color(27, 27, 27);
-                    c.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-                }
-
-                c.setBackground(baseColor);
-                c.setFont(FontManager.getRunescapeSmallFont());
-
-                if (c instanceof JComponent) {
-                    ((JComponent) c).setBorder(BorderFactory.createEmptyBorder(4, 6, 4, 6));
-                }
-
-                return c;
-            }
-
-            @Override
-            public boolean editCellAt(int row, int column, EventObject e) {
-                // For color picker columns, always start editing immediately
-                if (column == 2 || column == 3) {
-                    if (super.editCellAt(row, column, e)) {
-                        // Immediately trigger the color picker
-                        TableCellEditor editor = getCellEditor(row, column);
-                        if (editor instanceof ColorPickerCellEditor) {
-                            SwingUtilities.invokeLater(() -> {
-                                ((ColorPickerCellEditor) editor).openColorPickerDirectly();
-                            });
-                        }
-                        return true;
-                    }
-                    return false;
-                }
-                return super.editCellAt(row, column, e);
-            }
-        };
-
-        tableModel.setParentTable(npcTable);
-
-        NpcTableModel model = (NpcTableModel) npcTable.getModel();
-        rowSorter = new TableRowSorter<>(model);
-        npcTable.setRowSorter(rowSorter);
-        for (int i = 0; i < tableModel.getColumnCount(); i++) {
-            rowSorter.setSortable(i, false);
-        }
-
-        // Table appearance
-        npcTable.setRowHeight(25);
-        npcTable.setShowGrid(false);
-        npcTable.setIntercellSpacing(new Dimension(0, 1));
-        npcTable.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        npcTable.setSelectionBackground(ColorScheme.DARK_GRAY_COLOR);
-        npcTable.setSelectionForeground(Color.WHITE);
-        npcTable.setRowSelectionAllowed(true); // Enable row selection
-        npcTable.setColumnSelectionAllowed(false);
-        npcTable.setCellSelectionEnabled(false);
-        npcTable.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        npcTable.setFillsViewportHeight(true);
-        npcTable.setBorder(BorderFactory.createMatteBorder(0, 0, 0, 1, new Color(57, 57, 57, 255)));
-        npcTable.putClientProperty("JTable.rowHover", -1);
-
-        TableColumn nameColumn = npcTable.getColumnModel().getColumn(0);
-        nameColumn.setCellEditor(new DefaultCellEditor(new JTextField() {{
-            setBackground(ColorScheme.DARKER_GRAY_COLOR);
-            setForeground(Color.WHITE);
-            setFont(FontManager.getRunescapeSmallFont());
-
-            Border innerBorder = BorderFactory.createEmptyBorder(0, 5, 0, 0);
-            Border outerBorder = BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1);
-            setBorder(BorderFactory.createCompoundBorder(outerBorder, innerBorder));
-            setCaretColor(Color.WHITE); // optional, improves contrast
-        }}));
-
-
-        npcTable.addMouseMotionListener(new MouseMotionAdapter() {
-            @Override
-            public void mouseMoved(MouseEvent e) {
-                int row = npcTable.rowAtPoint(e.getPoint());
-                npcTable.putClientProperty("hoveredRow", row);
-                npcTable.repaint();
-            }
-        });
-
-        npcTable.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseExited(MouseEvent e) {
-                npcTable.putClientProperty("hoveredRow", -1);
-                npcTable.repaint();
-            }
-        });
-
-        npcTable.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                int row = npcTable.rowAtPoint(e.getPoint());
-                if (row >= 0) {
-                    if (!npcTable.isRowSelected(row)) {
-                        if (e.isControlDown() || e.isMetaDown()) {
-                            npcTable.addRowSelectionInterval(row, row);
-                        } else if (e.isShiftDown()) {
-                            int anchor = npcTable.getSelectionModel().getAnchorSelectionIndex();
-                            npcTable.setRowSelectionInterval(Math.min(anchor, row), Math.max(anchor, row));
-                        } else {
-                            npcTable.setRowSelectionInterval(row, row);
-                        }
-                    }
-                } else {
-                    npcTable.clearSelection();
-                }
-            }
-        });
-
-        // Delete key removes selected rows
-        npcTable.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0), "deleteRows");
-        npcTable.getActionMap().put("deleteRows", new AbstractAction() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                int[] selectedRows = npcTable.getSelectedRows();
-                if (selectedRows.length == 0)
-                {
-                    return;
-                }
-
-                final int[] modelRows = Arrays.stream(selectedRows)
-                        .map(npcTable::convertRowIndexToModel)
-                        .sorted()
-                        .toArray();
-
-                for (int i = modelRows.length - 1; i >= 0; i--)
-                {
-                    tableModel.removeRow(modelRows[i]);
-                }
-            }
-        });
-
-        // Header styling
-        JTableHeader header = npcTable.getTableHeader();
-        header.setFont(FontManager.getRunescapeSmallFont());
-        header.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        header.setForeground(Color.WHITE);
-        header.setReorderingAllowed(false);
-        header.setResizingAllowed(false);
-        header.setBorder(BorderFactory.createMatteBorder(0, 0, 2, 0, new Color(57, 57, 57)));
-
-        setupColumns();
+        // Auto-focus on the name field for new cards
+        SwingUtilities.invokeLater(() -> card.focusNameField());
     }
 
-    private void setupColumns() {
-        // Tag Style dropdown
-        JComboBox<String> tagStyleCombo = new JComboBox<>(NpcTableModel.TAG_STYLES);
-        tagStyleCombo.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        tagStyleCombo.setForeground(Color.WHITE);
-        tagStyleCombo.setFont(FontManager.getRunescapeSmallFont());
-
-        npcTable.getColumnModel().getColumn(1).setCellEditor(new ImmediateComboBoxEditor(NpcTableModel.TAG_STYLES));
-
-        // Color picker columns
-        npcTable.getColumnModel().getColumn(2).setCellRenderer(new ColorCellRenderer());
-        npcTable.getColumnModel().getColumn(2).setCellEditor(new ColorPickerCellEditor(colorPickerManager, this));
-
-        npcTable.getColumnModel().getColumn(3).setCellRenderer(new ColorCellRenderer());
-        npcTable.getColumnModel().getColumn(3).setCellEditor(new ColorPickerCellEditor(colorPickerManager, this));
-
-        // Column widths
-        TableColumnModel columnModel = npcTable.getColumnModel();
-        columnModel.getColumn(0).setPreferredWidth(120); // Name/ID
-        columnModel.getColumn(1).setPreferredWidth(80);  // Style
-
-        // Fixed width for outline color
-        TableColumn outlineCol = columnModel.getColumn(2);
-        outlineCol.setPreferredWidth(28);
-        outlineCol.setMinWidth(28);
-        outlineCol.setMaxWidth(28);
-
-        // Fixed width for fill color
-        TableColumn fillCol = columnModel.getColumn(3);
-        fillCol.setPreferredWidth(28);
-        fillCol.setMinWidth(28);
-        fillCol.setMaxWidth(28);
-
-        npcTable.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
-    }
-
-    private void setupContextMenu() {
-        JPopupMenu contextMenu = new JPopupMenu();
-        contextMenu.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        contextMenu.setBorder(BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR));
-
-        JMenuItem addRowItem = createMenuItem("Add Row");
-        addRowItem.addActionListener(e -> {
-            int selectedRow = npcTable.getSelectedRow();
-            if (selectedRow != -1) {
-                int modelRow = npcTable.convertRowIndexToModel(selectedRow);
-                tableModel.insertEmptyRow(modelRow + 1);
-            } else {
-                tableModel.addEmptyRow();
-            }
-        });
-
-        JMenuItem duplicateItem = createMenuItem("Duplicate Selected Row(s)");
-        duplicateItem.addActionListener(e -> {
-            int[] selectedRows = npcTable.getSelectedRows();
-            if (selectedRows.length == 0) {
-                return;
-            }
-
-            final int[] modelRows = Arrays.stream(selectedRows)
-                    .map(npcTable::convertRowIndexToModel)
-                    .sorted()
-                    .toArray();
-
-            for (int i = modelRows.length - 1; i >= 0; i--) {
-                tableModel.duplicateRow(modelRows[i]);
-            }
-        });
-
-        JMenuItem deleteItem = createMenuItem("Delete Selected Row(s)");
-        deleteItem.addActionListener(e -> {
-            int[] selectedRows = npcTable.getSelectedRows();
-
-            if (selectedRows.length == 0) {
-                return;
-            }
-
-            final int[] modelRows = Arrays.stream(selectedRows)
-                    .map(npcTable::convertRowIndexToModel)
-                    .sorted()
-                    .toArray();
-
-            for (int i = modelRows.length - 1; i >= 0; i--) {
-                tableModel.removeRow(modelRows[i]);
-            }
-        });
-
-        contextMenu.add(addRowItem);
-        contextMenu.add(duplicateItem);
-        contextMenu.add(deleteItem);
-        contextMenu.addSeparator();
-
-        JMenuItem hideNpcItem = createMenuItem(HIDE_NPC_TEXT);
-        hideNpcItem.addActionListener(e -> toggleBooleanProperty("hideNpc"));
-
-        JMenuItem drawUnderItem = createMenuItem(DRAW_UNDER_TEXT);
-        drawUnderItem.addActionListener(e -> toggleBooleanProperty("drawUnder"));
-
-        JMenuItem displayNameItem = createMenuItem(DISPLAY_NAME_TEXT);
-        displayNameItem.addActionListener(e -> toggleBooleanProperty("displayName"));
-
-        contextMenu.add(hideNpcItem);
-        contextMenu.add(drawUnderItem);
-        contextMenu.add(displayNameItem);
-
-        contextMenu.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
-            @Override
-            public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e) {
-                int[] selectedRows = npcTable.getSelectedRows();
-                boolean hasSelection = selectedRows.length > 0;
-
-                hideNpcItem.setEnabled(hasSelection);
-                drawUnderItem.setEnabled(hasSelection);
-                displayNameItem.setEnabled(hasSelection);
-
-                if (hasSelection) {
-                    updateMenuCheckmark(hideNpcItem, "hideNpc", selectedRows);
-                    updateMenuCheckmark(drawUnderItem, "drawUnder", selectedRows);
-                    updateMenuCheckmark(displayNameItem, "displayName", selectedRows);
-                } else {
-                    hideNpcItem.setText(HIDE_NPC_TEXT);
-                    drawUnderItem.setText(DRAW_UNDER_TEXT);
-                    displayNameItem.setText(DISPLAY_NAME_TEXT);
-                }
-            }
-
-            @Override
-            public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {}
-
-            @Override
-            public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {}
-        });
-
-        npcTable.setComponentPopupMenu(contextMenu);
-    }
-
-    private void toggleBooleanProperty(String propertyName) {
-        int[] selectedRows = npcTable.getSelectedRows();
-        if (selectedRows.length == 0) return;
-
-        final int[] modelRows = Arrays.stream(selectedRows)
-                .map(npcTable::convertRowIndexToModel)
-                .toArray();
-
-        boolean allEnabled = Arrays.stream(modelRows).allMatch(modelRow -> {
-            NpcTableModel.NpcRow row = tableModel.getRow(modelRow);
-            if (row == null) return false;
-            switch (propertyName) {
-                case "hideNpc": return row.hideNpc;
-                case "drawUnder": return row.drawUnder;
-                case "displayName": return row.displayName;
-                default: return false;
-            }
-        });
-
-        boolean newValue = !allEnabled;
-
-        for (int modelRow : modelRows) {
-            NpcTableModel.NpcRow row = tableModel.getRow(modelRow);
-            if (row != null) {
-                switch (propertyName) {
-                    case "hideNpc": row.hideNpc = newValue; break;
-                    case "drawUnder": row.drawUnder = newValue; break;
-                    case "displayName": row.displayName = newValue; break;
-                }
+    private void removeCard(NpcCard card) {
+        int index = npcCards.indexOf(card);
+        if (index >= 0) {
+            npcCards.remove(card);
+            cardsPanel.remove(card);
+            // Remove the spacing component if it exists
+            if (index * 2 < cardsPanel.getComponentCount()) {
+                cardsPanel.remove(index * 2);
             }
         }
-        tableModel.fireTableDataChanged();
-        if (onTableChanged != null) {
-            onTableChanged.run();
+
+        // Ensure we always have at least one card
+        if (npcCards.isEmpty()) {
+            addNewCard();
         }
+
+        cardsPanel.revalidate();
+        cardsPanel.repaint();
+        triggerDataChanged();
     }
 
-    private void updateMenuCheckmark(JMenuItem item, String propertyName, int[] selectedRows) {
-        final int[] modelRows = Arrays.stream(selectedRows)
-                .map(npcTable::convertRowIndexToModel)
-                .toArray();
-
-        boolean allEnabled = Arrays.stream(modelRows).allMatch(modelRow -> {
-            NpcTableModel.NpcRow row = tableModel.getRow(modelRow);
-            if (row == null) return false;
-            switch (propertyName) {
-                case "hideNpc": return row.hideNpc;
-                case "drawUnder": return row.drawUnder;
-                case "displayName": return row.displayName;
-                default: return false;
-            }
-        });
-
-        String baseText;
-        switch (propertyName) {
-            case "hideNpc": baseText = HIDE_NPC_TEXT; break;
-            case "drawUnder": baseText = DRAW_UNDER_TEXT; break;
-            case "displayName": baseText = DISPLAY_NAME_TEXT; break;
-            default: baseText = item.getText().replace(" ✔️", "");
+    private void triggerDataChanged() {
+        if (onDataChanged != null) {
+            onDataChanged.run();
         }
-
-        if (allEnabled) {
-            item.setText(baseText + " ✔️");
-        } else {
-            item.setText(baseText);
-        }
-    }
-
-    private JMenuItem createMenuItem(String text) {
-        JMenuItem item = new JMenuItem(text);
-        item.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        item.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        item.setFont(FontManager.getRunescapeSmallFont());
-        return item;
     }
 
     // Data management methods
     public List<NpcHighlightEntry> getNpcHighlightEntries() {
-        List<NpcHighlightEntry> entries = new ArrayList<>();
-        for (int i = 0; i < tableModel.getRowCount(); i++) {
-            String nameOrId = (String) tableModel.getValueAt(i, 0);
-            if (nameOrId != null && !nameOrId.trim().isEmpty()) {
-                NpcHighlightEntry entry = new NpcHighlightEntry(
-                        nameOrId.trim(),
-                        (String) tableModel.getValueAt(i, 1),
-                        (Color) tableModel.getValueAt(i, 2),
-                        (Color) tableModel.getValueAt(i, 3)
-                );
-                NpcTableModel.NpcRow row = tableModel.getRow(i);
-                if (row != null) {
-                    entry.hideNpc = row.hideNpc;
-                    entry.drawUnder = row.drawUnder;
-                    entry.displayName = row.displayName;
-                }
-                entries.add(entry);
-            }
+        List<NpcHighlightEntry> allEntries = new ArrayList<>();
+        for (NpcCard card : npcCards) {
+            allEntries.addAll(card.getAllEntries());
         }
-        return entries;
+        return allEntries;
     }
+
 
     public void setOnTableChanged(Runnable r) {
-        this.onTableChanged = r;
+        this.onDataChanged = r;
     }
-
-    private void setupTableChangeListener() {
-        tableModel.addTableModelListener(e -> {
-            if (onTableChanged != null) {
-                onTableChanged.run();
-            }
-        });
+    private void addCardFromEntry(NpcHighlightEntry entry) {
+        NpcCard card = new NpcCard();
+        card.setData(Collections.singletonList(entry));
+        npcCards.add(card);
+        cardsPanel.add(card);
+        cardsPanel.add(Box.createVerticalStrut(5));
+        cardsPanel.revalidate();
+        cardsPanel.repaint();
     }
+    // In BetterNpcHighlightPanel.java
 
-    // Persistence methods
+    /**
+     * Saves the current NPC highlight entries to RuneLite config.
+     * Serializes entries as a single string with ';' separator.
+     * Each entry is serialized as: nameOrId|tagStyle|outlineColorRGB|fillColorRGB|hideNpc|drawUnder|displayName
+     *
+     * @param configManager RuneLite ConfigManager instance
+     * @param configGroup   Config group name (e.g. "BetterNpcHighlight")
+     */
     public void saveToConfig(ConfigManager configManager, String configGroup) {
-        List<NpcHighlightEntry> entries = getNpcHighlightEntries();
-        StringBuilder sb = new StringBuilder();
+        try {
+            List<NpcHighlightEntry> entries = getNpcHighlightEntries();
+            StringBuilder sb = new StringBuilder();
 
-        for (NpcHighlightEntry entry : entries) {
-            sb.append(entryToString(entry)).append(";");
+            for (NpcHighlightEntry entry : entries) {
+                sb.append(entryToString(entry)).append(";");
+            }
+
+            if (sb.length() > 0) {
+                sb.setLength(sb.length() - 1);
+            }
+
+            configManager.setConfiguration(configGroup, "panelEntries", sb.toString());
+            saveCardSettings(configManager, configGroup);
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
-
-        configManager.setConfiguration(configGroup, "panelEntries", sb.toString());
     }
 
+    /**
+     * Loads NPC highlight entries from RuneLite config.
+     * Parses the serialized string and recreates NPC cards.
+     * If no entries found, adds a blank card.
+     *
+     * @param configManager RuneLite ConfigManager instance
+     * @param configGroup   Config group name (e.g. "BetterNpcHighlight")
+     */
     public void loadFromConfig(ConfigManager configManager, String configGroup) {
-        String entriesStr = configManager.getConfiguration(configGroup, "panelEntries");
-        if (entriesStr != null && !entriesStr.isEmpty()) {
-            tableModel.clearData();
+        try {
+            String entriesStr = configManager.getConfiguration(configGroup, "panelEntries");
+            clearAllCards();
 
-            String[] entries = entriesStr.split(";");
-            for (String entryStr : entries) {
-                if (!entryStr.trim().isEmpty()) {
-                    NpcHighlightEntry entry = stringToEntry(entryStr);
-                    if (entry != null) {
-                        tableModel.addEntry(entry);
+            if (entriesStr != null && !entriesStr.isEmpty()) {
+                String[] entries = entriesStr.split(";");
+                Map<String, List<NpcHighlightEntry>> groupedEntries = new HashMap<>();
+
+                for (String entryStr : entries) {
+                    if (!entryStr.trim().isEmpty()) {
+                        NpcHighlightEntry entry = stringToEntry(entryStr);
+                        if (entry != null) {
+                            groupedEntries.computeIfAbsent(entry.nameOrId, k -> new ArrayList<>()).add(entry);
+                        }
                     }
                 }
-            }
-        }
 
-        if (tableModel.getRowCount() == 0) {
-            tableModel.addEmptyRow();
+                for (Map.Entry<String, List<NpcHighlightEntry>> group : groupedEntries.entrySet()) {
+                    addCardFromEntries(group.getKey(), group.getValue());
+                }
+                loadCardSettings(configManager, configGroup);
+            }
+
+            if (npcCards.isEmpty()) {
+                addNewCard();
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            if (npcCards.isEmpty()) {
+                addNewCard();
+            }
         }
     }
 
-    private String entryToString(NpcHighlightEntry entry) {
+    private void addCardFromEntries(String npcNameOrId, List<NpcHighlightEntry> entries) {
+        NpcCard card = new NpcCard();
+        card.setNameText(npcNameOrId);
+        card.clearStyleRows();
+
+        for (NpcHighlightEntry entry : entries) {
+            card.addStyleRow(entry);
+        }
+
+        npcCards.add(card);
+        cardsPanel.add(card);
+        cardsPanel.add(Box.createVerticalStrut(5));
+        cardsPanel.revalidate();
+        cardsPanel.repaint();
+    }
+
+
+    /**
+     * Converts a single NPC highlight entry to a string for serialization.
+     *
+     * @param entry NPC highlight entry
+     * @return Serialized string representation
+     */
+    private String entryToString(NpcHighlightEntry entry)
+    {
+        // Use RGB int values for colors to preserve alpha channel
         return String.format("%s|%s|%d|%d|%b|%b|%b",
                 entry.nameOrId,
                 entry.tagStyle,
@@ -639,25 +371,39 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                 entry.displayName);
     }
 
-    private NpcHighlightEntry stringToEntry(String str) {
-        try {
+    /**
+     * Parses a serialized NPC highlight entry string into an object.
+     * Returns null if parsing fails.
+     *
+     * @param str Serialized entry string
+     * @return Parsed NpcHighlightEntry or null if invalid
+     */
+    private NpcHighlightEntry stringToEntry(String str)
+    {
+        try
+        {
             String[] parts = str.split("\\|");
-            if (parts.length >= 4) {
+            if (parts.length >= 4)
+            {
                 NpcHighlightEntry entry = new NpcHighlightEntry(
                         parts[0],
                         parts[1],
                         new Color(Integer.parseInt(parts[2]), true),
                         new Color(Integer.parseInt(parts[3]), true)
                 );
-                if (parts.length >= 7) {
+
+                if (parts.length >= 7)
+                {
                     entry.hideNpc = Boolean.parseBoolean(parts[4]);
                     entry.drawUnder = Boolean.parseBoolean(parts[5]);
                     entry.displayName = Boolean.parseBoolean(parts[6]);
                 }
                 return entry;
             }
-        } catch (Exception e) {
-            // Invalid entry format, skip
+        }
+        catch (Exception ex)
+        {
+            System.err.println("Error parsing NPC highlight entry: " + str + " - " + ex.getMessage());
         }
         return null;
     }
@@ -695,9 +441,16 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     private void clearAllEntries() {
         if (JOptionPane.showConfirmDialog(this, "Clear all entries?", "Confirm",
                 JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
-            tableModel.clearData();
-            tableModel.addEmptyRow();
+            clearAllCards();
+            addNewCard();
         }
+    }
+
+    private void clearAllCards() {
+        npcCards.clear();
+        cardsPanel.removeAll();
+        cardsPanel.revalidate();
+        cardsPanel.repaint();
     }
 
     public void exportToFile(File file) throws IOException {
@@ -735,11 +488,13 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         }
 
         if (!importedEntries.isEmpty()) {
-            tableModel.clearData();
+            clearAllCards();
             for (NpcHighlightEntry entry : importedEntries) {
-                tableModel.addEntry(entry);
+                addCardFromEntry(entry);
             }
-            tableModel.addEmptyRow();
+            if (npcCards.isEmpty()) {
+                addNewCard();
+            }
         }
     }
 
@@ -767,524 +522,833 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     }
 
     public void clearAndLoadEntries(List<NpcHighlightEntry> entries) {
-        tableModel.clearData();
+        clearAllCards();
         for (NpcHighlightEntry entry : entries) {
-            tableModel.addEntry(entry);
+            addCardFromEntry(entry);
         }
-        if (tableModel.getRowCount() == 0) {
-            tableModel.addEmptyRow();
+        if (npcCards.isEmpty()) {
+            addNewCard();
         }
     }
 
-    // Table Model
-    static class NpcTableModel extends AbstractTableModel {
-        static final String[] COLUMN_NAMES = {"Name/ID", "Style", "□", "■"};
-        static final String[] TAG_STYLES = {"Tile", "True Tile", "SW Tile", "SW True Tile", "Hull", "Area", "Outline", "Clickbox", "Turbo"};
-        private final List<NpcRow> data = new ArrayList<>();
-        private JTable parentTable; // Add this field
+    // NPC Card Component
+    public class NpcCard extends JPanel {
+        private JPanel bottomRowsPanel;
+        private final List<StyleRow> styleRows = new ArrayList<>();
+        private JTextField nameField;
+        private JComboBox<String> tagStyleCombo;
+        private ColorPreviewButton colorPreviewButton;
+        private JToggleButton hideNpcButton;
+        private JToggleButton drawUnderButton;
+        private JToggleButton displayNameButton;
+        private Color displayNameColor = Color.CYAN;
+        private JToggleButton highlightDeadButton;
 
-        public NpcTableModel() {
-            addEmptyRow();
+        public NpcCard() {
+            initCard();
         }
 
-        public NpcRow getRow(int row) {
-            if (row >= 0 && row < data.size()) {
-                return data.get(row);
-            }
-            return null;
-        }
+        private class StyleRow {
+            JPanel panel;
+            JComboBox<String> tagStyleCombo;
+            ColorPreviewButton colorPreviewButton; // Combined button
+            JButton addButton;
+            JButton removeButton;
 
-        // Add this method to set the table reference
-        public void setParentTable(JTable table) {
-            this.parentTable = table;
-        }
+            StyleRow(NpcHighlightEntry entry) {
+                panel = new JPanel(new BorderLayout(0, 0));
+                panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+                panel.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
 
-        public void addEmptyRow() {
-            data.add(new NpcRow());
-            fireTableRowsInserted(data.size() - 1, data.size() - 1);
-        }
+                // Left side: tag style combo and combined color button
+                JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+                leftPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-        public void insertEmptyRow(int row) {
-            if (row >= 0 && row <= data.size()) {
-                data.add(row, new NpcRow());
-                fireTableRowsInserted(row, row);
-            }
-        }
+                tagStyleCombo = new JComboBox<>();
+                styleComboBox(tagStyleCombo);
+                tagStyleCombo.addActionListener(e -> triggerDataChanged());
+                leftPanel.add(tagStyleCombo);
+                leftPanel.add(Box.createHorizontalStrut(4));
 
-        public void addEntry(NpcHighlightEntry entry) {
-            NpcRow row = new NpcRow();
-            row.nameOrId = entry.nameOrId;
-            row.tagStyle = entry.tagStyle;
-            row.outlineColor = entry.outlineColor;
-            row.fillColor = entry.fillColor;
-            row.hideNpc = entry.hideNpc;
-            row.drawUnder = entry.drawUnder;
-            row.displayName = entry.displayName;
-            data.add(row);
-            fireTableRowsInserted(data.size() - 1, data.size() - 1);
-        }
+                // Initialize combined color button with outline and fill colors
+                Color initialOutline = entry != null ? entry.outlineColor : Color.CYAN;
+                Color initialFill = entry != null ? entry.fillColor : new Color(0, 255, 255, 20);
 
-        public void clearData() {
-            int size = data.size();
-            data.clear();
-            if (size > 0) {
-                fireTableRowsDeleted(0, size - 1);
-            }
-        }
+                CheckerboardPanel checkerPanel = new CheckerboardPanel();
+                colorPreviewButton = new ColorPreviewButton(initialOutline, initialFill, colorPickerManager);
+                colorPreviewButton.setOpaque(false);
+                checkerPanel.add(colorPreviewButton, BorderLayout.CENTER);
+                leftPanel.add(checkerPanel);
 
-        public void removeRow(int row) {
-            if (row >= 0 && row < data.size()) {
-                data.remove(row);
-                fireTableRowsDeleted(row, row);
+                panel.add(leftPanel, BorderLayout.WEST);
 
-                if (data.isEmpty()) {
-                    addEmptyRow();
-                }
-            }
-        }
+                // Right side: ADD and REMOVE buttons
+                JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+                rightPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-        public void duplicateRow(int row) {
-            if (row >= 0 && row < data.size()) {
-                NpcRow original = data.get(row);
-                NpcRow duplicate = new NpcRow();
-                duplicate.nameOrId = original.nameOrId;
-                duplicate.tagStyle = original.tagStyle;
-                duplicate.outlineColor = original.outlineColor;
-                duplicate.fillColor = original.fillColor;
-                duplicate.hideNpc = original.hideNpc;
-                duplicate.drawUnder = original.drawUnder;
-                duplicate.displayName = original.displayName;
-
-                data.add(row + 1, duplicate);
-                fireTableRowsInserted(row + 1, row + 1);
-            }
-        }
-
-        @Override
-        public int getRowCount() { return data.size(); }
-
-        @Override
-        public int getColumnCount() { return COLUMN_NAMES.length; }
-
-        @Override
-        public String getColumnName(int col) { return COLUMN_NAMES[col]; }
-
-        @Override
-        public boolean isCellEditable(int row, int col) {
-            return true;
-        }
-
-        @Override
-        public Object getValueAt(int row, int col) {
-            if (row >= data.size()) return null;
-
-            NpcRow npc = data.get(row);
-            switch (col) {
-                case 0: return npc.nameOrId;
-                case 1: return npc.tagStyle;
-                case 2: return npc.outlineColor;
-                case 3: return npc.fillColor;
-            }
-            return null;
-        }
-
-        @Override
-        public void setValueAt(Object value, int row, int col) {
-            if (row >= data.size()) return;
-
-            NpcRow npc = data.get(row);
-            switch (col) {
-                case 0:
-                    npc.nameOrId = (String)value;
-                    // Check if this is the last row and we're adding content
-                    if (row == data.size() - 1 && value != null && !((String)value).trim().isEmpty()) {
-                        SwingUtilities.invokeLater(() -> {
-                            addEmptyRow();
-                            // Immediately start editing the new row
-                            if (parentTable != null) {
-                                SwingUtilities.invokeLater(() -> {
-                                    int newRow = data.size() - 1;
-                                    parentTable.setRowSelectionInterval(newRow, newRow);
-                                    parentTable.editCellAt(newRow, 0);
-
-                                    // Scroll to make the new row visible
-                                    Rectangle cellRect = parentTable.getCellRect(newRow, 0, true);
-                                    parentTable.scrollRectToVisible(cellRect);
-
-                                    if (parentTable.getEditorComponent() instanceof JTextField) {
-                                        parentTable.getEditorComponent().requestFocus();
-                                    }
-                                });
-                            }
-                        });
+                addButton = new JButton();
+                addButton.setPreferredSize(new Dimension(18, 24));
+                addButton.setContentAreaFilled(false);
+                addButton.setIcon(ADD_ICONS.on);
+                addButton.setRolloverIcon(ADD_ICONS.onHover);
+                addButton.setToolTipText("Add a new highlight style below");
+                addButton.addActionListener(e -> {
+                    if (styleRows.size() < MAX_STYLE_ROWS) {
+                        int index = styleRows.indexOf(this);
+                        if (index != -1) {
+                            addStyleRowAt(index + 1, null);
+                        }
                     }
-                    break;
-                case 1: npc.tagStyle = (String)value; break;
-                case 2: npc.outlineColor = (Color)value; break;
-                case 3: npc.fillColor = (Color)value; break;
+                });
+
+
+                removeButton = new JButton();
+                removeButton.setPreferredSize(new Dimension(18, 24));
+                removeButton.setContentAreaFilled(false);
+                removeButton.setIcon(REMOVE_ICONS.on);
+                removeButton.setRolloverIcon(REMOVE_ICONS.onHover);
+                removeButton.setToolTipText("Remove this highlight style");
+                removeButton.addActionListener(e -> {
+                    if (styleRows.size() > 1) {
+                        int index = styleRows.indexOf(this);
+                        if (index != -1) {
+                            removeStyleRowAt(index);
+                        }
+                    }
+                });
+
+                rightPanel.add(removeButton);
+                rightPanel.add(addButton);
+                panel.add(rightPanel, BorderLayout.EAST);
+
+                // Initialize combo box options
+                updateTagStyleComboBoxOptions(tagStyleCombo);
+                tagStyleCombo.addActionListener(e -> refreshAllTagStyleComboBoxes());
+
+                updateStyleButtons();
             }
-            fireTableCellUpdated(row, col);
-        }
-        static class NpcRow {
-            String nameOrId = "";
-            String tagStyle = TAG_STYLES[0];
-            Color outlineColor = Color.CYAN;
-            Color fillColor = new Color(0, 255, 255, 20);
-            boolean hideNpc = false;
-            boolean drawUnder = false;
-            boolean displayName = false;
-        }
-    }
-
-    public class ColorPreviewPanel extends JPanel {
-        private Color color;
-        private boolean isSelected;
-
-        public ColorPreviewPanel() {
-            setOpaque(false);
-            setPreferredSize(new Dimension(20, 20));
-        }
-
-        public void setColor(Color color) {
-            this.color = color;
-            repaint();
-        }
-
-        protected Color getColor() {
-            return color;
-        }
-
-        protected Paint getCheckerPaint() {
-            return createCheckerPaint();
         }
 
 
-        public void setHighlightState(boolean selectedOrHovered) {
-            this.isSelected = selectedOrHovered;
-        }
-
-        @Override
-        public void paintComponent(Graphics g) {
-            super.paintComponent(g);
-
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            g2.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-
-            g2.setColor(getBackground());
-            g2.fillRect(0, 0, getWidth(), getHeight());
-
-            if (color != null) {
-                int margin = isSelected ? 1 : 2;
-                int x = margin;
-                int y = margin;
-                int width = getWidth() - margin * 2;
-                int height = getHeight() - margin * 2;
-                int arc = 8;
-
-                Shape roundRect = new RoundRectangle2D.Float(x, y, width, height, arc, arc);
-
-                // Checkerboard
-                g2.setPaint(createCheckerPaint());
-                g2.fill(roundRect);
-
-                // Fill color
-                g2.setColor(color);
-                g2.fill(roundRect);
-
-                // Border
-                g2.setColor(getBackground());
-                g2.setStroke(new BasicStroke(3f));
-                g2.draw(new RoundRectangle2D.Float(
-                        x + 0.5f, y + 0.5f,
-                        width - 1f, height - 1f,
-                        arc, arc
-                ));
-            }
-
-            g2.dispose();
-        }
-
-        private TexturePaint createCheckerPaint() {
-            int size = 8;
-            int tileSize = size * 2;
-            BufferedImage tile = new BufferedImage(tileSize, tileSize, BufferedImage.TYPE_INT_ARGB_PRE);
-            Graphics2D g = tile.createGraphics();
-
-            g.setColor(new Color(220, 220, 220));
-            g.fillRect(0, 0, tileSize, tileSize);
-
-            g.setColor(new Color(180, 180, 180));
-            g.fillRect(0, 0, size, size);
-            g.fillRect(size, size, size, size);
-            g.dispose();
-
-            return new TexturePaint(tile, new Rectangle(0, 0, tileSize, tileSize));
-        }
-    }
 
 
-    // Color cell editor
-    // Color cell editor
-    public class ColorPickerCellEditor extends AbstractCellEditor implements TableCellEditor {
-        private final ColorPreviewPanel previewPanel = new ColorPreviewPanel();
-        private final ColorPickerManager colorPickerManager;
-        private final Component parent;
-        private Color currentColor;
-        private RuneliteColorPicker activeColorPicker;
-        private int currentEditingRow = -1; // Track which row we're editing
-        private int currentEditingColumn = -1; // Track which column we're editing
+        private void initCard() {
+            setLayout(new BorderLayout());
+            setBackground(ColorScheme.DARKER_GRAY_COLOR);
+            setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
 
-        public ColorPickerCellEditor(ColorPickerManager colorPickerManager, Component parent) {
-            this.colorPickerManager = colorPickerManager;
-            this.parent = parent;
+            // Main content panel
+            JPanel contentPanel = new JPanel();
+            contentPanel.setLayout(new BoxLayout(contentPanel, BoxLayout.Y_AXIS));
+            contentPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
-            previewPanel.setToolTipText("Click to open color picker");
-            previewPanel.addMouseListener(new MouseAdapter() {
+            // Top row: Name field and tag style dropdown
+            JPanel topRow = new JPanel(new BorderLayout(4, 0));
+            topRow.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+
+            // Name field (takes most space)
+            nameField = createStyledTextField("Name/ID..");
+            nameField.getDocument().addDocumentListener(new DocumentListener() {
                 @Override
-                public void mouseClicked(MouseEvent e) {
-                    openColorPicker();
-                }
+                public void insertUpdate(DocumentEvent e) { triggerDataChanged(); }
+                @Override
+                public void removeUpdate(DocumentEvent e) { triggerDataChanged(); }
+                @Override
+                public void changedUpdate(DocumentEvent e) { triggerDataChanged(); }
             });
-        }
+            topRow.add(nameField, BorderLayout.CENTER);
 
-        public void openColorPickerDirectly() {
-            openColorPicker();
-        }
+            // Panel for toggle buttons
+            JPanel togglePanel = new JPanel();
+            togglePanel.setLayout(new BoxLayout(togglePanel, BoxLayout.X_AXIS));
+            togglePanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+            topRow.add(togglePanel, BorderLayout.EAST);
 
-        private void openColorPicker() {
-            if (activeColorPicker != null) {
-                activeColorPicker.dispose();
-                activeColorPicker = null;
-            }
-
-            // Store the initial color to detect if it actually changed
-            final Color initialColor = currentColor;
-            final int editingRow = currentEditingRow;
-            final int editingColumn = currentEditingColumn;
-
-            activeColorPicker = colorPickerManager.create(
-                    SwingUtilities.getWindowAncestor(parent),
-                    currentColor,
-                    "Choose Color",
-                    false
+            // Create toggle buttons with icons
+            hideNpcButton = createToggleButton(
+                    ENTITY_HIDER_ICONS.on,
+                    ENTITY_HIDER_ICONS.off,
+                    ENTITY_HIDER_ICONS.onHover,
+                    ENTITY_HIDER_ICONS.offHover,
+                    "Do not hide NPC", "Hide NPC"
+            );
+            drawUnderButton = createToggleButton(
+                    DRAW_BENEATH_ICONS.on,
+                    DRAW_BENEATH_ICONS.off,
+                    DRAW_BENEATH_ICONS.onHover,
+                    DRAW_BENEATH_ICONS.offHover,
+                    "Do not draw overlay beneath NPC", "Draw overlay beneath NPC"
             );
 
-            activeColorPicker.setOnColorChange(newColor -> {
-                // Only update if we're still editing the same cell
-                if (editingRow == currentEditingRow && editingColumn == currentEditingColumn) {
-                    currentColor = newColor;
-                    previewPanel.setColor(currentColor);
+            displayNameButton = createToggleButton(
+                    DISPLAY_NAME_ICONS.on,
+                    DISPLAY_NAME_ICONS.off,
+                    DISPLAY_NAME_ICONS.onHover,
+                    DISPLAY_NAME_ICONS.offHover,
+                    "Do not display name above NPC", "Display name above NPC"
+            );
+            highlightDeadButton = createToggleButton(
+                    HIGHLIGHT_DEAD_ICONS.on,
+                    HIGHLIGHT_DEAD_ICONS.off,
+                    HIGHLIGHT_DEAD_ICONS.onHover,
+                    HIGHLIGHT_DEAD_ICONS.offHover,
+                    "Do not highlight dead NPC", "Highlight dead NPC"
+            );
+
+            displayNameButton.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (e.isPopupTrigger()) {
+                        showDisplayNameColorMenu(e);
+                    }
+                }
+
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    if (e.isPopupTrigger()) {
+                        showDisplayNameColorMenu(e);
+                    }
                 }
             });
 
-            activeColorPicker.setOnClose(finalColor -> {
-                // Only update if we're still editing the same cell and the color actually changed
-                if (editingRow == currentEditingRow && editingColumn == currentEditingColumn) {
-                    currentColor = finalColor;
-                    previewPanel.setColor(currentColor);
-                    activeColorPicker = null;
-                    fireEditingStopped();
-                } else {
-                    // If we're not editing the same cell anymore, just dispose
-                    activeColorPicker = null;
+            togglePanel.add(hideNpcButton);
+            togglePanel.add(Box.createHorizontalStrut(4));
+
+            togglePanel.add(drawUnderButton);
+            togglePanel.add(Box.createHorizontalStrut(4));
+
+            togglePanel.add(displayNameButton);
+            togglePanel.add(Box.createHorizontalStrut(4));
+
+            togglePanel.add(highlightDeadButton);
+            togglePanel.add(Box.createHorizontalStrut(4));
+
+            // Remove NPC card button
+            JButton removeCardButton = new JButton();
+            removeCardButton.setIcon(DELETE_ICONS.on);
+            removeCardButton.setRolloverIcon(DELETE_ICONS.onHover);
+            removeCardButton.setPreferredSize(new Dimension(18, 18));
+            removeCardButton.setContentAreaFilled(false);
+            removeCardButton.setToolTipText("Delete this NPC entry");
+            removeCardButton.addActionListener(e -> removeCard(this));
+            togglePanel.add(removeCardButton);
+
+            // Bottom rows panel to hold all StyleRows
+            bottomRowsPanel = new JPanel();
+            bottomRowsPanel.setLayout(new BoxLayout(bottomRowsPanel, BoxLayout.Y_AXIS));
+            bottomRowsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+            bottomRowsPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+            addStyleRow(null);
+            updateStyleButtons();
+
+            // Add spacing and components
+            contentPanel.add(topRow);
+            contentPanel.add(bottomRowsPanel);
+
+            add(contentPanel, BorderLayout.CENTER);
+        }
+
+        public void addStyleRow(NpcHighlightEntry entry) {
+            StyleRow row = new StyleRow(entry);
+            styleRows.add(row);
+            bottomRowsPanel.add(row.panel);
+            updateStyleButtons();
+            bottomRowsPanel.revalidate();
+            bottomRowsPanel.repaint();
+        }
+
+        public void clearStyleRows() {
+            styleRows.clear();
+            bottomRowsPanel.removeAll();
+            bottomRowsPanel.revalidate();
+            bottomRowsPanel.repaint();
+        }
+
+        public void addStyleRowAt(int index, NpcHighlightEntry entry) {
+            StyleRow row = new StyleRow(entry);
+            styleRows.add(index, row);
+            bottomRowsPanel.add(row.panel, index);
+            updateStyleButtons();
+            bottomRowsPanel.revalidate();
+            bottomRowsPanel.repaint();
+            triggerDataChanged();
+        }
+
+        public void removeStyleRowAt(int index) {
+            StyleRow row = styleRows.remove(index);
+            bottomRowsPanel.remove(row.panel);
+            updateStyleButtons();
+            bottomRowsPanel.revalidate();
+            bottomRowsPanel.repaint();
+            triggerDataChanged();
+        }
+
+        private void showDisplayNameColorMenu(MouseEvent e) {
+            JPopupMenu menu = new JPopupMenu();
+            JMenuItem changeColor = new JMenuItem("Change Name/Minimap Color");
+            changeColor.addActionListener(ev -> openDisplayNameColorPicker());
+            menu.add(changeColor);
+            menu.show(displayNameButton, e.getX(), e.getY());
+        }
+
+        private void openDisplayNameColorPicker() {
+            RuneliteColorPicker picker = colorPickerManager.create(
+                    SwingUtilities.getWindowAncestor(this),
+                    displayNameColor,
+                    "Name/Minimap Color",
+                    true
+            );
+            picker.setOnColorChange(newColor -> {
+                displayNameColor = newColor;
+                if (onDataChanged != null) {
+                    onDataChanged.run();
+                }
+            });
+            picker.setVisible(true);
+        }
+
+        public List<NpcHighlightEntry> getAllEntries() {
+            List<NpcHighlightEntry> entries = new ArrayList<>();
+            String npcNameOrId = getNameText().trim();
+            if (npcNameOrId.isEmpty()) {
+                return entries;
+            }
+
+            boolean hide = hideNpcButton.isSelected();
+            boolean drawUnder = drawUnderButton.isSelected();
+            boolean displayName = displayNameButton.isSelected();
+
+            for (StyleRow row : styleRows) {
+                String tagStyle = (String) row.tagStyleCombo.getSelectedItem();
+                if (tagStyle == null || tagStyle.isEmpty()) {
+                    continue;
+                }
+                NpcHighlightEntry entry = new NpcHighlightEntry(
+                        npcNameOrId,
+                        tagStyle,
+                        row.colorPreviewButton.getOutlineColor(),
+                        row.colorPreviewButton.getFillColor()
+                );
+                entry.hideNpc = hide;
+                entry.drawUnder = drawUnder;
+                entry.displayName = displayName;
+                entries.add(entry);
+            }
+            return entries;
+        }
+
+
+
+        @Override
+        public Dimension getMaximumSize()
+        {
+            Dimension prefSize = super.getPreferredSize();
+            return new Dimension(Integer.MAX_VALUE, prefSize.height);
+        }
+
+        private JTextField createStyledTextField(String placeholder) {
+            JTextField field = new JTextField();
+            field.setBackground(ColorScheme.DARK_GRAY_COLOR);
+            field.setForeground(Color.WHITE);
+            field.setFont(FontManager.getRunescapeFont());
+            field.setCaretColor(Color.WHITE);
+            field.setPreferredSize(new Dimension(Integer.MAX_VALUE, 24));
+            field.setMargin(new Insets(5,5,5,5));
+
+            // Placeholder text functionality
+            field.setText(placeholder);
+            field.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+
+            field.addFocusListener(new FocusAdapter() {
+                @Override
+                public void focusGained(FocusEvent e) {
+                    if (field.getText().equals(placeholder)) {
+                        field.setText("");
+                        field.setForeground(Color.WHITE);
+                    }
+                }
+
+                @Override
+                public void focusLost(FocusEvent e) {
+                    if (field.getText().isEmpty()) {
+                        field.setText(placeholder);
+                        field.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+                    }
                 }
             });
 
-            activeColorPicker.setVisible(true);
+            return field;
         }
 
-        @Override
-        public Object getCellEditorValue() {
-            return currentColor;
-        }
-
-        @Override
-        public Component getTableCellEditorComponent(JTable table, Object value,
-                                                     boolean isSelected, int row, int column) {
-            currentColor = (value instanceof Color) ? (Color) value : Color.WHITE;
-            previewPanel.setColor(currentColor);
-
-            // Store which cell we're editing
-            currentEditingRow = row;
-            currentEditingColumn = column;
-
-            // Ensure the row is selected when we start editing a color cell
-            if (!table.isRowSelected(row)) {
-                table.setRowSelectionInterval(row, row);
-            }
-
-            // Set the background to match the current state
-            Color background;
-            Object hoveredObj = table.getClientProperty("hoveredRow");
-            int hoveredRow = (hoveredObj instanceof Integer) ? (Integer) hoveredObj : -1;
-            boolean isHovered = (hoveredRow == row);
-            boolean isRowSelected = table.isRowSelected(row);
-
-            // Check both row selection AND cell selection (editing state)
-            if (isRowSelected || isSelected) {
-                // Selected row or cell gets selection color - use the same color as renderer
-                background = BetterNpcHighlightPanel.this.selectedColor;
-            } else if (isHovered) {
-                // Use the same hover color as renderer
-                background = BetterNpcHighlightPanel.this.hoveredColor;
-            } else {
-                // Apply same zebra pattern as the renderer
-                background = (row % 2 == 0)
-                        ? ColorScheme.DARKER_GRAY_COLOR
-                        : new Color(27, 27, 27);
-            }
-
-            previewPanel.setBackground(background);
-            previewPanel.setHighlightState(isRowSelected || isSelected || isHovered);
-            return previewPanel;
-        }
-
-        @Override
-        public boolean stopCellEditing() {
-            if (activeColorPicker != null) {
-                activeColorPicker.dispose();
-                activeColorPicker = null;
-            }
-            currentEditingRow = -1;
-            currentEditingColumn = -1;
-            return super.stopCellEditing();
-        }
-
-        @Override
-        public void cancelCellEditing() {
-            if (activeColorPicker != null) {
-                activeColorPicker.dispose();
-                activeColorPicker = null;
-            }
-            currentEditingRow = -1;
-            currentEditingColumn = -1;
-            super.cancelCellEditing();
-        }
-    }
-
-
-    public class ColorCellRenderer extends ColorPreviewPanel implements TableCellRenderer {
-        private boolean isSelected;
-        private boolean isHovered;
-        private int currentRow;
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean selected, boolean hasFocus,
-                                                       int row, int column) {
-            Color color = (value instanceof Color) ? (Color) value : Color.WHITE;
-            setColor(color);
-
-            // Check both row selection AND cell selection (for editing state)
-            this.isSelected = table.isRowSelected(row) || selected;
-            this.currentRow = row;
-
-            // Detect hovered row
-            int hoveredRow = -1;
-            Object hoveredObj = table.getClientProperty("hoveredRow");
-            if (hoveredObj instanceof Integer) {
-                hoveredRow = (Integer) hoveredObj;
-            }
-            this.isHovered = (hoveredRow == row);
-
-            // Set tooltip for RGBA
-            setToolTipText(String.format("RGBA(%d, %d, %d, %d)",
-                    color.getRed(), color.getGreen(), color.getBlue(), color.getAlpha()));
-
-            repaint();
-            return this;
-        }
-
-        @Override
-        public void paintComponent(Graphics g) {
-            Color background;
-            if (isSelected) {
-                // Selected row gets selection color
-                background = selectedColor;
-            } else if (isHovered) {
-                background = hoveredColor;
-            } else {
-                // Apply zebra pattern based on row number
-                background = (currentRow % 2 == 0)
-                        ? ColorScheme.DARKER_GRAY_COLOR
-                        : new Color(27, 27, 27);
-            }
-
-            Graphics2D g2 = (Graphics2D) g.create();
-            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            g2.setColor(background);
-            g2.fillRect(0, 0, getWidth(), getHeight());
-
-            Color color = getColor();
-            if (color != null) {
-                int margin = (isSelected || isHovered) ? 1 : 2;
-                int x = margin;
-                int y = margin;
-                int width = getWidth() - margin * 2;
-                int height = getHeight() - margin * 2;
-                int arc = 8;
-
-                Shape roundRect = new RoundRectangle2D.Float(x, y, width, height, arc, arc);
-
-                // Checkerboard background for transparency effect
-                g2.setPaint(getCheckerPaint());
-                g2.fill(roundRect);
-
-                // Fill with actual color
-                g2.setColor(color);
-                g2.fill(roundRect);
-
-                // Border
-                g2.setColor(background);
-                g2.setStroke(new BasicStroke(3f));
-                g2.draw(new RoundRectangle2D.Float(
-                        x + 0.5f, y + 0.5f,
-                        width - 1f, height - 1f,
-                        arc, arc
-                ));
-            }
-
-            g2.dispose();
-        }
-    }
-
-    public class ImmediateComboBoxEditor extends DefaultCellEditor {
-        private final JComboBox<String> comboBox;
-
-        public ImmediateComboBoxEditor(String[] items) {
-            super(new JComboBox<>(items));
-            comboBox = (JComboBox<String>) getComponent();
-            comboBox.putClientProperty("JComboBox.isTableCellEditor", Boolean.TRUE);
-        }
-
-        @Override
-        public Component getTableCellEditorComponent(JTable table, Object value,
-                                                     boolean isSelected, int row, int column) {
-            Component comp = super.getTableCellEditorComponent(table, value, isSelected, row, column);
-
+        private void styleComboBox(JComboBox<String> comboBox) {
+            comboBox.setBackground(ColorScheme.DARK_GRAY_COLOR);
+            comboBox.setForeground(Color.WHITE);
             comboBox.setFont(FontManager.getRunescapeSmallFont());
+            comboBox.setPreferredSize(new Dimension(88, 24));
+            comboBox.setMaximumSize(new Dimension(88, 24));
+        }
 
-            // Set selected value
-            comboBox.setSelectedItem(value);
+        private JToggleButton createToggleButton(ImageIcon iconOn, ImageIcon iconOff, ImageIcon iconOnHover, ImageIcon iconOffHover, String tooltipOn, String tooltipOff) {
+            JToggleButton button = new JToggleButton();
+            button.setPreferredSize(new Dimension(18, 18));
+            button.setSelectedIcon(iconOn);
+            button.setRolloverSelectedIcon(iconOnHover);
+            button.setIcon(iconOff);
+            button.setRolloverIcon(iconOffHover);
+            button.setBorderPainted(true);
+            button.setContentAreaFilled(false);
+            button.setFocusPainted(false);
 
-            // Delay dropdown opening to allow editor to initialize
-            SwingUtilities.invokeLater(() -> comboBox.showPopup());
+            // Set tooltip based on current state
+            button.setToolTipText(button.isSelected() ? tooltipOn : tooltipOff);
 
-            return comp;
+            // Update background and tooltip on toggle
+            button.addItemListener(e -> {
+                if (button.isSelected()) {
+                    button.setToolTipText(tooltipOn);
+                    button.setPressedIcon(iconOnHover);
+                } else {
+                    button.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+                    button.setPressedIcon(iconOffHover);
+                    button.setToolTipText(tooltipOff);
+                }
+                triggerDataChanged();
+            });
+
+
+            // Trigger state change listener
+            button.addActionListener(e -> triggerDataChanged());
+
+            return button;
+        }
+
+        private void updateStyleButtons() {
+            boolean canRemove = styleRows.size() > 1;
+            boolean canAdd = styleRows.size() < MAX_STYLE_ROWS;
+
+            for (StyleRow row : styleRows) {
+                row.removeButton.setEnabled(canRemove);
+                row.removeButton.setVisible(canRemove);
+
+                row.addButton.setEnabled(canAdd);
+                row.addButton.setVisible(true);
+
+                if (!canAdd) {
+                    row.addButton.setToolTipText("Maximum of " + MAX_STYLE_ROWS + " highlight styles allowed");
+                } else {
+                    row.addButton.setToolTipText("Add a new highlight style below");
+                }
+            }
+        }
+
+
+        private void updateTagStyleComboBoxOptions(JComboBox<String> comboBoxToUpdate) {
+            Set<String> selectedStyles = new HashSet<>();
+
+            // Gather selected styles from all other combo boxes
+            for (Component c : bottomRowsPanel.getComponents()) {
+                if (c instanceof JPanel) {
+                    JPanel row = (JPanel) c;
+                    for (Component comp : row.getComponents()) {
+                        if (comp instanceof JComboBox && comp != comboBoxToUpdate) {
+                            JComboBox<?> cb = (JComboBox<?>) comp;
+                            Object selected = cb.getSelectedItem();
+                            if (selected != null) {
+                                selectedStyles.add(selected.toString());
+                            }
+                        }
+                    }
+                }
+            }
+
+            Object currentSelection = comboBoxToUpdate.getSelectedItem();
+            comboBoxToUpdate.removeAllItems();
+
+            for (String style : STYLE_TAGS) {
+                if (!selectedStyles.contains(style) || style.equals(currentSelection)) {
+                    comboBoxToUpdate.addItem(style);
+                }
+            }
+
+            if (currentSelection != null) {
+                comboBoxToUpdate.setSelectedItem(currentSelection);
+            }
+        }
+
+
+        private void refreshAllTagStyleComboBoxes() {
+            for (Component c : bottomRowsPanel.getComponents()) {
+                if (c instanceof JPanel) {
+                    for (Component comp : ((JPanel) c).getComponents()) {
+                        if (comp instanceof JComboBox) {
+                            updateTagStyleComboBoxOptions((JComboBox<String>) comp);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Getters and setters
+        public void setNameText(String text) {
+            if (text == null || text.trim().isEmpty()) {
+                nameField.setText("Name/ID..");
+                nameField.setForeground(ColorScheme.MEDIUM_GRAY_COLOR);
+            } else {
+                nameField.setText(text);
+                nameField.setForeground(Color.WHITE);
+            }
+        }
+
+        public String getNameText() {
+            String text = nameField.getText();
+            return text.equals("Name/ID..") ? "" : text;
+        }
+
+        public String getTagStyle() {
+            return (String) tagStyleCombo.getSelectedItem();
+        }
+
+        public String getAllTagStyles() {
+            StringBuilder sb = new StringBuilder();
+            for (StyleRow row : styleRows) {
+                Object sel = row.tagStyleCombo.getSelectedItem();
+                if (sel != null) {
+                    sb.append(sel.toString()).append(" ");
+                }
+            }
+            return sb.toString().trim();
+        }
+
+        public Color getOutlineColor() {
+            return colorPreviewButton.getOutlineColor();
+        }
+
+        public Color getFillColor() {
+            return colorPreviewButton.getFillColor();
+        }
+
+        public boolean isHideNpc() {
+            return hideNpcButton.isSelected();
+        }
+
+        public boolean isDrawUnder() {
+            return drawUnderButton.isSelected();
+        }
+
+        public boolean isDisplayName() {
+            return displayNameButton.isSelected();
+        }
+
+        public Color getDisplayNameColor() {
+            return displayNameColor;
+        }
+
+        public void setDisplayNameColor(Color color) {
+            this.displayNameColor = color;
+            // Optionally repaint or update UI if needed
+        }
+
+
+        public void setData(List<NpcHighlightEntry> entries) {
+            if (entries == null || entries.isEmpty()) {
+                setNameText("");
+                clearStyleRows();
+                addStyleRow(null);
+                hideNpcButton.setSelected(false);
+                drawUnderButton.setSelected(false);
+                displayNameButton.setSelected(false);
+                return;
+            }
+
+            setNameText(entries.get(0).nameOrId);
+            clearStyleRows();
+
+            for (NpcHighlightEntry entry : entries) {
+                addStyleRow(entry);
+            }
+
+            // Set toggles from first entry (assuming consistent)
+            hideNpcButton.setSelected(entries.get(0).hideNpc);
+            drawUnderButton.setSelected(entries.get(0).drawUnder);
+            displayNameButton.setSelected(entries.get(0).displayName);
+        }
+
+        public void focusNameField() {
+            nameField.requestFocus();
+        }
+    }
+
+    public List<NpcCard> getNpcCards() {
+        return Collections.unmodifiableList(npcCards);
+    }
+
+    public class CheckerboardPanel extends JPanel {
+        private static final int CHECKER_SIZE = 8;
+        private TexturePaint checkerPaint;
+
+        public CheckerboardPanel() {
+            setPreferredSize(new Dimension(24, 24));
+            createCheckerPaint();
+            setLayout(new BorderLayout());
+        }
+
+        private void createCheckerPaint() {
+            int tileSize = CHECKER_SIZE * 2;
+            BufferedImage img = new BufferedImage(tileSize, tileSize, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = img.createGraphics();
+
+            Color light = new Color(192, 192, 192);
+            Color dark = new Color(128, 128, 128);
+
+            g.setColor(light);
+            g.fillRect(0, 0, tileSize, tileSize);
+
+            g.setColor(dark);
+            g.fillRect(0, 0, CHECKER_SIZE, CHECKER_SIZE);
+            g.fillRect(CHECKER_SIZE, CHECKER_SIZE, CHECKER_SIZE, CHECKER_SIZE);
+
+            g.dispose();
+
+            checkerPaint = new TexturePaint(img, new Rectangle(0, 0, tileSize, tileSize));
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (checkerPaint != null) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setPaint(checkerPaint);
+                g2.fillRect(0, 0, getWidth(), getHeight());
+            }
+        }
+    }
+
+    public class ColorPreviewButton extends JButton {
+        private Color outlineColor;
+        private Color fillColor;
+
+        private final ColorPickerManager colorPickerManager;
+
+        public ColorPreviewButton(Color initialOutline, Color initialFill, ColorPickerManager colorPickerManager) {
+            this.outlineColor = initialOutline;
+            this.fillColor = initialFill;
+            this.colorPickerManager = colorPickerManager;
+
+            setPreferredSize(new Dimension(24, 24));
+            setFocusPainted(false);
+            setOpaque(true);
+            setBackground(fillColor);
+            setBorder(BorderFactory.createLineBorder(outlineColor, 2));
+            setToolTipText("Right-click to change outline or fill color");
+
+            // Right-click menu to choose which color to edit
+            addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    if (e.isPopupTrigger()) {
+                        showColorMenu(e);
+                    }
+                }
+
+                @Override
+                public void mouseReleased(MouseEvent e) {
+                    if (e.isPopupTrigger()) {
+                        showColorMenu(e);
+                    }
+                }
+            });
+        }
+
+        private void showColorMenu(MouseEvent e) {
+            JPopupMenu menu = new JPopupMenu();
+
+            JMenuItem setOutline = new JMenuItem("Change outline color");
+            setOutline.addActionListener(ev -> openColorPicker(true));
+            menu.add(setOutline);
+
+            JMenuItem setFill = new JMenuItem("Change fill Color");
+            setFill.addActionListener(ev -> openColorPicker(false));
+            menu.add(setFill);
+
+            menu.show(this, e.getX(), e.getY());
+        }
+
+        private void openColorPicker(boolean isOutline) {
+            Color initial = isOutline ? outlineColor : fillColor;
+            RuneliteColorPicker picker = colorPickerManager.create(
+                    SwingUtilities.getWindowAncestor(this),
+                    initial,
+                    isOutline ? "Outline Color" : "Fill Color",
+                    false
+            );
+            picker.setLocation(getLocationOnScreen());
+            picker.setOnColorChange(color -> {
+                if (isOutline) {
+                    setOutlineColor(color);
+                } else {
+                    setFillColor(color);
+                }
+            });
+
+            picker.setOnClose(finalColor -> {
+                if (isOutline) {
+                    setOutlineColor(finalColor);
+                } else {
+                    setFillColor(finalColor);
+                }
+            });
+
+            picker.setVisible(true);
+        }
+
+        public Color getOutlineColor() {
+            return outlineColor;
+        }
+
+        public void setOutlineColor(Color outlineColor) {
+            this.outlineColor = outlineColor;
+            setBorder(BorderFactory.createLineBorder(outlineColor, 2));
+            repaint();
+        }
+
+        public Color getFillColor() {
+            return fillColor;
+        }
+
+        public void setFillColor(Color fillColor) {
+            this.fillColor = fillColor;
+            setBackground(fillColor);
+            repaint();
+        }
+    }
+
+    public void saveCardSettings(ConfigManager configManager, String configGroup) {
+        try {
+            // Map: name -> "rgb,hide,drawUnder,displayName"
+            Map<String, String> settingsMap = new HashMap<>();
+            for (NpcCard card : npcCards) {
+                String name = card.getNameText();
+                if (!name.isEmpty()) {
+                    String value = card.getDisplayNameColor().getRGB() + "," +
+                            card.isHideNpc() + "," +
+                            card.isDrawUnder() + "," +
+                            card.isDisplayName();
+                    settingsMap.put(name, value);
+                }
+            }
+            StringBuilder sb = new StringBuilder();
+            for (Map.Entry<String, String> e : settingsMap.entrySet()) {
+                sb.append(e.getKey()).append("=").append(e.getValue()).append(";");
+            }
+            if (sb.length() > 0) {
+                sb.setLength(sb.length() - 1);
+            }
+            configManager.setConfiguration(configGroup, "cardSettings", sb.toString());
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    public void loadCardSettings(ConfigManager configManager, String configGroup) {
+        try {
+            String settingsStr = configManager.getConfiguration(configGroup, "cardSettings");
+            if (settingsStr == null || settingsStr.isEmpty()) {
+                return;
+            }
+            Map<String, String> settingsMap = new HashMap<>();
+            String[] pairs = settingsStr.split(";");
+            for (String pair : pairs) {
+                String[] kv = pair.split("=");
+                if (kv.length == 2) {
+                    settingsMap.put(kv[0], kv[1]);
+                }
+            }
+            for (NpcCard card : npcCards) {
+                String name = card.getNameText();
+                if (settingsMap.containsKey(name)) {
+                    String[] vals = settingsMap.get(name).split(",");
+                    if (vals.length >= 4) {
+                        try {
+                            int rgb = Integer.parseInt(vals[0]);
+                            card.setDisplayNameColor(new Color(rgb, true));
+                            card.hideNpcButton.setSelected(Boolean.parseBoolean(vals[1]));
+                            card.drawUnderButton.setSelected(Boolean.parseBoolean(vals[2]));
+                            card.displayNameButton.setSelected(Boolean.parseBoolean(vals[3]));
+                        } catch (Exception ignored) {}
+                    }
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
         }
     }
 
 
 
-    // Entry POJO
+
+    // A panel that wraps its contents to the width of the scroll pane
+    private static class ScrollablePanel extends JPanel implements Scrollable {
+        @Override
+        public Dimension getPreferredScrollableViewportSize() {
+            return getPreferredSize();
+        }
+
+        @Override
+        public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return 16; // For smooth scrolling
+        }
+
+        @Override
+        public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+            return visibleRect.height; // For page-up/page-down
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportWidth() {
+            return true; // This is the key: force width to match viewport
+        }
+
+        @Override
+        public boolean getScrollableTracksViewportHeight() {
+            return false; // Allow vertical scrolling
+        }
+    }
+
+    private static class IconSet {
+        public final ImageIcon on;
+        public final ImageIcon off;
+        public final ImageIcon onHover;
+        public final ImageIcon offHover;
+
+        public IconSet(ImageIcon on, ImageIcon off, ImageIcon onHover, ImageIcon offHover) {
+            this.on = on;
+            this.off = off;
+            this.onHover = onHover;
+            this.offHover = offHover;
+        }
+    }
+
+    private static IconSet loadIconSet(String resourcePath, int hoverLuminance, int offLuminance, int offHoverLuminance) {
+        BufferedImage base = ImageUtil.loadImageResource(BetterNpcHighlightPanel.class, resourcePath);
+        return new IconSet(
+                new ImageIcon(base),
+                new ImageIcon(ImageUtil.luminanceOffset(base, offLuminance)),
+                new ImageIcon(ImageUtil.luminanceOffset(base, hoverLuminance)),
+                new ImageIcon(ImageUtil.luminanceOffset(base, offHoverLuminance))
+        );
+    }
+
+    public interface ColorButton {
+        Color getColor();
+        void setColor(Color color);
+    }
+
+    // Entry POJO (unchanged)
     public static class NpcHighlightEntry {
         public String nameOrId;
         public String tagStyle;
         public Color outlineColor;
         public Color fillColor;
-
         public boolean hideNpc;
         public boolean drawUnder;
         public boolean displayName;
@@ -1299,5 +1363,4 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             this.displayName = false;
         }
     }
-
 }

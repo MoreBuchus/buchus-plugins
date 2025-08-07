@@ -1,0 +1,17 @@
+Index: src/main/java/com/betternpchighlight/BetterNpcHighlightPanel.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/src/main/java/com/betternpchighlight/BetterNpcHighlightPanel.java b/src/main/java/com/betternpchighlight/BetterNpcHighlightPanel.java
+--- a/src/main/java/com/betternpchighlight/BetterNpcHighlightPanel.java
++++ b/src/main/java/com/betternpchighlight/BetterNpcHighlightPanel.java	(date 1754478532897)
+@@ -711,7 +711,7 @@
+ 
+             togglePanel.add(highlightDeadButton);
+             togglePanel.add(Box.createHorizontalStrut(4));
+-
++            
+             // Remove NPC card button
+             JButton removeCardButton = new JButton();
+             removeCardButton.setIcon(DELETE_ICONS.on);

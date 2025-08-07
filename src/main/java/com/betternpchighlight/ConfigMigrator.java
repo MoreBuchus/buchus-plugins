@@ -56,7 +56,7 @@ public class ConfigMigrator {
             configManager.setConfiguration(CONFIG_GROUP, "migrationCompleted", "true");
 
             // Optionally clear legacy config entries to clean up
-            clearLegacyConfigEntries(configManager);
+            //clearLegacyConfigEntries(configManager);
 
             return true;
         }

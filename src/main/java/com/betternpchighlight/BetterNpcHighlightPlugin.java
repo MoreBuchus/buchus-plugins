@@ -27,6 +27,7 @@ package com.betternpchighlight;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
+import java.net.URL;
 import java.util.*;
 import javax.swing.*;
 
@@ -165,7 +166,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 			// Create navigation button
 			panelButton = NavigationButton.builder()
 					.tooltip("Better NPC Highlight")
-					.icon(ImageUtil.getResourceStreamFromClass(getClass(), "/com/betternpchighlight/icon.png"))
+					.icon(ImageUtil.getResourceStreamFromClass(getClass(), "/icon.png"))
 					.priority(5)
 					.panel(panel)
 					.build();
@@ -560,7 +561,29 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		return Color.getHSBColor((client.getGameCycle() % ticks) / ((float) ticks), 1.0f, 1.0f);
 	}
 
-	public boolean checkSlayerPluginEnabled()
+    public Color getDisplayNameColorForNpc(NPC npc)
+    {
+        if (panel == null)
+        {
+            return null;
+        }
+
+        for (BetterNpcHighlightPanel.NpcCard card : panel.getNpcCards())
+        {
+            String cardName = card.getNameText();
+            if (cardName != null && !cardName.isEmpty() && npc.getName() != null)
+            {
+                if (npc.getName().equalsIgnoreCase(cardName))
+                {
+                    return card.getDisplayNameColor();
+                }
+            }
+        }
+        return null;
+    }
+
+
+    public boolean checkSlayerPluginEnabled()
 	{
 		final Optional<Plugin> slayerPlugin = pluginManager.getPlugins().stream()
 				.filter(p -> p.getName().equals("Slayer")).findFirst();

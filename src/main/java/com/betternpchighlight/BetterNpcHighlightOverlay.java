@@ -145,7 +145,11 @@ public class BetterNpcHighlightOverlay extends Overlay
 						if (textLoc != null)
 						{
 							drawTextBackground(graphics, textLoc, text);
-							Color textColor = plugin.getSpecificColor(npcInfo) != null ? plugin.getSpecificColor(npcInfo) : config.tileColor();
+                            Color textColor = plugin.getDisplayNameColorForNpc(npcInfo.getNpc());
+                            if (textColor == null)
+                            {
+                                textColor = config.tileColor();
+                            }
 							OverlayUtil.renderTextLocation(graphics, textLoc, text, textColor);
 						}
 					}
