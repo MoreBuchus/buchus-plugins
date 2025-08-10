@@ -7,17 +7,19 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.awt.geom.Area;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.Collections;
-import java.util.Map;
-import java.util.HashMap;
+import java.util.UUID;
+import java.lang.reflect.Type;
 
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.google.common.collect.ImmutableList;
+
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
@@ -33,9 +35,14 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     private JScrollPane cardsScrollPane;
     private Runnable onDataChanged;
     private final ColorPickerManager colorPickerManager;
+    private final ConfigManager configManager;
     private final List<NpcCard> npcCards = new ArrayList<>();
+    private boolean loading = false;
+    private final Gson gson = new Gson();
+    private final String configGroup = "betterNpcHighlight";
+    private static final String CARDS_CONFIG_KEY = "cards";
 
-    private static final ImmutableList<String> STYLE_TAGS = ImmutableList.of(
+    private static final ImmutableList<String> TAG_STYLES = ImmutableList.of(
             "Tile",
             "True Tile",
             "SW Tile",
@@ -61,9 +68,10 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     private static final IconSet REMOVE_ICONS = loadIconSet("/remove_icon.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
     private static final IconSet DELETE_ICONS = loadIconSet("/delete_icon.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
 
-    public BetterNpcHighlightPanel(ColorPickerManager colorPickerManager) {
+    public BetterNpcHighlightPanel(ColorPickerManager colorPickerManager, ConfigManager configManager) {
         super(false);
         this.colorPickerManager = colorPickerManager;
+        this.configManager = configManager;
         initComponents();
     }
 
@@ -126,7 +134,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             public void changedUpdate(DocumentEvent e) { updateFilter(); }
         });
 
-        STYLE_TAGS.forEach(searchField.getSuggestionListModel()::addElement);
+        TAG_STYLES.forEach(searchField.getSuggestionListModel()::addElement);
 
         topPanel.add(searchField, BorderLayout.CENTER);
         return topPanel;
@@ -230,28 +238,38 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         cardsPanel.revalidate();
         cardsPanel.repaint();
-        triggerDataChanged();
+        saveAllCards(configManager, configGroup);
     }
 
     private void triggerDataChanged() {
+        System.out.println("triggerDataChanged called");
         if (onDataChanged != null) {
             onDataChanged.run();
         }
     }
 
+
     // Data management methods
     public List<NpcHighlightEntry> getNpcHighlightEntries() {
-        List<NpcHighlightEntry> allEntries = new ArrayList<>();
-        for (NpcCard card : npcCards) {
-            allEntries.addAll(card.getAllEntries());
-        }
-        return allEntries;
-    }
+        List<NpcHighlightEntry> entries = new ArrayList<>();
 
+        for (NpcCard card : npcCards) {
+            String nameOrId = card.getNameText();
+            if (nameOrId == null || nameOrId.trim().isEmpty()) {
+                continue;
+            }
+
+            // Use the card's getAllEntries() method instead of accessing styleButtons directly
+            entries.addAll(card.getAllEntries());
+        }
+
+        return entries;
+    }
 
     public void setOnTableChanged(Runnable r) {
         this.onDataChanged = r;
     }
+
     private void addCardFromEntry(NpcHighlightEntry entry) {
         NpcCard card = new NpcCard();
         card.setData(Collections.singletonList(entry));
@@ -261,82 +279,9 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         cardsPanel.revalidate();
         cardsPanel.repaint();
     }
-    // In BetterNpcHighlightPanel.java
 
-    /**
-     * Saves the current NPC highlight entries to RuneLite config.
-     * Serializes entries as a single string with ';' separator.
-     * Each entry is serialized as: nameOrId|tagStyle|outlineColorRGB|fillColorRGB|hideNpc|drawUnder|displayName
-     *
-     * @param configManager RuneLite ConfigManager instance
-     * @param configGroup   Config group name (e.g. "BetterNpcHighlight")
-     */
-    public void saveToConfig(ConfigManager configManager, String configGroup) {
-        try {
-            List<NpcHighlightEntry> entries = getNpcHighlightEntries();
-            StringBuilder sb = new StringBuilder();
-
-            for (NpcHighlightEntry entry : entries) {
-                sb.append(entryToString(entry)).append(";");
-            }
-
-            if (sb.length() > 0) {
-                sb.setLength(sb.length() - 1);
-            }
-
-            configManager.setConfiguration(configGroup, "panelEntries", sb.toString());
-            saveCardSettings(configManager, configGroup);
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    /**
-     * Loads NPC highlight entries from RuneLite config.
-     * Parses the serialized string and recreates NPC cards.
-     * If no entries found, adds a blank card.
-     *
-     * @param configManager RuneLite ConfigManager instance
-     * @param configGroup   Config group name (e.g. "BetterNpcHighlight")
-     */
-    public void loadFromConfig(ConfigManager configManager, String configGroup) {
-        try {
-            String entriesStr = configManager.getConfiguration(configGroup, "panelEntries");
-            clearAllCards();
-
-            if (entriesStr != null && !entriesStr.isEmpty()) {
-                String[] entries = entriesStr.split(";");
-                Map<String, List<NpcHighlightEntry>> groupedEntries = new HashMap<>();
-
-                for (String entryStr : entries) {
-                    if (!entryStr.trim().isEmpty()) {
-                        NpcHighlightEntry entry = stringToEntry(entryStr);
-                        if (entry != null) {
-                            groupedEntries.computeIfAbsent(entry.nameOrId, k -> new ArrayList<>()).add(entry);
-                        }
-                    }
-                }
-
-                for (Map.Entry<String, List<NpcHighlightEntry>> group : groupedEntries.entrySet()) {
-                    addCardFromEntries(group.getKey(), group.getValue());
-                }
-                loadCardSettings(configManager, configGroup);
-            }
-
-            if (npcCards.isEmpty()) {
-                addNewCard();
-            }
-
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            if (npcCards.isEmpty()) {
-                addNewCard();
-            }
-        }
-    }
-
-    private void addCardFromEntries(String npcNameOrId, List<NpcHighlightEntry> entries) {
-        NpcCard card = new NpcCard();
+    private void addCardFromEntries(UUID cardId, String npcNameOrId, List<NpcHighlightEntry> entries) {
+        NpcCard card = cardId == null ? new NpcCard() : new NpcCard(cardId);
         card.setNameText(npcNameOrId);
         card.clearStyleRows();
 
@@ -349,62 +294,78 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         cardsPanel.add(Box.createVerticalStrut(5));
         cardsPanel.revalidate();
         cardsPanel.repaint();
+        System.out.println("Adding card with UUID: " + cardId + " and name: " + npcNameOrId);
     }
 
-
-    /**
-     * Converts a single NPC highlight entry to a string for serialization.
-     *
-     * @param entry NPC highlight entry
-     * @return Serialized string representation
-     */
-    private String entryToString(NpcHighlightEntry entry)
-    {
-        // Use RGB int values for colors to preserve alpha channel
-        return String.format("%s|%s|%d|%d|%b|%b|%b",
-                entry.nameOrId,
-                entry.tagStyle,
-                entry.outlineColor.getRGB(),
-                entry.fillColor.getRGB(),
-                entry.hideNpc,
-                entry.drawUnder,
-                entry.displayName);
+    private String entryToString(NpcHighlightEntry entry) {
+        return entry.nameOrId + "|" +
+                entry.tagStyle + "|" +
+                entry.outlineColor.getRGB() + "|" +
+                entry.fillColor.getRGB() + "|" +
+                entry.hideNpc + "|" +
+                entry.drawUnder + "|" +
+                entry.displayName + "|" +
+                entry.displayNameColor.getRGB() + "|" +
+                entry.highlightDead;
     }
 
-    /**
-     * Parses a serialized NPC highlight entry string into an object.
-     * Returns null if parsing fails.
-     *
-     * @param str Serialized entry string
-     * @return Parsed NpcHighlightEntry or null if invalid
-     */
-    private NpcHighlightEntry stringToEntry(String str)
-    {
-        try
-        {
-            String[] parts = str.split("\\|");
-            if (parts.length >= 4)
-            {
-                NpcHighlightEntry entry = new NpcHighlightEntry(
+    private NpcHighlightEntry entryFromString(String str) {
+        String[] parts = str.split("\\|");
+        if (parts.length >= 9) {
+            try {
+                return new NpcHighlightEntry(
                         parts[0],
                         parts[1],
                         new Color(Integer.parseInt(parts[2]), true),
-                        new Color(Integer.parseInt(parts[3]), true)
+                        new Color(Integer.parseInt(parts[3]), true),
+                        Boolean.parseBoolean(parts[4]),
+                        Boolean.parseBoolean(parts[5]),
+                        Boolean.parseBoolean(parts[6]),
+                        new Color(Integer.parseInt(parts[7]), true),
+                        Boolean.parseBoolean(parts[8])
                 );
-
-                if (parts.length >= 7)
-                {
-                    entry.hideNpc = Boolean.parseBoolean(parts[4]);
-                    entry.drawUnder = Boolean.parseBoolean(parts[5]);
-                    entry.displayName = Boolean.parseBoolean(parts[6]);
-                }
-                return entry;
+            } catch (Exception e) {
+                // Handle parsing errors
             }
         }
-        catch (Exception ex)
-        {
-            System.err.println("Error parsing NPC highlight entry: " + str + " - " + ex.getMessage());
+        // Fallback for older formats
+        if (parts.length >= 8) { // Update to expect 8 parts
+            try {
+                return new NpcHighlightEntry(
+                        parts[0],
+                        parts[1],
+                        new Color(Integer.parseInt(parts[2]), true),
+                        new Color(Integer.parseInt(parts[3]), true),
+                        Boolean.parseBoolean(parts[4]),
+                        Boolean.parseBoolean(parts[5]),
+                        Boolean.parseBoolean(parts[6]),
+                        new Color(Integer.parseInt(parts[7]), true),// Parse display name color
+                        false
+                );
+            } catch (Exception e) {
+                // Handle parsing errors
+            }
         }
+
+        // Fallback for older format or parsing errors
+        if (parts.length >= 7) {
+            try {
+                return new NpcHighlightEntry(
+                        parts[0],
+                        parts[1],
+                        new Color(Integer.parseInt(parts[2]), true),
+                        new Color(Integer.parseInt(parts[3]), true),
+                        Boolean.parseBoolean(parts[4]),
+                        Boolean.parseBoolean(parts[5]),
+                        Boolean.parseBoolean(parts[6]),
+                        Color.WHITE, // Default display name color
+                        false
+                );
+            } catch (Exception e) {
+                // Handle parsing errors
+            }
+        }
+
         return null;
     }
 
@@ -457,17 +418,18 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         List<NpcHighlightEntry> entries = getNpcHighlightEntries();
         try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
             writer.println("# Better NPC Highlight Export");
-            writer.println("# Format: Name/ID,TagStyle,OutlineColor(RGB),FillColor(RGB),Hide,DrawUnder,DisplayName");
+            writer.println("# Format: Name/ID,TagStyle,OutlineColor(RGB),FillColor(RGB),Hide,DrawUnder,DisplayName,HighlightDead");
 
             for (NpcHighlightEntry entry : entries) {
-                writer.printf("%s,%s,%d,%d,%b,%b,%b%n",
+                writer.printf("%s,%s,%d,%d,%b,%b,%b,%b%n",
                         entry.nameOrId,
                         entry.tagStyle,
                         entry.outlineColor.getRGB(),
                         entry.fillColor.getRGB(),
                         entry.hideNpc,
                         entry.drawUnder,
-                        entry.displayName);
+                        entry.displayName,
+                        entry.highlightDead);
             }
         }
     }
@@ -502,18 +464,31 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         try {
             String[] parts = line.split(",");
             if (parts.length >= 4) {
-                NpcHighlightEntry entry = new NpcHighlightEntry(
+                // Provide default values for missing parameters
+                boolean hideNpc = false;
+                boolean drawUnder = false;
+                boolean displayName = false;
+                Color displayNameColor = Color.CYAN; // or Color.WHITE
+                boolean highlightDead = false;
+
+                if (parts.length >= 8) {
+                    hideNpc = Boolean.parseBoolean(parts[4].trim());
+                    drawUnder = Boolean.parseBoolean(parts[5].trim());
+                    displayName = Boolean.parseBoolean(parts[6].trim());
+                    highlightDead = Boolean.parseBoolean(parts[7].trim());
+                }
+
+                return new NpcHighlightEntry(
                         parts[0].trim(),
                         parts[1].trim(),
                         new Color(Integer.parseInt(parts[2].trim()), true),
-                        new Color(Integer.parseInt(parts[3].trim()), true)
+                        new Color(Integer.parseInt(parts[3].trim()), true),
+                        hideNpc,
+                        drawUnder,
+                        displayName,
+                        displayNameColor,
+                        highlightDead
                 );
-                if (parts.length >= 7) {
-                    entry.hideNpc = Boolean.parseBoolean(parts[4].trim());
-                    entry.drawUnder = Boolean.parseBoolean(parts[5].trim());
-                    entry.displayName = Boolean.parseBoolean(parts[6].trim());
-                }
-                return entry;
             }
         } catch (Exception e) {
             // Skip invalid lines
@@ -543,9 +518,21 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         private JToggleButton displayNameButton;
         private Color displayNameColor = Color.CYAN;
         private JToggleButton highlightDeadButton;
+        private final UUID cardId;
 
         public NpcCard() {
+            this.cardId = UUID.randomUUID();
             initCard();
+        }
+
+        // Add a constructor to create card with existing UUID (for loading)
+        public NpcCard(UUID id) {
+            this.cardId = id;
+            initCard();
+        }
+
+        public UUID getCardId() {
+            return cardId;
         }
 
         private class StyleRow {
@@ -566,7 +553,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
                 tagStyleCombo = new JComboBox<>();
                 styleComboBox(tagStyleCombo);
-                tagStyleCombo.addActionListener(e -> triggerDataChanged());
+                tagStyleCombo.addActionListener(e -> saveAllCards(configManager, configGroup));
                 leftPanel.add(tagStyleCombo);
                 leftPanel.add(Box.createHorizontalStrut(4));
 
@@ -624,6 +611,14 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                 // Initialize combo box options
                 updateTagStyleComboBoxOptions(tagStyleCombo);
                 tagStyleCombo.addActionListener(e -> refreshAllTagStyleComboBoxes());
+                if (entry != null && entry.tagStyle != null) {
+                    tagStyleCombo.setSelectedItem(entry.tagStyle);
+                }
+                // Add listener to save changes when selection changes
+                tagStyleCombo.addActionListener(e -> {
+                    refreshAllTagStyleComboBoxes();
+                    saveAllCards(configManager, configGroup);  // Save on change
+                });
 
                 updateStyleButtons();
             }
@@ -650,12 +645,22 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             nameField = createStyledTextField("Name/ID..");
             nameField.getDocument().addDocumentListener(new DocumentListener() {
                 @Override
-                public void insertUpdate(DocumentEvent e) { triggerDataChanged(); }
+                public void insertUpdate(DocumentEvent e) {
+                    saveAllCards(configManager, configGroup);
+                }
+
                 @Override
-                public void removeUpdate(DocumentEvent e) { triggerDataChanged(); }
+                public void removeUpdate(DocumentEvent e) {
+                    saveAllCards(configManager, configGroup);
+                }
+
                 @Override
-                public void changedUpdate(DocumentEvent e) { triggerDataChanged(); }
+                public void changedUpdate(DocumentEvent e) {
+                    saveAllCards(configManager, configGroup);
+                }
             });
+
+
             topRow.add(nameField, BorderLayout.CENTER);
 
             // Panel for toggle buttons
@@ -694,6 +699,25 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                     HIGHLIGHT_DEAD_ICONS.offHover,
                     "Do not highlight dead NPC", "Highlight dead NPC"
             );
+
+            hideNpcButton.addItemListener(e -> {
+                if (!loading) {
+                    saveAllCards(configManager, configGroup);
+                }
+            });
+
+            drawUnderButton.addItemListener(e -> {
+                if (!loading) {
+                    saveAllCards(configManager, configGroup);
+                }
+            });
+
+            displayNameButton.addItemListener(e -> {
+                if (!loading) {
+                    saveAllCards(configManager, configGroup);
+                }
+            });
+
 
             displayNameButton.addMouseListener(new MouseAdapter() {
                 @Override
@@ -746,6 +770,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             contentPanel.add(bottomRowsPanel);
 
             add(contentPanel, BorderLayout.CENTER);
+            System.out.println("NpcCard created with UUID: " + cardId + " and name: " + getNameText());
         }
 
         public void addStyleRow(NpcHighlightEntry entry) {
@@ -771,7 +796,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             updateStyleButtons();
             bottomRowsPanel.revalidate();
             bottomRowsPanel.repaint();
-            triggerDataChanged();
+            saveAllCards(configManager, configGroup);
         }
 
         public void removeStyleRowAt(int index) {
@@ -780,7 +805,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             updateStyleButtons();
             bottomRowsPanel.revalidate();
             bottomRowsPanel.repaint();
-            triggerDataChanged();
+            saveAllCards(configManager, configGroup);
         }
 
         private void showDisplayNameColorMenu(MouseEvent e) {
@@ -798,6 +823,8 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                     "Name/Minimap Color",
                     true
             );
+            Point loc = getLocationOnScreen();
+            picker.setLocation(loc.x + -400, loc.y);
             picker.setOnColorChange(newColor -> {
                 displayNameColor = newColor;
                 if (onDataChanged != null) {
@@ -817,6 +844,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             boolean hide = hideNpcButton.isSelected();
             boolean drawUnder = drawUnderButton.isSelected();
             boolean displayName = displayNameButton.isSelected();
+            boolean highlightDead = highlightDeadButton.isSelected();
 
             for (StyleRow row : styleRows) {
                 String tagStyle = (String) row.tagStyleCombo.getSelectedItem();
@@ -827,15 +855,18 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                         npcNameOrId,
                         tagStyle,
                         row.colorPreviewButton.getOutlineColor(),
-                        row.colorPreviewButton.getFillColor()
+                        row.colorPreviewButton.getFillColor(),
+                        hide,
+                        drawUnder,
+                        displayName,
+                        this.getDisplayNameColor(), // Use 'this' instead of 'card'
+                        highlightDead
                 );
-                entry.hideNpc = hide;
-                entry.drawUnder = drawUnder;
-                entry.displayName = displayName;
                 entries.add(entry);
             }
             return entries;
         }
+
 
 
 
@@ -912,12 +943,12 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                     button.setPressedIcon(iconOffHover);
                     button.setToolTipText(tooltipOff);
                 }
-                triggerDataChanged();
+                saveAllCards(configManager, configGroup);
             });
 
 
             // Trigger state change listener
-            button.addActionListener(e -> triggerDataChanged());
+            button.addActionListener(e -> saveAllCards(configManager, configGroup));
 
             return button;
         }
@@ -964,7 +995,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             Object currentSelection = comboBoxToUpdate.getSelectedItem();
             comboBoxToUpdate.removeAllItems();
 
-            for (String style : STYLE_TAGS) {
+            for (String style : TAG_STYLES) {
                 if (!selectedStyles.contains(style) || style.equals(currentSelection)) {
                     comboBoxToUpdate.addItem(style);
                 }
@@ -1031,12 +1062,44 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             return hideNpcButton.isSelected();
         }
 
+        public void setHideNpc(boolean selected) {
+            hideNpcButton.setSelected(selected);
+            if (!loading) {
+                saveAllCards(configManager, configGroup);
+            }
+        }
+
         public boolean isDrawUnder() {
             return drawUnderButton.isSelected();
         }
 
+        public void setDrawUnder(boolean selected) {
+            drawUnderButton.setSelected(selected);
+            if (!loading) {
+                saveAllCards(configManager, configGroup);
+            }
+        }
+
         public boolean isDisplayName() {
             return displayNameButton.isSelected();
+        }
+
+        public void setDisplayName(boolean selected) {
+            displayNameButton.setSelected(selected);
+            if (!loading) {
+                saveAllCards(configManager, configGroup);
+            }
+        }
+
+        public boolean isHighlightDead() {
+            return highlightDeadButton.isSelected();
+        }
+
+        public void setHighlightDead(boolean selected) {
+            highlightDeadButton.setSelected(selected);
+            if (!loading) {
+                saveAllCards(configManager, configGroup);
+            }
         }
 
         public Color getDisplayNameColor() {
@@ -1045,9 +1108,10 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         public void setDisplayNameColor(Color color) {
             this.displayNameColor = color;
-            // Optionally repaint or update UI if needed
+            if (!loading) {
+                saveAllCards(configManager, configGroup);
+            }
         }
-
 
         public void setData(List<NpcHighlightEntry> entries) {
             if (entries == null || entries.isEmpty()) {
@@ -1057,6 +1121,8 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                 hideNpcButton.setSelected(false);
                 drawUnderButton.setSelected(false);
                 displayNameButton.setSelected(false);
+                highlightDeadButton.setSelected(false);
+
                 return;
             }
 
@@ -1071,6 +1137,8 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             hideNpcButton.setSelected(entries.get(0).hideNpc);
             drawUnderButton.setSelected(entries.get(0).drawUnder);
             displayNameButton.setSelected(entries.get(0).displayName);
+            highlightDeadButton.setSelected(entries.get(0).highlightDead);
+            setDisplayNameColor(entries.get(0).displayNameColor);
         }
 
         public void focusNameField() {
@@ -1181,13 +1249,15 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                     isOutline ? "Outline Color" : "Fill Color",
                     false
             );
-            picker.setLocation(getLocationOnScreen());
+            Point loc = getLocationOnScreen();
+            picker.setLocation(loc.x + -500, loc.y);
             picker.setOnColorChange(color -> {
                 if (isOutline) {
                     setOutlineColor(color);
                 } else {
                     setFillColor(color);
                 }
+                saveAllCards(configManager, configGroup);
             });
 
             picker.setOnClose(finalColor -> {
@@ -1221,70 +1291,6 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             repaint();
         }
     }
-
-    public void saveCardSettings(ConfigManager configManager, String configGroup) {
-        try {
-            // Map: name -> "rgb,hide,drawUnder,displayName"
-            Map<String, String> settingsMap = new HashMap<>();
-            for (NpcCard card : npcCards) {
-                String name = card.getNameText();
-                if (!name.isEmpty()) {
-                    String value = card.getDisplayNameColor().getRGB() + "," +
-                            card.isHideNpc() + "," +
-                            card.isDrawUnder() + "," +
-                            card.isDisplayName();
-                    settingsMap.put(name, value);
-                }
-            }
-            StringBuilder sb = new StringBuilder();
-            for (Map.Entry<String, String> e : settingsMap.entrySet()) {
-                sb.append(e.getKey()).append("=").append(e.getValue()).append(";");
-            }
-            if (sb.length() > 0) {
-                sb.setLength(sb.length() - 1);
-            }
-            configManager.setConfiguration(configGroup, "cardSettings", sb.toString());
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-    public void loadCardSettings(ConfigManager configManager, String configGroup) {
-        try {
-            String settingsStr = configManager.getConfiguration(configGroup, "cardSettings");
-            if (settingsStr == null || settingsStr.isEmpty()) {
-                return;
-            }
-            Map<String, String> settingsMap = new HashMap<>();
-            String[] pairs = settingsStr.split(";");
-            for (String pair : pairs) {
-                String[] kv = pair.split("=");
-                if (kv.length == 2) {
-                    settingsMap.put(kv[0], kv[1]);
-                }
-            }
-            for (NpcCard card : npcCards) {
-                String name = card.getNameText();
-                if (settingsMap.containsKey(name)) {
-                    String[] vals = settingsMap.get(name).split(",");
-                    if (vals.length >= 4) {
-                        try {
-                            int rgb = Integer.parseInt(vals[0]);
-                            card.setDisplayNameColor(new Color(rgb, true));
-                            card.hideNpcButton.setSelected(Boolean.parseBoolean(vals[1]));
-                            card.drawUnderButton.setSelected(Boolean.parseBoolean(vals[2]));
-                            card.displayNameButton.setSelected(Boolean.parseBoolean(vals[3]));
-                        } catch (Exception ignored) {}
-                    }
-                }
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
-        }
-    }
-
-
-
 
     // A panel that wraps its contents to the width of the scroll pane
     private static class ScrollablePanel extends JPanel implements Scrollable {
@@ -1343,6 +1349,108 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         void setColor(Color color);
     }
 
+    private static class CardDTO
+    {
+        public String uuid;
+        public String name;
+        public int displayNameColor; // ARGB int
+        public boolean hideNpc;
+        public boolean drawUnder;
+        public boolean displayName;
+        public boolean highlightDead;
+        public List<StyleDTO> styles = new ArrayList<>();
+    }
+
+    private static class StyleDTO
+    {
+        public String tagStyle;
+        public int outlineColor; // ARGB int
+        public int fillColor;    // ARGB int
+    }
+
+    // Save all cards as a single JSON array under configGroup -> "cards"
+    public void saveAllCards(ConfigManager configManager, String configGroup)
+    {
+        List<CardDTO> cards = new ArrayList<>();
+
+        for (NpcCard card : npcCards)
+        {
+            CardDTO dto = new CardDTO();
+            dto.uuid = card.getCardId().toString();
+            dto.name = card.getNameText();
+            dto.displayNameColor = card.getDisplayNameColor().getRGB();
+            dto.hideNpc = card.isHideNpc();
+            dto.drawUnder = card.isDrawUnder();
+            dto.displayName = card.isDisplayName();
+            dto.highlightDead = card.isHighlightDead();
+
+            for (NpcHighlightEntry e : card.getAllEntries())
+            {
+                StyleDTO s = new StyleDTO();
+                s.tagStyle = e.tagStyle;
+                s.outlineColor = e.outlineColor.getRGB();
+                s.fillColor = e.fillColor.getRGB();
+                dto.styles.add(s);
+            }
+
+            cards.add(dto);
+        }
+
+        configManager.setConfiguration(configGroup, CARDS_CONFIG_KEY, gson.toJson(cards));
+        triggerDataChanged();
+    }
+
+
+    // Load cards from config
+    public void loadAllCards(ConfigManager configManager, String configGroup)
+    {
+        String json = configManager.getConfiguration(configGroup, CARDS_CONFIG_KEY);
+        clearAllCards();
+
+        if (json != null && !json.isEmpty())
+        {
+            Type listType = new TypeToken<List<CardDTO>>(){}.getType();
+            List<CardDTO> cards = gson.fromJson(json, listType);
+
+            for (CardDTO dto : cards)
+            {
+                NpcCard card = new NpcCard(UUID.fromString(dto.uuid));
+                card.setNameText(dto.name);
+                card.clearStyleRows();
+
+                List<NpcHighlightEntry> entries = new ArrayList<>();
+                for (StyleDTO s : dto.styles)
+                {
+                    entries.add(new NpcHighlightEntry(
+                            dto.name,
+                            s.tagStyle,
+                            new Color(s.outlineColor, true),
+                            new Color(s.fillColor, true),
+                            dto.hideNpc,
+                            dto.drawUnder,
+                            dto.displayName,
+                            new Color(dto.displayNameColor, true),
+                            dto.highlightDead
+                    ));
+                }
+
+                card.setData(entries);
+                npcCards.add(card);
+                cardsPanel.add(card);
+                cardsPanel.add(Box.createVerticalStrut(5));
+            }
+        }
+
+        if (npcCards.isEmpty())
+        {
+            addNewCard();
+        }
+        triggerDataChanged();
+
+        cardsPanel.revalidate();
+        cardsPanel.repaint();
+    }
+
     // Entry POJO (unchanged)
     public static class NpcHighlightEntry {
         public String nameOrId;
@@ -1352,15 +1460,21 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         public boolean hideNpc;
         public boolean drawUnder;
         public boolean displayName;
+        public Color displayNameColor;
+        public boolean highlightDead;
 
-        public NpcHighlightEntry(String nameOrId, String tagStyle, Color outlineColor, Color fillColor) {
+        public NpcHighlightEntry(String nameOrId, String tagStyle, Color outlineColor, Color fillColor,
+                                 boolean hideNpc, boolean drawUnder, boolean displayName, Color displayNameColor, boolean highlightDead) {
             this.nameOrId = nameOrId;
             this.tagStyle = tagStyle;
             this.outlineColor = outlineColor;
             this.fillColor = fillColor;
-            this.hideNpc = false;
-            this.drawUnder = false;
-            this.displayName = false;
+            this.hideNpc = hideNpc;
+            this.drawUnder = drawUnder;
+            this.displayName = displayName;
+            this.displayNameColor = displayNameColor;
+            this.highlightDead = highlightDead;
         }
     }
+
 }

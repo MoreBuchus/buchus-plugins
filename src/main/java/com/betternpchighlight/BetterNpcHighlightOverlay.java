@@ -27,7 +27,6 @@
 package com.betternpchighlight;
 
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -73,7 +72,7 @@ public class BetterNpcHighlightOverlay extends Overlay
 			NPCComposition npcComposition = npc.getTransformedComposition();
 			if (npcComposition != null && ((npc.getName() != null && !npc.getName().equals("") && !npc.getName().equals("null")) || !isInvisible(npc.getModel())))
 			{
-				boolean showWhileDead = (!npc.isDead() && !npcUtil.isDying(npc)) || !config.ignoreDeadNpcs() || npcInfo.isIgnoreDead();
+				boolean showWhileDead = (!npc.isDead() && !npcUtil.isDying(npc)) || !config.ignoreDeadNpcs() || npcInfo.isHighlightDead();
 				boolean showNPC = (npcComposition.isFollower() && config.highlightPets()) || (!npcComposition.isFollower() && showWhileDead);
 
 				if (showNPC && withinDistanceLimit(npc))
@@ -137,22 +136,6 @@ public class BetterNpcHighlightOverlay extends Overlay
 							}
 						}
 					}
-
-					if (npcInfo.isDisplayNameAboveNpc() && npc.getName() != null)
-					{
-						String text = Text.removeTags(npc.getName());
-						Point textLoc = npc.getCanvasTextLocation(graphics, text, npc.getLogicalHeight() + 40);
-						if (textLoc != null)
-						{
-							drawTextBackground(graphics, textLoc, text);
-                            Color textColor = plugin.getDisplayNameColorForNpc(npcInfo.getNpc());
-                            if (textColor == null)
-                            {
-                                textColor = config.tileColor();
-                            }
-							OverlayUtil.renderTextLocation(graphics, textLoc, text, textColor);
-						}
-					}
 				}
 			}
 		}
@@ -169,11 +152,30 @@ public class BetterNpcHighlightOverlay extends Overlay
 						.sorted(Comparator.comparingInt(n -> n.getNpc().getLocalLocation().distanceTo(lp)))
 						.limit(config.drawBeneathLimit())
 						.collect(Collectors.toList());
-				npcsToDrawBeneath.forEach(nInfo -> System.out.println("NPC to draw beneath: " + nInfo.getNpc().getName()));
-
-				npcsToDrawBeneath.forEach(nInfo -> removeActor(graphics, nInfo.getNpc()));
+                npcsToDrawBeneath.forEach(nInfo -> removeActor(graphics, nInfo.getNpc()));
 			}
 		}
+
+        // Draw display names for all NPCs after draw beneath logic
+        for (NPCInfo npcInfo : plugin.npcList)
+        {
+            NPC npc = npcInfo.getNpc();
+            if (npcInfo.isDisplayNameAboveNpc() && npc.getName() != null)
+            {
+                String text = Text.removeTags(npc.getName());
+                Point textLoc = npc.getCanvasTextLocation(graphics, text, npc.getLogicalHeight() + 40);
+                if (textLoc != null)
+                {
+                    drawTextBackground(graphics, textLoc, text);
+                    Color textColor = plugin.getDisplayNameColorForNpc(npcInfo.getNpc());
+                    if (textColor == null)
+                    {
+                        textColor = config.tileColor();
+                    }
+                    OverlayUtil.renderTextLocation(graphics, textLoc, text, textColor);
+                }
+            }
+        }
 
 		if (config.debugNPC())
 		{
@@ -767,7 +769,6 @@ public class BetterNpcHighlightOverlay extends Overlay
 		Object origAA = graphics.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 		Model model = actor.getModel();
-		System.out.println(model);
 		int vCount = model.getVerticesCount();
 		float[] x3d = model.getVerticesX();
 		float[] y3d = model.getVerticesY();
@@ -783,7 +784,6 @@ public class BetterNpcHighlightOverlay extends Overlay
 			if (composition != null)
 			{
 				size = composition.getSize();
-				System.out.println(size);
 			}
 		}
 

@@ -1,5 +1,6 @@
 package com.betternpchighlight;
 
+import java.awt.Color;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.NPC;
@@ -19,10 +20,11 @@ public class NPCInfo
 	HighlightColor clickbox;
 	HighlightColor turbo;
 	boolean isTask;
-	boolean ignoreDead;
+	boolean highlightDead;
 	boolean hideNpc;
 	boolean drawOverlayBeneathNpc;
 	boolean displayNameAboveNpc;
+    private Color displayNameColor;
 
 	/**
 	 * Main constructor - creates NPCInfo with default (off) highlight states
@@ -41,7 +43,7 @@ public class NPCInfo
 		this.clickbox = new HighlightColor(false, null, null);
 		this.turbo = new HighlightColor(false, null, null);
 		this.isTask = false;
-		this.ignoreDead = false;
+		this.highlightDead = false;
 		this.hideNpc = false;
 		this.drawOverlayBeneathNpc = false;
 		this.displayNameAboveNpc = false;

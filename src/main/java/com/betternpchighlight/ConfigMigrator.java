@@ -50,7 +50,7 @@ public class ConfigMigrator {
             panel.clearAndLoadEntries(migratedEntries);
 
             // Save to new format
-            panel.saveToConfig(configManager, CONFIG_GROUP);
+            panel.saveAllCards(configManager, CONFIG_GROUP);
 
             // Mark migration as complete
             configManager.setConfiguration(CONFIG_GROUP, "migrationCompleted", "true");
@@ -94,8 +94,17 @@ public class ConfigMigrator {
                     }
 
                     migratedEntries.add(new BetterNpcHighlightPanel.NpcHighlightEntry(
-                            cleanName, tagStyle, outlineColor, fillColor
+                            cleanName,
+                            tagStyle,
+                            outlineColor,
+                            fillColor,
+                            false,  // hideNpc default
+                            false,  // drawUnder default
+                            false,  // displayName default
+                            Color.CYAN, // default displayNameColor
+                            false   // highlightDead default
                     ));
+
                 }
             }
         }
@@ -125,8 +134,17 @@ public class ConfigMigrator {
                     }
 
                     migratedEntries.add(new BetterNpcHighlightPanel.NpcHighlightEntry(
-                            cleanId, tagStyle, outlineColor, fillColor
+                            cleanId,
+                            tagStyle,
+                            outlineColor,
+                            fillColor,
+                            false,
+                            false,
+                            false,
+                            Color.CYAN,
+                            false
                     ));
+
                 }
             }
         }

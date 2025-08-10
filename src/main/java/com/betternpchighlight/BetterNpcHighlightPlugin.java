@@ -149,19 +149,18 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 			keyManager.registerKeyListener(this);
 
 			// Initialize panel
-			panel = new BetterNpcHighlightPanel(colorPickerManager);
-			panel.setOnTableChanged(this::recreateList);
+			panel = new BetterNpcHighlightPanel(colorPickerManager, configManager);
 
-			// Check for and migrate legacy config
-			if (ConfigMigrator.hasLegacyConfig(configManager)) {
-				boolean migrated = ConfigMigrator.migrateLegacyConfig(configManager, panel);
-				if (migrated) {
-					log.info("Successfully migrated legacy NPC highlight configuration to new panel system");
-				}
-			} else {
-				// Load panel data from config (new format)
-				panel.loadFromConfig(configManager, config.CONFIG_GROUP);
-			}
+            panel.setOnTableChanged(() -> {
+                // Save the panel data to config
+
+
+                // Recreate NPC list for plugin logic
+                                recreateList();
+
+                                // Add logging for debugging
+                log.info("Panel data changed, config saved.");
+            });
 
 			// Create navigation button
 			panelButton = NavigationButton.builder()
@@ -171,6 +170,8 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 					.panel(panel)
 					.build();
 			clientToolbar.addNavigation(panelButton);
+            panel.loadAllCards(configManager, config.CONFIG_GROUP);
+            System.out.println("Panel data loaded.");
 
 			if (client.getGameState() == GameState.LOGGED_IN)
 			{
@@ -184,7 +185,8 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		clientThread.invokeLater(() -> {
 			// Save panel data to config
 			if (panel != null) {
-				panel.saveToConfig(configManager, config.CONFIG_GROUP);
+				panel.saveAllCards(configManager, config.CONFIG_GROUP);
+                System.out.println("Panel data saved.");
 			}
 
 			reset();
@@ -230,8 +232,6 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 						NPCInfo info = buildNpcInfoFromPanelEntries(npc, entries);
 						if (info != null && (info.hasAnyHighlight() || info.isHideNpc() || info.isDisplayNameAboveNpc() || info.isDrawOverlayBeneathNpc())) {
 							npcList.add(info);
-							System.out.println(info.toString());
-							System.out.println(info.getNpc().getName() + " " + info.isDrawOverlayBeneathNpc());
 						}
 					}
 				}
@@ -318,6 +318,10 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		}
 		if (entry.displayName) {
 			info.setDisplayNameAboveNpc(true);
+            info.setDisplayNameColor(entry.displayNameColor);
+        }
+		if (entry.highlightDead) {
+			info.setHighlightDead(true);
 		}
 	}
 
@@ -431,7 +435,19 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 	{
 		NPC npc = event.getNpc();
 
-		if (npc.isDead()) {
+		Optional<NPCInfo> npcInfo = npcList.stream().filter(n -> n.getNpc() == npc).findFirst();
+
+		if (npc.isDead())
+		{
+			if (npcInfo.isPresent() && npcInfo.get().isHighlightDead())
+			{
+				// Don't remove it from the list
+			}
+			else
+			{
+				npcList.removeIf(n -> n.getNpc().getIndex() == npc.getIndex());
+			}
+
 			if (npcList.stream().anyMatch(n -> n.getNpc() == npc) &&
 					npcSpawns.stream().noneMatch(n -> n.index == npc.getIndex())) {
 				npcSpawns.add(new NpcSpawn(npc));
@@ -445,8 +461,10 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 				}
 			}
 		}
-
-		npcList.removeIf(n -> n.getNpc().getIndex() == npc.getIndex());
+		else
+		{
+			npcList.removeIf(n -> n.getNpc().getIndex() == npc.getIndex());
+		}
 	}
 
 	@Subscribe(priority = -1)
@@ -563,24 +581,28 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 
     public Color getDisplayNameColorForNpc(NPC npc)
     {
-        if (panel == null)
-        {
+        if (panel == null) {
             return null;
         }
 
-        for (BetterNpcHighlightPanel.NpcCard card : panel.getNpcCards())
-        {
-            String cardName = card.getNameText();
-            if (cardName != null && !cardName.isEmpty() && npc.getName() != null)
-            {
-                if (npc.getName().equalsIgnoreCase(cardName))
-                {
-                    return card.getDisplayNameColor();
-                }
+        String npcName = npc.getName() != null ? npc.getName().toLowerCase() : "";
+        String npcIdStr = String.valueOf(npc.getId());
+
+        List<BetterNpcHighlightPanel.NpcHighlightEntry> entries = panel.getNpcHighlightEntries();
+
+        for (BetterNpcHighlightPanel.NpcHighlightEntry entry : entries) {
+            if (isEmptyEntry(entry) || !entry.displayName) {
+                continue;
+            }
+
+            if (matchesEntry(npcName, npcIdStr, entry)) {
+                return entry.displayNameColor;
             }
         }
+
         return null;
     }
+
 
 
     public boolean checkSlayerPluginEnabled()
