@@ -58,6 +58,7 @@ enum BossInfo
 	VETION("Vet'ion", 395, 300),
 	VORKATH("Vorkath", 214, 150),
 	XARPUS("Xarpus", 250, 220),
+	YAMA("Yama", 225, 250),
 	ZEBAK("Zebak", 20, 100),
 	ZULRAH("Zulrah", 300, 300);
 

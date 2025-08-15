@@ -181,6 +181,7 @@ public class DefenceTrackerPlugin extends Plugin
 		put("TzKal-Zuk", new ArrayList<>(Collections.singletonList(9043)));
 		put("TzTok-Jad", new ArrayList<>(Collections.singletonList(9551)));
 		put("Vorkath", new ArrayList<>(Collections.singletonList(9023)));
+		put("Yama", new ArrayList<>(Collections.singletonList(6045)));
 		put("Zulrah", new ArrayList<>(Arrays.asList(9007, 9008)));
 	}};
 
@@ -698,9 +699,22 @@ public class DefenceTrackerPlugin extends Plugin
 			case DARKLIGHT:
 				if (hit > 0)
 				{
-					if (boss.equalsIgnoreCase("K'ril Tsutsaroth") || boss.equalsIgnoreCase("Abyssal Sire"))
+					if (boss.equalsIgnoreCase("K'ril Tsutsaroth") || boss.equalsIgnoreCase("Abyssal Sire") || boss.equalsIgnoreCase("Yama"))
 					{
 						bossDef -= BossInfo.getBaseDefence(boss) * .10;
+					}
+					else
+					{
+						bossDef -= BossInfo.getBaseDefence(boss) * .05;
+					}
+				}
+				break;
+			case EMBERLIGHT:
+				if (hit > 0)
+				{
+					if (boss.equalsIgnoreCase("K'ril Tsutsaroth") || boss.equalsIgnoreCase("Abyssal Sire") || boss.equalsIgnoreCase("Yama"))
+					{
+						bossDef -= BossInfo.getBaseDefence(boss) * .15;
 					}
 					else
 					{
@@ -738,6 +752,10 @@ public class DefenceTrackerPlugin extends Plugin
 		if (boss.equalsIgnoreCase("Sotetseg") && bossDef < 100)
 		{
 			bossDef = 100;
+		}
+		else if (boss.equalsIgnoreCase("Yama") && bossDef < 145)
+		{
+			bossDef = 145;
 		}
 		else if (bossDef < 0)
 		{
