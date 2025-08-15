@@ -7,7 +7,6 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.*;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -15,6 +14,9 @@ import java.util.Set;
 import java.util.Collections;
 import java.util.UUID;
 import java.lang.reflect.Type;
+import javax.swing.Timer;
+import java.awt.BasicStroke;
+import java.text.DecimalFormat;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -36,8 +38,9 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     private Runnable onDataChanged;
     private final ColorPickerManager colorPickerManager;
     private final ConfigManager configManager;
+    private final BetterNpcHighlightPlugin plugin;
     private final List<NpcCard> npcCards = new ArrayList<>();
-    private boolean loading = false;
+    
     private final Gson gson = new Gson();
     private final String configGroup = "betterNpcHighlight";
     private static final String CARDS_CONFIG_KEY = "cards";
@@ -68,10 +71,11 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     private static final IconSet REMOVE_ICONS = loadIconSet("/remove_icon.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
     private static final IconSet DELETE_ICONS = loadIconSet("/delete_icon.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
 
-    public BetterNpcHighlightPanel(ColorPickerManager colorPickerManager, ConfigManager configManager) {
+    public BetterNpcHighlightPanel(ColorPickerManager colorPickerManager, ConfigManager configManager, BetterNpcHighlightPlugin plugin) {
         super(false);
         this.colorPickerManager = colorPickerManager;
         this.configManager = configManager;
+        this.plugin = plugin;
         initComponents();
     }
 
@@ -164,18 +168,12 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         JButton addBtn = createStyledButton("Add NPC");
         addBtn.addActionListener(e -> addNewCard());
 
-        JButton importBtn = createStyledButton("Import");
-        importBtn.addActionListener(e -> importEntries());
-
-        JButton exportBtn = createStyledButton("Export");
-        exportBtn.addActionListener(e -> exportEntries());
+        
 
         JButton clearBtn = createStyledButton("Clear All");
         clearBtn.addActionListener(e -> clearAllEntries());
 
         buttonPanel.add(addBtn);
-        buttonPanel.add(importBtn);
-        buttonPanel.add(exportBtn);
         buttonPanel.add(clearBtn);
 
         bottomPanel.add(buttonPanel, BorderLayout.CENTER);
@@ -242,7 +240,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     }
 
     private void triggerDataChanged() {
-        System.out.println("triggerDataChanged called");
+        
         if (onDataChanged != null) {
             onDataChanged.run();
         }
@@ -280,124 +278,9 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         cardsPanel.repaint();
     }
 
-    private void addCardFromEntries(UUID cardId, String npcNameOrId, List<NpcHighlightEntry> entries) {
-        NpcCard card = cardId == null ? new NpcCard() : new NpcCard(cardId);
-        card.setNameText(npcNameOrId);
-        card.clearStyleRows();
+    
 
-        for (NpcHighlightEntry entry : entries) {
-            card.addStyleRow(entry);
-        }
-
-        npcCards.add(card);
-        cardsPanel.add(card);
-        cardsPanel.add(Box.createVerticalStrut(5));
-        cardsPanel.revalidate();
-        cardsPanel.repaint();
-        System.out.println("Adding card with UUID: " + cardId + " and name: " + npcNameOrId);
-    }
-
-    private String entryToString(NpcHighlightEntry entry) {
-        return entry.nameOrId + "|" +
-                entry.tagStyle + "|" +
-                entry.outlineColor.getRGB() + "|" +
-                entry.fillColor.getRGB() + "|" +
-                entry.hideNpc + "|" +
-                entry.drawUnder + "|" +
-                entry.displayName + "|" +
-                entry.displayNameColor.getRGB() + "|" +
-                entry.highlightDead;
-    }
-
-    private NpcHighlightEntry entryFromString(String str) {
-        String[] parts = str.split("\\|");
-        if (parts.length >= 9) {
-            try {
-                return new NpcHighlightEntry(
-                        parts[0],
-                        parts[1],
-                        new Color(Integer.parseInt(parts[2]), true),
-                        new Color(Integer.parseInt(parts[3]), true),
-                        Boolean.parseBoolean(parts[4]),
-                        Boolean.parseBoolean(parts[5]),
-                        Boolean.parseBoolean(parts[6]),
-                        new Color(Integer.parseInt(parts[7]), true),
-                        Boolean.parseBoolean(parts[8])
-                );
-            } catch (Exception e) {
-                // Handle parsing errors
-            }
-        }
-        // Fallback for older formats
-        if (parts.length >= 8) { // Update to expect 8 parts
-            try {
-                return new NpcHighlightEntry(
-                        parts[0],
-                        parts[1],
-                        new Color(Integer.parseInt(parts[2]), true),
-                        new Color(Integer.parseInt(parts[3]), true),
-                        Boolean.parseBoolean(parts[4]),
-                        Boolean.parseBoolean(parts[5]),
-                        Boolean.parseBoolean(parts[6]),
-                        new Color(Integer.parseInt(parts[7]), true),// Parse display name color
-                        false
-                );
-            } catch (Exception e) {
-                // Handle parsing errors
-            }
-        }
-
-        // Fallback for older format or parsing errors
-        if (parts.length >= 7) {
-            try {
-                return new NpcHighlightEntry(
-                        parts[0],
-                        parts[1],
-                        new Color(Integer.parseInt(parts[2]), true),
-                        new Color(Integer.parseInt(parts[3]), true),
-                        Boolean.parseBoolean(parts[4]),
-                        Boolean.parseBoolean(parts[5]),
-                        Boolean.parseBoolean(parts[6]),
-                        Color.WHITE, // Default display name color
-                        false
-                );
-            } catch (Exception e) {
-                // Handle parsing errors
-            }
-        }
-
-        return null;
-    }
-
-    // Import/Export functionality
-    private void importEntries() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("CSV Files", "csv"));
-
-        if (fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            try {
-                importFromFile(fileChooser.getSelectedFile());
-                JOptionPane.showMessageDialog(this, "Import successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Import failed: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-
-    private void exportEntries() {
-        JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("CSV Files", "csv"));
-        fileChooser.setSelectedFile(new File("npc_highlights.csv"));
-
-        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
-            try {
-                exportToFile(fileChooser.getSelectedFile());
-                JOptionPane.showMessageDialog(this, "Export successful!", "Success", JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception e) {
-                JOptionPane.showMessageDialog(this, "Export failed: " + e.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
+    
 
     private void clearAllEntries() {
         if (JOptionPane.showConfirmDialog(this, "Clear all entries?", "Confirm",
@@ -414,89 +297,12 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         cardsPanel.repaint();
     }
 
-    public void exportToFile(File file) throws IOException {
-        List<NpcHighlightEntry> entries = getNpcHighlightEntries();
-        try (PrintWriter writer = new PrintWriter(new FileWriter(file))) {
-            writer.println("# Better NPC Highlight Export");
-            writer.println("# Format: Name/ID,TagStyle,OutlineColor(RGB),FillColor(RGB),Hide,DrawUnder,DisplayName,HighlightDead");
+    
 
-            for (NpcHighlightEntry entry : entries) {
-                writer.printf("%s,%s,%d,%d,%b,%b,%b,%b%n",
-                        entry.nameOrId,
-                        entry.tagStyle,
-                        entry.outlineColor.getRGB(),
-                        entry.fillColor.getRGB(),
-                        entry.hideNpc,
-                        entry.drawUnder,
-                        entry.displayName,
-                        entry.highlightDead);
-            }
-        }
-    }
+    
 
-    public void importFromFile(File file) throws IOException {
-        List<NpcHighlightEntry> importedEntries = new ArrayList<>();
 
-        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.startsWith("#") || line.trim().isEmpty()) continue;
-
-                NpcHighlightEntry entry = parseImportLine(line);
-                if (entry != null) {
-                    importedEntries.add(entry);
-                }
-            }
-        }
-
-        if (!importedEntries.isEmpty()) {
-            clearAllCards();
-            for (NpcHighlightEntry entry : importedEntries) {
-                addCardFromEntry(entry);
-            }
-            if (npcCards.isEmpty()) {
-                addNewCard();
-            }
-        }
-    }
-
-    private NpcHighlightEntry parseImportLine(String line) {
-        try {
-            String[] parts = line.split(",");
-            if (parts.length >= 4) {
-                // Provide default values for missing parameters
-                boolean hideNpc = false;
-                boolean drawUnder = false;
-                boolean displayName = false;
-                Color displayNameColor = Color.CYAN; // or Color.WHITE
-                boolean highlightDead = false;
-
-                if (parts.length >= 8) {
-                    hideNpc = Boolean.parseBoolean(parts[4].trim());
-                    drawUnder = Boolean.parseBoolean(parts[5].trim());
-                    displayName = Boolean.parseBoolean(parts[6].trim());
-                    highlightDead = Boolean.parseBoolean(parts[7].trim());
-                }
-
-                return new NpcHighlightEntry(
-                        parts[0].trim(),
-                        parts[1].trim(),
-                        new Color(Integer.parseInt(parts[2].trim()), true),
-                        new Color(Integer.parseInt(parts[3].trim()), true),
-                        hideNpc,
-                        drawUnder,
-                        displayName,
-                        displayNameColor,
-                        highlightDead
-                );
-            }
-        } catch (Exception e) {
-            // Skip invalid lines
-        }
-        return null;
-    }
-
-    public void clearAndLoadEntries(List<NpcHighlightEntry> entries) {
+    private void clearAndLoadEntries(List<NpcHighlightEntry> entries) {
         clearAllCards();
         for (NpcHighlightEntry entry : entries) {
             addCardFromEntry(entry);
@@ -516,7 +322,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         private JToggleButton hideNpcButton;
         private JToggleButton drawUnderButton;
         private JToggleButton displayNameButton;
-        private Color displayNameColor = Color.CYAN;
+        private Color displayNameColor = null;
         private JToggleButton highlightDeadButton;
         private final UUID cardId;
 
@@ -535,17 +341,16 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             return cardId;
         }
 
-        private class StyleRow {
-            JPanel panel;
+        public class StyleRow extends JPanel {
             JComboBox<String> tagStyleCombo;
             ColorPreviewButton colorPreviewButton; // Combined button
             JButton addButton;
             JButton removeButton;
 
             StyleRow(NpcHighlightEntry entry) {
-                panel = new JPanel(new BorderLayout(0, 0));
-                panel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-                panel.setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
+                super(new BorderLayout(0, 0));
+                setBackground(ColorScheme.DARKER_GRAY_COLOR);
+                setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
 
                 // Left side: tag style combo and combined color button
                 JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
@@ -561,13 +366,23 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                 Color initialOutline = entry != null ? entry.outlineColor : Color.CYAN;
                 Color initialFill = entry != null ? entry.fillColor : new Color(0, 255, 255, 20);
 
+                // Get rave settings from entry
+                boolean initialRaveOutline = entry != null && entry.raveOutline;
+                boolean initialRaveFill = entry != null && entry.raveFill;
+                int initialRaveSpeed = entry != null ? entry.raveSpeed : 6000;
+                HighlightColor.TileStyle initialTileStyle = entry != null ? entry.tileStyle : HighlightColor.TileStyle.REGULAR;
+                double initialOutlineWidth = entry != null ? entry.outlineWidth : 2.0;
+                boolean initialAntiAliasing = entry != null ? entry.antiAliasing : true;
+                int initialOutlineFeather = entry != null ? entry.outlineFeather : 2;
+
                 CheckerboardPanel checkerPanel = new CheckerboardPanel();
-                colorPreviewButton = new ColorPreviewButton(initialOutline, initialFill, colorPickerManager);
+                colorPreviewButton = new ColorPreviewButton(initialOutline, initialFill, initialRaveOutline, initialRaveFill, initialRaveSpeed, initialTileStyle,
+                        initialOutlineWidth, initialAntiAliasing, initialOutlineFeather, colorPickerManager, plugin);
                 colorPreviewButton.setOpaque(false);
                 checkerPanel.add(colorPreviewButton, BorderLayout.CENTER);
                 leftPanel.add(checkerPanel);
 
-                panel.add(leftPanel, BorderLayout.WEST);
+                add(leftPanel, BorderLayout.WEST);
 
                 // Right side: ADD and REMOVE buttons
                 JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
@@ -606,7 +421,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
                 rightPanel.add(removeButton);
                 rightPanel.add(addButton);
-                panel.add(rightPanel, BorderLayout.EAST);
+                add(rightPanel, BorderLayout.EAST);
 
                 // Initialize combo box options
                 updateTagStyleComboBoxOptions(tagStyleCombo);
@@ -701,21 +516,15 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             );
 
             hideNpcButton.addItemListener(e -> {
-                if (!loading) {
-                    saveAllCards(configManager, configGroup);
-                }
+                saveAllCards(configManager, configGroup);
             });
 
             drawUnderButton.addItemListener(e -> {
-                if (!loading) {
-                    saveAllCards(configManager, configGroup);
-                }
+                saveAllCards(configManager, configGroup);
             });
 
             displayNameButton.addItemListener(e -> {
-                if (!loading) {
-                    saveAllCards(configManager, configGroup);
-                }
+                saveAllCards(configManager, configGroup);
             });
 
 
@@ -770,13 +579,13 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             contentPanel.add(bottomRowsPanel);
 
             add(contentPanel, BorderLayout.CENTER);
-            System.out.println("NpcCard created with UUID: " + cardId + " and name: " + getNameText());
+            
         }
 
         public void addStyleRow(NpcHighlightEntry entry) {
             StyleRow row = new StyleRow(entry);
             styleRows.add(row);
-            bottomRowsPanel.add(row.panel);
+            bottomRowsPanel.add(row);
             updateStyleButtons();
             bottomRowsPanel.revalidate();
             bottomRowsPanel.repaint();
@@ -792,7 +601,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         public void addStyleRowAt(int index, NpcHighlightEntry entry) {
             StyleRow row = new StyleRow(entry);
             styleRows.add(index, row);
-            bottomRowsPanel.add(row.panel, index);
+            bottomRowsPanel.add(row, index);
             updateStyleButtons();
             bottomRowsPanel.revalidate();
             bottomRowsPanel.repaint();
@@ -801,7 +610,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         public void removeStyleRowAt(int index) {
             StyleRow row = styleRows.remove(index);
-            bottomRowsPanel.remove(row.panel);
+            bottomRowsPanel.remove(row);
             updateStyleButtons();
             bottomRowsPanel.revalidate();
             bottomRowsPanel.repaint();
@@ -810,29 +619,41 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         private void showDisplayNameColorMenu(MouseEvent e) {
             JPopupMenu menu = new JPopupMenu();
-            JMenuItem changeColor = new JMenuItem("Change Name/Minimap Color");
+            JMenuItem changeColor = new JMenuItem("Change name/minimap color");
             changeColor.addActionListener(ev -> openDisplayNameColorPicker());
             menu.add(changeColor);
+
+            JMenuItem resetColor = new JMenuItem("Reset name/minimap color");
+            resetColor.addActionListener(ev -> {
+                displayNameColor = null; // Reset to default behavior
+                saveAllCards(configManager, configGroup);
+                if (onDataChanged != null) {
+                    onDataChanged.run();
+                }
+            });
+            menu.add(resetColor);
+
             menu.show(displayNameButton, e.getX(), e.getY());
         }
 
         private void openDisplayNameColorPicker() {
             RuneliteColorPicker picker = colorPickerManager.create(
                     SwingUtilities.getWindowAncestor(this),
-                    displayNameColor,
-                    "Name/Minimap Color",
+                    displayNameColor != null ? displayNameColor : Color.CYAN, // Use CYAN as default in picker if null
+                    "Name/Minimap color",
                     true
             );
             Point loc = getLocationOnScreen();
             picker.setLocation(loc.x + -400, loc.y);
             picker.setOnColorChange(newColor -> {
-                displayNameColor = newColor;
+                displayNameColor = newColor; // This explicitly sets the color
                 if (onDataChanged != null) {
                     onDataChanged.run();
                 }
             });
             picker.setVisible(true);
         }
+
 
         public List<NpcHighlightEntry> getAllEntries() {
             List<NpcHighlightEntry> entries = new ArrayList<>();
@@ -859,13 +680,21 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                         hide,
                         drawUnder,
                         displayName,
-                        this.getDisplayNameColor(), // Use 'this' instead of 'card'
-                        highlightDead
+                        this.displayNameColor, // This can now be null
+                        highlightDead,
+                        row.colorPreviewButton.isRaveOutline(),
+                        row.colorPreviewButton.isRaveFill(),
+                        row.colorPreviewButton.getRaveSpeed(),
+                        row.colorPreviewButton.getTileStyle(),
+                        row.colorPreviewButton.getOutlineWidth(),
+                        row.colorPreviewButton.isAntiAliasing(),
+                        row.colorPreviewButton.getOutlineFeather()
                 );
                 entries.add(entry);
             }
             return entries;
         }
+
 
 
 
@@ -943,12 +772,10 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                     button.setPressedIcon(iconOffHover);
                     button.setToolTipText(tooltipOff);
                 }
-                saveAllCards(configManager, configGroup);
             });
 
 
-            // Trigger state change listener
-            button.addActionListener(e -> saveAllCards(configManager, configGroup));
+            
 
             return button;
         }
@@ -1064,9 +891,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         public void setHideNpc(boolean selected) {
             hideNpcButton.setSelected(selected);
-            if (!loading) {
-                saveAllCards(configManager, configGroup);
-            }
+            saveAllCards(configManager, configGroup);
         }
 
         public boolean isDrawUnder() {
@@ -1075,9 +900,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         public void setDrawUnder(boolean selected) {
             drawUnderButton.setSelected(selected);
-            if (!loading) {
-                saveAllCards(configManager, configGroup);
-            }
+            saveAllCards(configManager, configGroup);
         }
 
         public boolean isDisplayName() {
@@ -1086,9 +909,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         public void setDisplayName(boolean selected) {
             displayNameButton.setSelected(selected);
-            if (!loading) {
-                saveAllCards(configManager, configGroup);
-            }
+            saveAllCards(configManager, configGroup);
         }
 
         public boolean isHighlightDead() {
@@ -1097,9 +918,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         public void setHighlightDead(boolean selected) {
             highlightDeadButton.setSelected(selected);
-            if (!loading) {
-                saveAllCards(configManager, configGroup);
-            }
+            saveAllCards(configManager, configGroup);
         }
 
         public Color getDisplayNameColor() {
@@ -1108,9 +927,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         public void setDisplayNameColor(Color color) {
             this.displayNameColor = color;
-            if (!loading) {
-                saveAllCards(configManager, configGroup);
-            }
+            saveAllCards(configManager, configGroup);
         }
 
         public void setData(List<NpcHighlightEntry> entries) {
@@ -1192,54 +1009,436 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     }
 
     public class ColorPreviewButton extends JButton {
+        private final ColorPickerManager colorPickerManager;
+        private final BetterNpcHighlightPlugin plugin;
+
         private Color outlineColor;
         private Color fillColor;
 
-        private final ColorPickerManager colorPickerManager;
+        private boolean raveOutline = false;
+        private boolean raveFill = false;
+        private int raveSpeed;
+        private HighlightColor.TileStyle tileStyle;
+        private double outlineWidth = 2.0;
+        private boolean antiAliasing = true;
+        private int outlineFeather = 2;
+        private Timer raveTimer;
 
-        public ColorPreviewButton(Color initialOutline, Color initialFill, ColorPickerManager colorPickerManager) {
+        public ColorPreviewButton(Color initialOutline, Color initialFill, boolean raveOutline, boolean raveFill, int raveSpeed, HighlightColor.TileStyle tileStyle,
+                                  double outlineWidth, boolean antiAliasing, int outlineFeather, ColorPickerManager colorPickerManager, BetterNpcHighlightPlugin plugin) {
             this.outlineColor = initialOutline;
             this.fillColor = initialFill;
+            this.raveOutline = raveOutline;
+            this.raveFill = raveFill;
+            this.raveSpeed = raveSpeed;
+            this.tileStyle = tileStyle;
+            this.outlineWidth = outlineWidth;
+            this.antiAliasing = antiAliasing;
+            this.outlineFeather = outlineFeather;
+
             this.colorPickerManager = colorPickerManager;
+            this.plugin = plugin;
 
             setPreferredSize(new Dimension(24, 24));
             setFocusPainted(false);
             setOpaque(true);
             setBackground(fillColor);
             setBorder(BorderFactory.createLineBorder(outlineColor, 2));
-            setToolTipText("Right-click to change outline or fill color");
+            setToolTipText("Right-click to customize highlight style");
 
-            // Right-click menu to choose which color to edit
+            // Right-click menu to choose which color to edit or toggle rave
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
                     if (e.isPopupTrigger()) {
-                        showColorMenu(e);
+                        Component parentComponent = getParent();
+                        BetterNpcHighlightPanel.NpcCard.StyleRow styleRow = null;
+                        while (parentComponent != null) {
+                            if (parentComponent instanceof BetterNpcHighlightPanel.NpcCard.StyleRow) {
+                                styleRow = (BetterNpcHighlightPanel.NpcCard.StyleRow) parentComponent;
+                                break;
+                            }
+                            parentComponent = parentComponent.getParent();
+                        }
+                        String tagStyle = (String) styleRow.tagStyleCombo.getSelectedItem();
+                        showColorMenu(e, tagStyle);
                     }
                 }
 
                 @Override
                 public void mouseReleased(MouseEvent e) {
                     if (e.isPopupTrigger()) {
-                        showColorMenu(e);
+                        Component parentComponent = getParent();
+                        BetterNpcHighlightPanel.NpcCard.StyleRow styleRow = null;
+                        while (parentComponent != null) {
+                            if (parentComponent instanceof BetterNpcHighlightPanel.NpcCard.StyleRow) {
+                                styleRow = (BetterNpcHighlightPanel.NpcCard.StyleRow) parentComponent;
+                                break;
+                            }
+                            parentComponent = parentComponent.getParent();
+                        }
+                        String tagStyle = (String) styleRow.tagStyleCombo.getSelectedItem();
+                        showColorMenu(e, tagStyle);
                     }
                 }
             });
+            updateRaveTimer();
         }
 
-        private void showColorMenu(MouseEvent e) {
+        private void showColorMenu(MouseEvent e, String tagStyle) {
             JPopupMenu menu = new JPopupMenu();
+            DecimalFormat df = new DecimalFormat("#.#");
 
-            JMenuItem setOutline = new JMenuItem("Change outline color");
+            JMenuItem setOutline = new JMenuItem("Outline color");
             setOutline.addActionListener(ev -> openColorPicker(true));
             menu.add(setOutline);
 
-            JMenuItem setFill = new JMenuItem("Change fill Color");
+            JMenuItem setFill = new JMenuItem("Fill color");
             setFill.addActionListener(ev -> openColorPicker(false));
             menu.add(setFill);
 
+            if (tagStyle != null) {
+                String lowerCaseTagStyle = tagStyle.toLowerCase();
+
+                if (lowerCaseTagStyle.contains("tile") || lowerCaseTagStyle.equals("hull") || lowerCaseTagStyle.equals("clickbox")) {
+                    // Tile, True Tile, SW Tile, SW True Tile, Hull, Clickbox
+                    JMenuItem setWidth = new JMenuItem("Outline width: " + df.format(outlineWidth));
+                    setWidth.addActionListener(ev -> {
+                        double originalWidth = getOutlineWidth();
+                        SpinnerNumberModel model = new SpinnerNumberModel(originalWidth, 0.0, 50.0, 0.1);
+                        JSpinner spinner = new JSpinner(model);
+                        spinner.addChangeListener(changeEvent -> {
+                            setOutlineWidth((Double) spinner.getValue());
+                            saveAllCards(configManager, configGroup);
+                        });
+
+                        JPanel panel = new JPanel(new BorderLayout());
+                        panel.add(new JLabel("Outline width:"), BorderLayout.NORTH);
+                        panel.add(spinner, BorderLayout.CENTER);
+
+                        int result = JOptionPane.showConfirmDialog(
+                                this,
+                                panel,
+                                "Outline Width",
+                                JOptionPane.OK_CANCEL_OPTION,
+                                JOptionPane.PLAIN_MESSAGE
+                        );
+
+                        if (result == JOptionPane.OK_OPTION) {
+                            saveAllCards(configManager, configGroup);
+                        } else {
+                            setOutlineWidth(originalWidth);
+                            saveAllCards(configManager, configGroup);
+                        }
+                    });
+                    menu.add(setWidth);
+
+                    JCheckBoxMenuItem enableAA = new JCheckBoxMenuItem("Anti-aliasing");
+                    enableAA.setSelected(isAntiAliasing());
+                    enableAA.setHorizontalTextPosition(SwingConstants.LEFT);
+                    if (enableAA.isSelected()) {
+                        enableAA.setFont(enableAA.getFont().deriveFont(Font.BOLD));
+                    }
+                    enableAA.addActionListener(ev -> {
+                        setAntiAliasing(enableAA.isSelected());
+                        saveAllCards(configManager, configGroup);
+                    });
+                    menu.add(enableAA);
+                } else if (lowerCaseTagStyle.equals("outline")) {
+                    // Outline
+                    JMenuItem setWidth = new JMenuItem("Outline width: " + (int)outlineWidth);
+                    setWidth.addActionListener(ev -> {
+                        int originalWidth = (int) getOutlineWidth();
+                        SpinnerNumberModel model = new SpinnerNumberModel(originalWidth, 1, 50, 1);
+                        JSpinner spinner = new JSpinner(model);
+                        spinner.addChangeListener(changeEvent -> {
+                            setOutlineWidth((Integer) spinner.getValue());
+                            saveAllCards(configManager, configGroup);
+                        });
+
+                        JPanel panel = new JPanel(new BorderLayout());
+                        panel.add(new JLabel("Outline width:"), BorderLayout.NORTH);
+                        panel.add(spinner, BorderLayout.CENTER);
+
+                        int result = JOptionPane.showConfirmDialog(
+                                this,
+                                panel,
+                                "Outline Width",
+                                JOptionPane.OK_CANCEL_OPTION,
+                                JOptionPane.PLAIN_MESSAGE
+                        );
+
+                        if (result == JOptionPane.OK_OPTION) {
+                            saveAllCards(configManager, configGroup);
+                        } else {
+                            setOutlineWidth(originalWidth);
+                            saveAllCards(configManager, configGroup);
+                        }
+                    });
+                    menu.add(setWidth);
+
+                    JMenuItem setFeather = new JMenuItem("Outline feather: " + outlineFeather);
+                    setFeather.addActionListener(ev -> {
+                        int originalFeather = getOutlineFeather();
+                        SpinnerNumberModel model = new SpinnerNumberModel(originalFeather, 0, 5, 1);
+                        JSpinner spinner = new JSpinner(model);
+                        spinner.addChangeListener(changeEvent -> {
+                            setOutlineFeather((Integer) spinner.getValue());
+                            saveAllCards(configManager, configGroup);
+                        });
+
+                        JPanel panel = new JPanel(new BorderLayout());
+                        panel.add(new JLabel("Outline feather:"), BorderLayout.NORTH);
+                        panel.add(spinner, BorderLayout.CENTER);
+
+                        int result = JOptionPane.showConfirmDialog(
+                                this,
+                                panel,
+                                "Outline Feather",
+                                JOptionPane.OK_CANCEL_OPTION,
+                                JOptionPane.PLAIN_MESSAGE
+                        );
+
+                        if (result == JOptionPane.OK_OPTION) {
+                            saveAllCards(configManager, configGroup);
+                        } else {
+                            setOutlineFeather(originalFeather);
+                            saveAllCards(configManager, configGroup);
+                        }
+                    });
+                    menu.add(setFeather);
+                }
+            }
+
+            menu.addSeparator();
+
+            JCheckBoxMenuItem raveOutlineItem = new JCheckBoxMenuItem("Rave outline");
+            raveOutlineItem.setSelected(isRaveOutline());
+            raveOutlineItem.setHorizontalTextPosition(SwingConstants.LEFT);
+            if (raveOutlineItem.isSelected()) {
+                raveOutlineItem.setFont(raveOutlineItem.getFont().deriveFont(Font.BOLD));
+            }
+            raveOutlineItem.addActionListener(ev -> {
+                setRaveOutline(raveOutlineItem.isSelected());
+                saveAllCards(configManager, configGroup);
+            });
+            menu.add(raveOutlineItem);
+
+            JCheckBoxMenuItem raveFillItem = new JCheckBoxMenuItem("Rave fill");
+            raveFillItem.setSelected(isRaveFill());
+            raveFillItem.setHorizontalTextPosition(SwingConstants.LEFT);
+            if (raveFillItem.isSelected()) {
+                raveFillItem.setFont(raveFillItem.getFont().deriveFont(Font.BOLD));
+            }
+            raveFillItem.addActionListener(ev -> {
+                setRaveFill(raveFillItem.isSelected());
+                saveAllCards(configManager, configGroup);
+            });
+            menu.add(raveFillItem);
+
+            JMenuItem setRaveSpeed = new JMenuItem("Rave speed: " + raveSpeed + "ms");
+            setRaveSpeed.addActionListener(ev -> {
+                // Store original speed in case we need to revert
+                int originalSpeed = this.raveSpeed;
+
+                // Create spinner for milliseconds
+                SpinnerNumberModel model = new SpinnerNumberModel(originalSpeed, 100, 100000, 10);
+                JSpinner spinner = new JSpinner(model);
+
+                // Live preview while changing value
+                spinner.addChangeListener(changeEvent -> {
+                    int newSpeed = (Integer) spinner.getValue();
+                    this.setRaveSpeed(newSpeed);
+                    saveAllCards(configManager, configGroup);
+                });
+
+                // Build panel
+                JPanel panel = new JPanel(new BorderLayout());
+                panel.add(new JLabel("Rave speed (miliseconds):"), BorderLayout.NORTH);
+                panel.add(spinner, BorderLayout.CENTER);
+
+                // Show dialog
+                int result = JOptionPane.showConfirmDialog(
+                        this,
+                        panel,
+                        "Rave Speed",
+                        JOptionPane.OK_CANCEL_OPTION,
+                        JOptionPane.PLAIN_MESSAGE
+                );
+
+                if (result == JOptionPane.OK_OPTION) {
+                    // User confirmed — persist
+                    saveAllCards(configManager, configGroup);
+                } else {
+                    // User cancelled — restore original speed
+                    this.setRaveSpeed(originalSpeed);
+                    saveAllCards(configManager, configGroup);
+                }
+            });
+            menu.add(setRaveSpeed);
+
+            if (tagStyle != null && (tagStyle.toLowerCase().contains("tile"))) {
+                menu.addSeparator();
+                JMenu tileStyleMenu = new JMenu("Tile style: " + tileStyle.name().charAt(0) + tileStyle.name().substring(1).toLowerCase());
+                ButtonGroup group = new ButtonGroup();
+                for (HighlightColor.TileStyle style : HighlightColor.TileStyle.values()) {
+                    JRadioButtonMenuItem item = new JRadioButtonMenuItem(style.name().charAt(0) + style.name().substring(1).toLowerCase());
+                    item.setSelected(this.tileStyle == style);
+                    item.addActionListener(ev -> {
+                        setTileStyle(style);
+                        saveAllCards(configManager, configGroup);
+                    });
+                    group.add(item);
+                    tileStyleMenu.add(item);
+                }
+                menu.add(tileStyleMenu);
+            }
+
             menu.show(this, e.getX(), e.getY());
         }
+
+        private void startRaveTimer() {
+            if (raveTimer != null && raveTimer.isRunning()) {
+                return;
+            }
+            // Fire every 50ms for a smooth animation
+            raveTimer = new Timer(50, e -> {
+                repaint();
+            });
+            raveTimer.start();
+        }
+
+        private void stopRaveTimer() {
+            if (raveTimer != null) {
+                raveTimer.stop();
+                raveTimer = null;
+            }
+        }
+
+        private void updateRaveTimer() {
+            if (raveOutline || raveFill) {
+                startRaveTimer();
+            } else {
+                stopRaveTimer();
+            }
+        }
+
+        public void setRaveOutline(boolean raveOutline) {
+            this.raveOutline = raveOutline;
+            updateRaveTimer();
+            repaint();
+        }
+
+        public void setRaveFill(boolean raveFill) {
+            this.raveFill = raveFill;
+            updateRaveTimer();
+            repaint();
+        }
+
+        public boolean isRaveOutline() {
+            return raveOutline;
+        }
+
+        public boolean isRaveFill() {
+            return raveFill;
+        }
+
+        public int getRaveSpeed() {
+            return raveSpeed;
+        }
+
+        public void setRaveSpeed(int raveSpeed) {
+            this.raveSpeed = raveSpeed;
+        }
+
+        public HighlightColor.TileStyle getTileStyle() {
+            return tileStyle;
+        }
+
+        public void setTileStyle(HighlightColor.TileStyle tileStyle) {
+            this.tileStyle = tileStyle;
+        }
+
+        public Color getOutlineColor() {
+            return outlineColor;
+        }
+
+        public void setOutlineColor(Color outlineColor) {
+            this.outlineColor = outlineColor;
+            setBorder(BorderFactory.createLineBorder(outlineColor, 2));
+        }
+
+        public Color getFillColor() {
+            return fillColor;
+        }
+
+        public void setFillColor(Color fillColor) {
+            this.fillColor = fillColor;
+            setBackground(fillColor);
+        }
+
+        public double getOutlineWidth() {
+            return outlineWidth;
+        }
+
+        public void setOutlineWidth(double outlineWidth) {
+            this.outlineWidth = outlineWidth;
+        }
+
+        public boolean isAntiAliasing() {
+            return antiAliasing;
+        }
+
+        public void setAntiAliasing(boolean antiAliasing) {
+            this.antiAliasing = antiAliasing;
+        }
+
+        public int getOutlineFeather() {
+            return outlineFeather;
+        }
+
+        public void setOutlineFeather(int outlineFeather) {
+            this.outlineFeather = outlineFeather;
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            if (raveFill) {
+                // Calculate the current rave color, which fades through the hue spectrum
+                Color raveRgb = plugin.getRaveColor(this.raveSpeed);
+
+                // Combine the rave color's RGB with the original fill color's alpha
+                Color finalRaveColor = new Color(raveRgb.getRed(), raveRgb.getGreen(), raveRgb.getBlue(), fillColor.getAlpha());
+
+                // Paint the solid, fading color
+                g.setColor(finalRaveColor);
+                g.fillRect(0, 0, getWidth(), getHeight());
+            } else {
+                super.paintComponent(g);
+            }
+        }
+
+        @Override
+        protected void paintBorder(Graphics g) {
+            if (raveOutline) {
+                Graphics2D g2d = (Graphics2D) g.create();
+
+                // Calculate the current rave color, which fades through the hue spectrum
+                Color raveRgb = plugin.getRaveColor(this.raveSpeed);
+                // Combine the rave color's RGB with the original outline color's alpha
+                Color finalRaveColor = new Color(raveRgb.getRed(), raveRgb.getGreen(), raveRgb.getBlue(), outlineColor.getAlpha());
+
+                g2d.setColor(finalRaveColor);
+                g2d.setStroke(new BasicStroke(2)); // Same width as the normal border
+                // Draw the rect inside the button bounds
+                g2d.drawRect(1, 1, getWidth() - 2, getHeight() - 2);
+
+                g2d.dispose();
+            } else {
+                super.paintBorder(g);
+            }
+        }
+
 
         private void openColorPicker(boolean isOutline) {
             Color initial = isOutline ? outlineColor : fillColor;
@@ -1250,47 +1449,20 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                     false
             );
             Point loc = getLocationOnScreen();
-            picker.setLocation(loc.x + -500, loc.y);
+            picker.setLocation(loc.x - 500, loc.y);
             picker.setOnColorChange(color -> {
                 if (isOutline) {
                     setOutlineColor(color);
                 } else {
                     setFillColor(color);
                 }
-                saveAllCards(configManager, configGroup);
             });
 
-            picker.setOnClose(finalColor -> {
-                if (isOutline) {
-                    setOutlineColor(finalColor);
-                } else {
-                    setFillColor(finalColor);
-                }
-            });
-
+            picker.setOnClose(color -> saveAllCards(configManager, configGroup));
             picker.setVisible(true);
         }
-
-        public Color getOutlineColor() {
-            return outlineColor;
-        }
-
-        public void setOutlineColor(Color outlineColor) {
-            this.outlineColor = outlineColor;
-            setBorder(BorderFactory.createLineBorder(outlineColor, 2));
-            repaint();
-        }
-
-        public Color getFillColor() {
-            return fillColor;
-        }
-
-        public void setFillColor(Color fillColor) {
-            this.fillColor = fillColor;
-            setBackground(fillColor);
-            repaint();
-        }
     }
+
 
     // A panel that wraps its contents to the width of the scroll pane
     private static class ScrollablePanel extends JPanel implements Scrollable {
@@ -1344,16 +1516,14 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         );
     }
 
-    public interface ColorButton {
-        Color getColor();
-        void setColor(Color color);
-    }
+    
 
     private static class CardDTO
     {
         public String uuid;
         public String name;
         public int displayNameColor; // ARGB int
+        public boolean hasCustomDisplayNameColor = false;
         public boolean hideNpc;
         public boolean drawUnder;
         public boolean displayName;
@@ -1361,11 +1531,20 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         public List<StyleDTO> styles = new ArrayList<>();
     }
 
+
     private static class StyleDTO
     {
         public String tagStyle;
         public int outlineColor; // ARGB int
-        public int fillColor;    // ARGB int
+        public int fillColor;
+        public boolean raveOutline;
+        public boolean raveFill;
+        public int raveSpeed;
+        public String tileStyle;
+        // New fields
+        public double outlineWidth;
+        public boolean antiAliasing;
+        public int outlineFeather;
     }
 
     // Save all cards as a single JSON array under configGroup -> "cards"
@@ -1378,7 +1557,16 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             CardDTO dto = new CardDTO();
             dto.uuid = card.getCardId().toString();
             dto.name = card.getNameText();
-            dto.displayNameColor = card.getDisplayNameColor().getRGB();
+
+            // Handle null displayNameColor
+            if (card.getDisplayNameColor() != null) {
+                dto.displayNameColor = card.getDisplayNameColor().getRGB();
+                dto.hasCustomDisplayNameColor = true;
+            } else {
+                dto.displayNameColor = Color.CYAN.getRGB(); // Default value for storage only
+                dto.hasCustomDisplayNameColor = false;
+            }
+
             dto.hideNpc = card.isHideNpc();
             dto.drawUnder = card.isDrawUnder();
             dto.displayName = card.isDisplayName();
@@ -1390,6 +1578,14 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                 s.tagStyle = e.tagStyle;
                 s.outlineColor = e.outlineColor.getRGB();
                 s.fillColor = e.fillColor.getRGB();
+                s.raveOutline = e.raveOutline;
+                s.raveFill = e.raveFill;
+                s.raveSpeed = e.raveSpeed;
+                s.tileStyle = e.tileStyle.name();
+                // New properties
+                s.outlineWidth = e.outlineWidth;
+                s.antiAliasing = e.antiAliasing;
+                s.outlineFeather = e.outlineFeather;
                 dto.styles.add(s);
             }
 
@@ -1399,6 +1595,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         configManager.setConfiguration(configGroup, CARDS_CONFIG_KEY, gson.toJson(cards));
         triggerDataChanged();
     }
+
 
 
     // Load cards from config
@@ -1421,6 +1618,15 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                 List<NpcHighlightEntry> entries = new ArrayList<>();
                 for (StyleDTO s : dto.styles)
                 {
+                    Color displayNameColor;
+                    if (dto.hasCustomDisplayNameColor) {
+                        displayNameColor = new Color(dto.displayNameColor, true);
+                    } else {
+                        displayNameColor = null; // Use null to fall back to primary highlight color
+                    }
+                    int raveSpeed = s.raveSpeed == 0 ? 6000 : s.raveSpeed;
+                    HighlightColor.TileStyle tileStyle = s.tileStyle == null ? HighlightColor.TileStyle.REGULAR : HighlightColor.TileStyle.valueOf(s.tileStyle);
+                    // Use values from s, HighlightColor constructor will apply defaults if s has default values (e.g., 0.0, false, 0)
                     entries.add(new NpcHighlightEntry(
                             dto.name,
                             s.tagStyle,
@@ -1429,8 +1635,15 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                             dto.hideNpc,
                             dto.drawUnder,
                             dto.displayName,
-                            new Color(dto.displayNameColor, true),
-                            dto.highlightDead
+                            displayNameColor,
+                            dto.highlightDead,
+                            s.raveOutline,
+                            s.raveFill,
+                            raveSpeed,
+                            tileStyle,
+                            s.outlineWidth, // Will be 0.0 if not in old JSON
+                            s.antiAliasing, // Will be false if not in old JSON
+                            s.outlineFeather // Will be 0 if not in old JSON
                     ));
                 }
 
@@ -1462,9 +1675,19 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         public boolean displayName;
         public Color displayNameColor;
         public boolean highlightDead;
+        public boolean raveOutline;
+        public boolean raveFill;
+        public int raveSpeed;
+        public HighlightColor.TileStyle tileStyle;
+        // New fields
+        public double outlineWidth;
+        public boolean antiAliasing;
+        public int outlineFeather;
 
         public NpcHighlightEntry(String nameOrId, String tagStyle, Color outlineColor, Color fillColor,
-                                 boolean hideNpc, boolean drawUnder, boolean displayName, Color displayNameColor, boolean highlightDead) {
+                                 boolean hideNpc, boolean drawUnder, boolean displayName, Color displayNameColor,
+                                 boolean highlightDead, boolean raveOutline, boolean raveFill, int raveSpeed, HighlightColor.TileStyle tileStyle,
+                                 double outlineWidth, boolean antiAliasing, int outlineFeather) {
             this.nameOrId = nameOrId;
             this.tagStyle = tagStyle;
             this.outlineColor = outlineColor;
@@ -1474,6 +1697,13 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             this.displayName = displayName;
             this.displayNameColor = displayNameColor;
             this.highlightDead = highlightDead;
+            this.raveOutline = raveOutline;
+            this.raveFill = raveFill;
+            this.raveSpeed = raveSpeed;
+            this.tileStyle = tileStyle;
+            this.outlineWidth = outlineWidth;
+            this.antiAliasing = antiAliasing;
+            this.outlineFeather = outlineFeather;
         }
     }
 

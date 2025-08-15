@@ -25,6 +25,7 @@ public class NPCInfo
 	boolean drawOverlayBeneathNpc;
 	boolean displayNameAboveNpc;
     private Color displayNameColor;
+    
 
 	/**
 	 * Main constructor - creates NPCInfo with default (off) highlight states
@@ -47,8 +48,8 @@ public class NPCInfo
 		this.hideNpc = false;
 		this.drawOverlayBeneathNpc = false;
 		this.displayNameAboveNpc = false;
+        
 	}
-
 	/**
 	 * Check if this NPC has any active highlights
 	 */

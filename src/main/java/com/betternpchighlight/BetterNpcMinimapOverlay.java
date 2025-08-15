@@ -41,11 +41,6 @@ public class BetterNpcMinimapOverlay extends Overlay
 			if (npc.getName() != null && config.npcMinimapMode() != BetterNpcHighlightConfig.npcMinimapMode.OFF)
 			{
                 Color color = plugin.getDisplayNameColorForNpc(npcInfo.getNpc());
-                if (color == null)
-                {
-                    color = plugin.getSpecificColor(npcInfo);
-                }
-
                 NPCComposition npcComposition = npc.getTransformedComposition();
 				if (color != null && npcComposition != null && npcComposition.isInteractible())
 				{

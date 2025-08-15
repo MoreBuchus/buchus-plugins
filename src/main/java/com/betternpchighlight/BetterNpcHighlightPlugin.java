@@ -24,6 +24,8 @@
  */
 package com.betternpchighlight;
 
+
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
@@ -54,8 +56,11 @@ import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.components.colorpicker.ColorPickerManager;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 import net.runelite.client.util.WildcardMatcher;
+import net.runelite.client.util.Text;
+
 import org.apache.commons.lang3.StringUtils;
 import javax.inject.Inject;
 import java.awt.*;
@@ -149,7 +154,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 			keyManager.registerKeyListener(this);
 
 			// Initialize panel
-			panel = new BetterNpcHighlightPanel(colorPickerManager, configManager);
+			panel = new BetterNpcHighlightPanel(colorPickerManager, configManager, this);
 
             panel.setOnTableChanged(() -> {
                 // Save the panel data to config
@@ -279,7 +284,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 	 * This allows for layering multiple highlights on a single NPC.
 	 */
 	private void applyHighlightFromEntry(NPCInfo info, BetterNpcHighlightPanel.NpcHighlightEntry entry) {
-		HighlightColor highlight = new HighlightColor(true, entry.outlineColor, entry.fillColor);
+		HighlightColor highlight = new HighlightColor(true, entry.outlineColor, entry.fillColor, entry.raveOutline, entry.raveFill, entry.raveSpeed, entry.tileStyle, entry.outlineWidth, entry.antiAliasing, entry.outlineFeather);
 		switch (entry.tagStyle) {
 			case "Tile":
 				info.setTile(highlight);
@@ -323,6 +328,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		if (entry.highlightDead) {
 			info.setHighlightDead(true);
 		}
+        
 	}
 
 	private boolean isEmptyEntry(BetterNpcHighlightPanel.NpcHighlightEntry entry)
@@ -426,32 +432,25 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		// Check if this NPC should be highlighted
 		NPCInfo npcInfo = checkValidNPC(npc);
 		if (npcInfo != null) {
+            System.out.println("NPC ADDED: " + npcInfo.getNpc().getName());
 			npcList.add(npcInfo);
 		}
+        System.out.println("TEST: " + npcList.size());
 	}
 
 	@Subscribe
 	public void onNpcDespawned(NpcDespawned event)
 	{
 		NPC npc = event.getNpc();
-
-		Optional<NPCInfo> npcInfo = npcList.stream().filter(n -> n.getNpc() == npc).findFirst();
+        System.out.println("TEST2: " + npc);
 
 		if (npc.isDead())
 		{
-			if (npcInfo.isPresent() && npcInfo.get().isHighlightDead())
-			{
-				// Don't remove it from the list
-			}
-			else
-			{
-				npcList.removeIf(n -> n.getNpc().getIndex() == npc.getIndex());
-			}
-
-			if (npcList.stream().anyMatch(n -> n.getNpc() == npc) &&
-					npcSpawns.stream().noneMatch(n -> n.index == npc.getIndex())) {
+			if (npcList.stream().anyMatch(n -> n.getNpc() == npc) && npcSpawns.stream().noneMatch(n -> n.index == npc.getIndex())) {
 				npcSpawns.add(new NpcSpawn(npc));
-			} else {
+                System.out.println("TEST3: " + npcSpawns.size());
+			}
+            else {
 				for (NpcSpawn n : npcSpawns) {
 					if (npc.getIndex() == n.index && npc.getId() == n.id) {
 						n.diedOnTick = client.getTickCount();
@@ -461,10 +460,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 				}
 			}
 		}
-		else
-		{
-			npcList.removeIf(n -> n.getNpc().getIndex() == npc.getIndex());
-		}
+        npcList.removeIf(n -> n.getNpc().getIndex() == npc.getIndex());
 	}
 
 	@Subscribe(priority = -1)
@@ -500,6 +496,64 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		turboOutlineFeather = new Random().nextInt(4);
 	}
 
+	@Subscribe
+	public void onMenuEntryAdded(MenuEntryAdded event)
+	{
+		// Only apply if highlightMenuNames is enabled
+		if (!config.highlightMenuNames())
+		{
+			return;
+		}
+
+		// Get the MenuAction type
+		final MenuAction menuAction = MenuAction.of(event.getType());
+
+		// Check if it's an NPC-related menu action
+		// Using a direct comparison for now, as NPC_MENU_ACTIONS is not defined
+		// and the original code's logic for deprioritization offset is complex.
+		// This covers the common NPC interaction options.
+		if (menuAction == MenuAction.EXAMINE_NPC ||
+			menuAction == MenuAction.NPC_FIRST_OPTION ||
+			menuAction == MenuAction.NPC_SECOND_OPTION ||
+			menuAction == MenuAction.NPC_THIRD_OPTION ||
+			menuAction == MenuAction.NPC_FOURTH_OPTION ||
+			menuAction == MenuAction.NPC_FIFTH_OPTION)
+		{
+			// Get the NPC
+			// Using client.getCachedNPCs() as client.getTopLevelWorldView() might be API specific
+			NPC npc = client.getNpcs().stream()
+				.filter(n -> n.getIndex() == event.getIdentifier())
+				.findFirst()
+				.orElse(null);
+			if (npc == null)
+			{
+				return;
+			}
+
+			Color color = null;
+
+			// Check for dead NPC color
+			if (npcUtil.isDying(npc))
+			{
+				color = config.deadNpcMenuColor();
+			}
+			else
+			{
+				// Get display name color from our plugin's logic
+				color = getDisplayNameColorForNpc(npc);
+			}
+
+			if (color != null)
+			{
+				// Apply color to the menu entry
+				// Using event.getMenuEntry().setOptionColor() which is the standard way
+				// The original code used setTarget with ColorUtil.prependColorTag, which is an older method
+				final String target = ColorUtil.prependColorTag(Text.removeTags(event.getMenuEntry().getTarget()), color);
+				event.getMenuEntry().setTarget(target);
+			}
+		}
+	}
+
 	/**
 	 * Check if an NPC should be highlighted (simplified version)
 	 */
@@ -525,62 +579,50 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 		return null;
 	}
 
-	/**
-	 * Get the specific color for an NPC (updated for new system)
-	 */
-	public Color getSpecificColor(NPCInfo n)
-	{
-		// Slayer task takes priority
-		if (n.isTask() && config.slayerHighlight()) {
-			return config.slayerRave() ? getRaveColor(config.slayerRaveSpeed()) : config.taskColor();
-		}
+    public int getTurboIndex(int id, String name)
+    {
+        for (int i = 0; i < npcList.size(); i++)
+        {
+            NPCInfo info = npcList.get(i);
+            NPC npc = info.getNpc();
 
-		// Check each highlight type in priority order
-		if (n.getTile().isHighlight() && config.tileHighlight()) {
-			return config.tileRave() ? getRaveColor(config.tileRaveSpeed()) : n.getTile().getColor();
-		}
-		if (n.getTrueTile().isHighlight() && config.trueTileHighlight()) {
-			return config.trueTileRave() ? getRaveColor(config.trueTileRaveSpeed()) : n.getTrueTile().getColor();
-		}
-		if (n.getSwTile().isHighlight() && config.swTileHighlight()) {
-			return config.swTileRave() ? getRaveColor(config.swTileRaveSpeed()) : n.getSwTile().getColor();
-		}
-		if (n.getSwTrueTile().isHighlight() && config.swTrueTileHighlight()) {
-			return config.swTrueTileRave() ? getRaveColor(config.swTrueTileRaveSpeed()) : n.getSwTrueTile().getColor();
-		}
-		if (n.getHull().isHighlight() && config.hullHighlight()) {
-			return config.hullRave() ? getRaveColor(config.hullRaveSpeed()) : n.getHull().getColor();
-		}
-		if (n.getArea().isHighlight() && config.areaHighlight()) {
-			return config.areaRave() ? getRaveColor(config.areaRaveSpeed()) : n.getArea().getColor();
-		}
-		if (n.getOutline().isHighlight() && config.outlineHighlight()) {
-			return config.outlineRave() ? getRaveColor(config.outlineRaveSpeed()) : n.getOutline().getColor();
-		}
-		if (n.getClickbox().isHighlight() && config.clickboxHighlight()) {
-			return config.clickboxRave() ? getRaveColor(config.clickboxRaveSpeed()) : n.getClickbox().getColor();
-		}
-		if (n.getTurbo().isHighlight() && config.turboHighlight()) {
-			return getTurboColorForNpc(n.getNpc());
-		}
+            if (npc.getId() == id)
+            {
+                if (name == null || (npc.getName() != null && npc.getName().toLowerCase().equals(name)))
+                {
+                    if (info.getTurbo() != null && info.getTurbo().isHighlight())
+                    {
+                        return i;
+                    }
+                }
+            }
+            else if (name != null)
+            {
+                // If ID doesn't match, check name wildcard match
+                if (npc.getName() != null && WildcardMatcher.matches(name, npc.getName().toLowerCase()))
+                {
+                    if (info.getTurbo() != null && info.getTurbo().isHighlight())
+                    {
+                        return i;
+                    }
+                }
+            }
+        }
+        return -1;
+    }
 
-		return null;
-	}
 
-	private Color getTurboColorForNpc(NPC npc)
-	{
-		// Simplified turbo color logic
-		return Color.getHSBColor(new Random().nextFloat(), 1.0F, 1.0F);
-	}
-
-	public Color getRaveColor(int speed)
+    public Color getRaveColor(int speed)
 	{
 		int ticks = speed / 20;
+		if (ticks <= 0)
+		{
+			ticks = 1;
+		}
 		return Color.getHSBColor((client.getGameCycle() % ticks) / ((float) ticks), 1.0f, 1.0f);
 	}
 
-    public Color getDisplayNameColorForNpc(NPC npc)
-    {
+    public Color getDisplayNameColorForNpc(NPC npc) {
         if (panel == null) {
             return null;
         }
@@ -588,20 +630,43 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
         String npcName = npc.getName() != null ? npc.getName().toLowerCase() : "";
         String npcIdStr = String.valueOf(npc.getId());
 
+        // First check if this NPC has a custom display name color in the panel
         List<BetterNpcHighlightPanel.NpcHighlightEntry> entries = panel.getNpcHighlightEntries();
-
         for (BetterNpcHighlightPanel.NpcHighlightEntry entry : entries) {
-            if (isEmptyEntry(entry) || !entry.displayName) {
+            if (entry.nameOrId == null || entry.nameOrId.trim().isEmpty()) {
                 continue;
             }
 
-            if (matchesEntry(npcName, npcIdStr, entry)) {
+            String entryValue = entry.nameOrId.toLowerCase().trim();
+
+            boolean matches = false;
+            if (StringUtils.isNumeric(entryValue) && npcIdStr.equals(entryValue)) {
+                matches = true;
+            } else if (!npcName.isEmpty() && WildcardMatcher.matches(entryValue, npcName)) {
+                matches = true;
+            }
+
+            if (matches && entry.displayNameColor != null) {
+                // Only return explicitly set display name colors
                 return entry.displayNameColor;
             }
         }
 
-        return null;
+        // If no custom display name color is set, find the NPC in our list and use its primary highlight color
+        NPCInfo info = npcList.stream()
+                .filter(i -> i.getNpc().getIndex() == npc.getIndex())
+                .findFirst()
+                .orElse(null);
+
+        if (info != null && info.getPrimaryHighlight() != null) {
+            return info.getPrimaryHighlight().getColor();
+        }
+
+        // Final fallback if no highlight color is found
+        return Color.CYAN;
     }
+
+
 
 
 

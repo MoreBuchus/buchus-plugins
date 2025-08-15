@@ -207,7 +207,7 @@ public class BetterNpcHighlightOverlay extends Overlay
 
 		if (config.respawnTimer() != BetterNpcHighlightConfig.respawnTimerMode.OFF)
 		{
-			for (NpcSpawn n : plugin.npcSpawns)
+            for (NpcSpawn n : plugin.npcSpawns)
 			{
 				if (n.spawnPoint != null && n.respawnTime != -1 && n.dead)
 				{
@@ -222,8 +222,8 @@ public class BetterNpcHighlightOverlay extends Overlay
 						int width = config.respawnTileWidth();
 
 						// Fixed: Use proper method to get turbo index
-						int turboIndex = getTurboIndex(n.id, n.name.toLowerCase());
-						if (turboIndex != -1)
+                        int turboIndex = plugin.getTurboIndex(n.id, n.name != null ? n.name.toLowerCase() : null);
+                        if (turboIndex != -1 && turboIndex < plugin.turboColors.size())
 						{
 							raveColor = plugin.turboColors.get(turboIndex);
 							outlineColor = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);
@@ -276,23 +276,6 @@ public class BetterNpcHighlightOverlay extends Overlay
 	}
 
 	/**
-	 * Fixed: Added missing getTurboIndex method
-	 */
-	private int getTurboIndex(int npcId, String npcName)
-	{
-		for (int i = 0; i < plugin.npcList.size(); i++)
-		{
-			NPCInfo npcInfo = plugin.npcList.get(i);
-			NPC npc = npcInfo.getNpc();
-			if (npc.getId() == npcId && npc.getName() != null && npc.getName().toLowerCase().equals(npcName))
-			{
-				return i;
-			}
-		}
-		return -1;
-	}
-
-	/**
 	 * Create overlays for NPCs to highlight.
 	 *
 	 * @param graphics  graphics
@@ -302,6 +285,7 @@ public class BetterNpcHighlightOverlay extends Overlay
 	protected void renderNpcOverlay(Graphics2D graphics, NPCInfo npcInfo, String highlight)
 	{
 		NPC npc = npcInfo.getNpc();
+
 		NPCComposition npcComposition = npc.getTransformedComposition();
 		if (npcComposition != null)
 		{
@@ -318,28 +302,30 @@ public class BetterNpcHighlightOverlay extends Overlay
 			switch (highlight)
 			{
 				case "hull":
+					HighlightColor hullHighlight = npcInfo.getHull();
 					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
-							: config.hullRave() ? plugin.getRaveColor(config.hullRaveSpeed()) : npcInfo.getHull().getColor();
+							: hullHighlight.isRaveOutline() ? plugin.getRaveColor(hullHighlight.getRaveSpeed()) : hullHighlight.getColor();
 					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
-							: config.hullRave() ? plugin.getRaveColor(config.hullRaveSpeed()) : npcInfo.getHull().getFill();
+							: hullHighlight.isRaveFill() ? plugin.getRaveColor(hullHighlight.getRaveSpeed()) : hullHighlight.getFill();
 					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getHull().getColor().getAlpha();
 					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getHull().getFill().getAlpha();
-					antialias = isTask ? config.slayerAA() : config.hullAA();
+					antialias = isTask ? config.slayerAA() : hullHighlight.isAntiAliasing();
 
 					Shape hull = npc.getConvexHull();
 					if (hull != null)
 					{
-						renderPoly(graphics, line, fill, lineAlpha, fillAlpha, hull, config.hullWidth(), antialias);
+						renderPoly(graphics, line, fill, lineAlpha, fillAlpha, hull, hullHighlight.getOutlineWidth(), antialias);
 					}
 					break;
 				case "tile":
+					HighlightColor tileHighlight = npcInfo.getTile();
 					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
-							: config.tileRave() ? plugin.getRaveColor(config.tileRaveSpeed()) : npcInfo.getTile().getColor();
+							: tileHighlight.isRaveOutline() ? plugin.getRaveColor(tileHighlight.getRaveSpeed()) : tileHighlight.getColor();
 					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
-							: config.tileRave() ? plugin.getRaveColor(config.tileRaveSpeed()) : npcInfo.getTile().getFill();
+							: tileHighlight.isRaveFill() ? plugin.getRaveColor(tileHighlight.getRaveSpeed()) : tileHighlight.getFill();
 					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getTile().getColor().getAlpha();
 					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getTile().getFill().getAlpha();
-					antialias = isTask ? config.slayerAA() : config.tileAA();
+					antialias = isTask ? config.slayerAA() : tileHighlight.isAntiAliasing();
 
 					lp = npc.getLocalLocation();
 					if (lp != null)
@@ -347,29 +333,30 @@ public class BetterNpcHighlightOverlay extends Overlay
 						tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
 						if (tilePoly != null)
 						{
-							switch (config.tileLines())
+							switch (tileHighlight.getTileStyle())
 							{
-								case REG:
-									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.tileWidth(), antialias);
+								case REGULAR:
+									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, tileHighlight.getOutlineWidth(), antialias);
 									break;
-								case DASH:
-									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.tileWidth(), size, antialias);
+								case DASHED:
+									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, tileHighlight.getOutlineWidth(), size, antialias);
 									break;
 								case CORNER:
-									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.tileWidth(), antialias);
+									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, tileHighlight.getOutlineWidth(), antialias);
 									break;
 							}
 						}
 					}
 					break;
 				case "trueTile":
+					HighlightColor trueTileHighlight = npcInfo.getTrueTile();
 					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
-							: config.trueTileRave() ? plugin.getRaveColor(config.trueTileRaveSpeed()) : npcInfo.getTrueTile().getColor();
+							: trueTileHighlight.isRaveOutline() ? plugin.getRaveColor(trueTileHighlight.getRaveSpeed()) : trueTileHighlight.getColor();
 					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
-							: config.trueTileRave() ? plugin.getRaveColor(config.trueTileRaveSpeed()) : npcInfo.getTrueTile().getFill();
+							: trueTileHighlight.isRaveFill() ? plugin.getRaveColor(trueTileHighlight.getRaveSpeed()) : trueTileHighlight.getFill();
 					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getTrueTile().getColor().getAlpha();
 					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getTrueTile().getFill().getAlpha();
-					antialias = isTask ? config.slayerAA() : config.trueTileAA();
+					antialias = isTask ? config.slayerAA() : trueTileHighlight.isAntiAliasing();
 
 					lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
 					if (lp != null)
@@ -378,29 +365,30 @@ public class BetterNpcHighlightOverlay extends Overlay
 						tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
 						if (tilePoly != null)
 						{
-							switch (config.trueTileLines())
+							switch (trueTileHighlight.getTileStyle())
 							{
-								case REG:
-									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.trueTileWidth(), antialias);
+								case REGULAR:
+									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, trueTileHighlight.getOutlineWidth(), antialias);
 									break;
-								case DASH:
-									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.trueTileWidth(), size, antialias);
+								case DASHED:
+									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, trueTileHighlight.getOutlineWidth(), size, antialias);
 									break;
 								case CORNER:
-									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.trueTileWidth(), antialias);
+									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, trueTileHighlight.getOutlineWidth(), antialias);
 									break;
 							}
 						}
 					}
 					break;
 				case "swTile":
+					HighlightColor swTileHighlight = npcInfo.getSwTile();
 					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
-							: config.swTileRave() ? plugin.getRaveColor(config.swTileRaveSpeed()) : npcInfo.getSwTile().getColor();
+							: swTileHighlight.isRaveOutline() ? plugin.getRaveColor(swTileHighlight.getRaveSpeed()) : swTileHighlight.getColor();
 					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
-							: config.swTileRave() ? plugin.getRaveColor(config.swTileRaveSpeed()) : npcInfo.getSwTile().getFill();
+							: swTileHighlight.isRaveFill() ? plugin.getRaveColor(swTileHighlight.getRaveSpeed()) : swTileHighlight.getFill();
 					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getSwTile().getColor().getAlpha();
 					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getSwTile().getFill().getAlpha();
-					antialias = isTask ? config.slayerAA() : config.swTileAA();
+					antialias = isTask ? config.slayerAA() : swTileHighlight.isAntiAliasing();
 
 					lp = npc.getLocalLocation();
 					if (lp != null)
@@ -410,29 +398,30 @@ public class BetterNpcHighlightOverlay extends Overlay
 						tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
 						if (tilePoly != null)
 						{
-							switch (config.swTileLines())
+							switch (swTileHighlight.getTileStyle())
 							{
-								case REG:
-									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTileWidth(), antialias);
+								case REGULAR:
+									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, swTileHighlight.getOutlineWidth(), antialias);
 									break;
-								case DASH:
-									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTileWidth(), size, antialias);
+								case DASHED:
+									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, swTileHighlight.getOutlineWidth(), size, antialias);
 									break;
 								case CORNER:
-									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTileWidth(), antialias);
+									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, swTileHighlight.getOutlineWidth(), antialias);
 									break;
 							}
 						}
 					}
 					break;
 				case "swTrueTile":
+					HighlightColor swTrueTileHighlight = npcInfo.getSwTrueTile();
 					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
-							: config.swTrueTileRave() ? plugin.getRaveColor(config.swTrueTileRaveSpeed()) : npcInfo.getSwTrueTile().getColor();
+							: swTrueTileHighlight.isRaveOutline() ? plugin.getRaveColor(swTrueTileHighlight.getRaveSpeed()) : swTrueTileHighlight.getColor();
 					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
-							: config.swTrueTileRave() ? plugin.getRaveColor(config.swTrueTileRaveSpeed()) : npcInfo.getSwTrueTile().getFill();
+							: swTrueTileHighlight.isRaveFill() ? plugin.getRaveColor(swTrueTileHighlight.getRaveSpeed()) : swTrueTileHighlight.getFill();
 					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getSwTrueTile().getColor().getAlpha();
 					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getSwTrueTile().getFill().getAlpha();
-					antialias = isTask ? config.slayerAA() : config.swTrueTileAA();
+					antialias = isTask ? config.slayerAA() : swTrueTileHighlight.isAntiAliasing();
 
 					lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
 					if (lp != null)
@@ -440,68 +429,63 @@ public class BetterNpcHighlightOverlay extends Overlay
 						tilePoly = Perspective.getCanvasTilePoly(client, lp);
 						if (tilePoly != null)
 						{
-							switch (config.swTrueTileLines())
+							switch (swTrueTileHighlight.getTileStyle())
 							{
-								case REG:
-									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTrueTileWidth(), antialias);
+								case REGULAR:
+									renderPoly(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, swTrueTileHighlight.getOutlineWidth(), antialias);
 									break;
-								case DASH:
-									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTrueTileWidth(), size, antialias);
+								case DASHED:
+									renderPolygonDashed(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, swTrueTileHighlight.getOutlineWidth(), size, antialias);
 									break;
 								case CORNER:
-									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, config.swTrueTileWidth(), antialias);
+									renderPolygonCorners(graphics, line, fill, lineAlpha, fillAlpha, tilePoly, swTrueTileHighlight.getOutlineWidth(), antialias);
 									break;
 							}
 						}
 					}
 					break;
 				case "outline":
+					HighlightColor outlineHighlight = npcInfo.getOutline();
 					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
-							: config.outlineRave() ? plugin.getRaveColor(config.outlineRaveSpeed()) : npcInfo.getOutline().getColor();
+							: outlineHighlight.isRaveOutline() ? plugin.getRaveColor(outlineHighlight.getRaveSpeed()) : outlineHighlight.getColor();
 
-					modelOutlineRenderer.drawOutline(npc, config.outlineWidth(), line, config.outlineFeather());
+					modelOutlineRenderer.drawOutline(npc, (int) outlineHighlight.getOutlineWidth(), line, outlineHighlight.getOutlineFeather());
 					break;
 				case "area":
-					Color color = npcInfo.getArea().getFill() != null ? npcInfo.getArea().getFill() : npcInfo.getArea().getColor();
+					HighlightColor areaHighlight = npcInfo.getArea();
+					Color color = areaHighlight.getFill() != null ? areaHighlight.getFill() : areaHighlight.getColor();
 					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
-							: config.areaRave() ? plugin.getRaveColor(config.areaRaveSpeed()) : color;
+							: areaHighlight.isRaveFill() ? plugin.getRaveColor(areaHighlight.getRaveSpeed()) : color;
 					fillAlpha = isTask ? config.taskFillColor().getAlpha() : color.getAlpha();
 
 					Shape area = npc.getConvexHull();
 					if (area != null)
 					{
-						// Fixed: Typo in color parameter (getGreen instead of getBlue)
 						graphics.setColor(fill.getAlpha() == 0 ? new Color(fill.getRed(), fill.getGreen(), fill.getBlue(), 50)
 								: new Color(fill.getRed(), fill.getGreen(), fill.getBlue(), fillAlpha));
 						graphics.fill(area);
 					}
 					break;
 				case "clickbox":
+					HighlightColor clickboxHighlight = npcInfo.getClickbox();
 					line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
-							: config.clickboxRave() ? plugin.getRaveColor(config.clickboxRaveSpeed()) : npcInfo.getClickbox().getColor();
+							: clickboxHighlight.isRaveOutline() ? plugin.getRaveColor(clickboxHighlight.getRaveSpeed()) : clickboxHighlight.getColor();
 					fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
-							: config.clickboxRave() ? plugin.getRaveColor(config.clickboxRaveSpeed()) : npcInfo.getClickbox().getFill();
+							: clickboxHighlight.isRaveFill() ? plugin.getRaveColor(clickboxHighlight.getRaveSpeed()) : clickboxHighlight.getFill();
 					lineAlpha = isTask ? config.taskColor().getAlpha() : npcInfo.getClickbox().getColor().getAlpha();
 					fillAlpha = isTask ? config.taskFillColor().getAlpha() : npcInfo.getClickbox().getFill().getAlpha();
-					antialias = isTask ? config.slayerAA() : config.clickboxAA();
+					antialias = isTask ? config.slayerAA() : clickboxHighlight.isAntiAliasing();
 
 					lp = npc.getLocalLocation();
 					if (lp != null)
 					{
 						Shape clickbox = Perspective.getClickbox(client, npc.getModel(), npc.getCurrentOrientation(), lp.getX(), lp.getY(),
 								Perspective.getTileHeight(client, lp, npc.getWorldLocation().getPlane()));
-						renderClickbox(graphics, clickbox, client.getMouseCanvasPosition(), line, fill, lineAlpha, fillAlpha, line.darker(), config.clickboxWidth(), antialias);
+						renderClickbox(graphics, clickbox, client.getMouseCanvasPosition(), line, fill, lineAlpha, fillAlpha, line.darker(), clickboxHighlight.getOutlineWidth(), antialias);
 					}
 					break;
 				case "turbo":
-					// Fixed: Get turbo index properly
-					int turboIndex = getTurboIndex(npc.getId(), npc.getName() != null ? npc.getName().toLowerCase() : "");
-					Color raveColor = null;
-					if (turboIndex >= 0 && turboIndex < plugin.turboColors.size())
-					{
-						raveColor = plugin.turboColors.get(turboIndex);
-					}
-
+                    Color raveColor = plugin.turboColors.get(plugin.npcList.indexOf(npcInfo));
 					if (raveColor != null)
 					{
 						line = new Color(raveColor.getRed(), raveColor.getGreen(), raveColor.getBlue(), new Random().nextInt(254) + 1);

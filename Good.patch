@@ -5,13 +5,13 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 ===================================================================
 diff --git a/src/main/java/com/betternpchighlight/BetterNpcHighlightPanel.java b/src/main/java/com/betternpchighlight/BetterNpcHighlightPanel.java
 --- a/src/main/java/com/betternpchighlight/BetterNpcHighlightPanel.java
-+++ b/src/main/java/com/betternpchighlight/BetterNpcHighlightPanel.java	(date 1754478532897)
-@@ -711,7 +711,7 @@
- 
-             togglePanel.add(highlightDeadButton);
-             togglePanel.add(Box.createHorizontalStrut(4));
--
-+            
-             // Remove NPC card button
-             JButton removeCardButton = new JButton();
-             removeCardButton.setIcon(DELETE_ICONS.on);
++++ b/src/main/java/com/betternpchighlight/BetterNpcHighlightPanel.java	(date 1755268040303)
+@@ -1316,7 +1316,7 @@
+                     JMenuItem setWidth = new JMenuItem("Outline width: " + (int)outlineWidth);
+                     setWidth.addActionListener(ev -> {
+                         int originalWidth = (int) getOutlineWidth();
+-                        SpinnerNumberModel model = new SpinnerNumberModel(originalWidth, 0, 50, 1);
++                        SpinnerNumberModel model = new SpinnerNumberModel(originalWidth, 1, 50, 1);
+                         JSpinner spinner = new JSpinner(model);
+                         spinner.addChangeListener(changeEvent -> {
+                             setOutlineWidth((Integer) spinner.getValue());
