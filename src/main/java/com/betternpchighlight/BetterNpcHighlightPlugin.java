@@ -26,6 +26,7 @@ package com.betternpchighlight;
 
 
 
+import com.betternpchighlight.data.NpcHighlightEntry;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.inject.Provides;
 import java.awt.event.KeyEvent;
@@ -231,7 +232,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 				npcList.clear();
 
 				if (panel != null) {
-					List<BetterNpcHighlightPanel.NpcHighlightEntry> entries = panel.getNpcHighlightEntries();
+					List<NpcHighlightEntry> entries = panel.getNpcHighlightEntries();
 
 					for (NPC npc : client.getNpcs()) {
 						NPCInfo info = buildNpcInfoFromPanelEntries(npc, entries);
@@ -255,12 +256,12 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 	 * Build NPCInfo from panel entries, allowing for multiple highlights per NPC.
 	 * It iterates through all rules and applies each one that matches.
 	 */
-	private NPCInfo buildNpcInfoFromPanelEntries(NPC npc, List<BetterNpcHighlightPanel.NpcHighlightEntry> entries) {
+	private NPCInfo buildNpcInfoFromPanelEntries(NPC npc, List<NpcHighlightEntry> entries) {
 		String npcName = npc.getName() != null ? npc.getName().toLowerCase() : "";
 		String npcIdStr = String.valueOf(npc.getId());
 		NPCInfo info = null; // Lazily create the info object only if a match is found
 
-		for (BetterNpcHighlightPanel.NpcHighlightEntry entry : entries) {
+		for (NpcHighlightEntry entry : entries) {
 			if (isEmptyEntry(entry)) {
 				continue;
 			}
@@ -283,7 +284,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 	 * Applies a specific highlight style from a panel entry to an existing NPCInfo object.
 	 * This allows for layering multiple highlights on a single NPC.
 	 */
-	private void applyHighlightFromEntry(NPCInfo info, BetterNpcHighlightPanel.NpcHighlightEntry entry) {
+	private void applyHighlightFromEntry(NPCInfo info, NpcHighlightEntry entry) {
 		HighlightColor highlight = new HighlightColor(true, entry.outlineColor, entry.fillColor, entry.raveOutline, entry.raveFill, entry.raveSpeed, entry.tileStyle, entry.outlineWidth, entry.antiAliasing, entry.outlineFeather);
 		switch (entry.tagStyle) {
 			case "Tile":
@@ -331,12 +332,12 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
         
 	}
 
-	private boolean isEmptyEntry(BetterNpcHighlightPanel.NpcHighlightEntry entry)
+	private boolean isEmptyEntry(NpcHighlightEntry entry)
 	{
 		return (entry.nameOrId == null || entry.nameOrId.trim().isEmpty());
 	}
 
-	private boolean matchesEntry(String npcName, String npcIdStr, BetterNpcHighlightPanel.NpcHighlightEntry entry)
+	private boolean matchesEntry(String npcName, String npcIdStr, NpcHighlightEntry entry)
 	{
 		String entryValue = entry.nameOrId.toLowerCase().trim();
 
@@ -561,7 +562,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 	{
 		if (panel == null) return null;
 
-		List<BetterNpcHighlightPanel.NpcHighlightEntry> entries = panel.getNpcHighlightEntries();
+		List<NpcHighlightEntry> entries = panel.getNpcHighlightEntries();
 		NPCInfo info = buildNpcInfoFromPanelEntries(npc, entries);
 
 		// Also check for slayer task
@@ -631,8 +632,8 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
         String npcIdStr = String.valueOf(npc.getId());
 
         // First check if this NPC has a custom display name color in the panel
-        List<BetterNpcHighlightPanel.NpcHighlightEntry> entries = panel.getNpcHighlightEntries();
-        for (BetterNpcHighlightPanel.NpcHighlightEntry entry : entries) {
+        List<NpcHighlightEntry> entries = panel.getNpcHighlightEntries();
+        for (NpcHighlightEntry entry : entries) {
             if (entry.nameOrId == null || entry.nameOrId.trim().isEmpty()) {
                 continue;
             }
@@ -728,6 +729,10 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 			configManager.setConfiguration(config.CONFIG_GROUP, "turboHighlight", true);
 		}
 	}
+
+	public BetterNpcHighlightPanel getPanel() {
+        return panel;
+    }
 
 	// Simplified key listener (keeping minimal functionality)
 	public void keyPressed(KeyEvent e) {
