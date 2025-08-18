@@ -185,49 +185,6 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         cardsScrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
     }
 
-    private JPanel createBottomPanel() {
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        bottomPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
-
-        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
-        buttonPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-
-        JButton clearBtn = createStyledButton("Clear All");
-        clearBtn.addActionListener(e -> clearAllEntries());
-
-        buttonPanel.add(clearBtn);
-
-        bottomPanel.add(buttonPanel, BorderLayout.CENTER);
-        return bottomPanel;
-    }
-
-    private JButton createStyledButton(String text) {
-        JButton button = new JButton(text);
-        button.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        button.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-        button.setFont(FontManager.getRunescapeSmallFont());
-        button.setFocusPainted(false);
-        button.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(ColorScheme.MEDIUM_GRAY_COLOR, 1),
-                BorderFactory.createEmptyBorder(4, 8, 4, 8)
-        ));
-
-        button.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                button.setBackground(ColorScheme.DARK_GRAY_COLOR);
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-                button.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-            }
-        });
-
-        return button;
-    }
-
     private void addNewCard() {
         NpcCard card = new NpcCard(this, configManager, colorPickerManager);
         npcCards.add(card);
