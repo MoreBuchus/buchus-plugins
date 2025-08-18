@@ -6,9 +6,11 @@ import com.betternpchighlight.data.CardDTO;
 import com.betternpchighlight.data.NpcHighlightEntry;
 import com.betternpchighlight.data.StyleDTO;
 import com.betternpchighlight.util.IconSet;
+
 import com.google.common.collect.ImmutableList;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
@@ -63,13 +65,14 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     private static final int luminanceOffHover = -130;
     private static final int luminanceOff = -150;
 
+    public static final IconSet ADD_CARD_ICONS = loadIconSet("/add_card.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
     public static final IconSet ENTITY_HIDER_ICONS = loadIconSet("/entity_hider_on.png", luminanceOnHover, luminanceOff, luminanceOffHover);
     public static final IconSet DRAW_BENEATH_ICONS = loadIconSet("/draw_beneath.png", luminanceOnHover, luminanceOff, luminanceOffHover);
     public static final IconSet DISPLAY_NAME_ICONS = loadIconSet("/display_name.png", luminanceOnHover, luminanceOff, luminanceOffHover);
     public static final IconSet HIGHLIGHT_DEAD_ICONS = loadIconSet("/highlight_dead.png", luminanceOnHover, luminanceOff, luminanceOffHover);
-    public static final IconSet ADD_ICONS = loadIconSet("/add_icon.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
-    public static final IconSet REMOVE_ICONS = loadIconSet("/remove_icon.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
-    public static final IconSet DELETE_ICONS = loadIconSet("/delete_icon.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
+    public static final IconSet ADD_STYLE_ICONS = loadIconSet("/add_style.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
+    public static final IconSet REMOVE_STYLE_ICONS = loadIconSet("/remove_style.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
+    public static final IconSet REMOVE_CARD_ICONS = loadIconSet("/remove_card.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
 
     public BetterNpcHighlightPanel(ColorPickerManager colorPickerManager, ConfigManager configManager, BetterNpcHighlightPlugin plugin) {
         super(false);
@@ -81,7 +84,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
     private void initComponents() {
         setLayout(new BorderLayout());
-        setBorder(new EmptyBorder(0, 4, 0, 4));
+        setBorder(new EmptyBorder(0, 0, 0, 0));
         setBackground(ColorScheme.DARK_GRAY_COLOR);
 
         // Create main content panel
@@ -98,7 +101,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         // Create bottom panel with action buttons
         JPanel bottomPanel = createBottomPanel();
-        contentPanel.add(bottomPanel, BorderLayout.SOUTH);
+        //contentPanel.add(bottomPanel, BorderLayout.SOUTH);
 
         add(contentPanel, BorderLayout.CENTER);
 
@@ -109,7 +112,32 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     private JPanel createTopPanel() {
         JPanel topPanel = new JPanel(new BorderLayout());
         topPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        topPanel.setBorder(new EmptyBorder(5, 5, 10, 5));
+        //topPanel.setBorder(new EmptyBorder(5, 5, 10, 5));
+        topPanel.setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(23, 23, 23)), new EmptyBorder(5, 5, 5, 5)));
+
+        // Titlebar
+        JPanel titleBar = new JPanel(new BorderLayout());
+        titleBar.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        titleBar.setBorder(new EmptyBorder(4, 4, 4, 4));
+
+        JLabel title = new JLabel("Better NPC Highlight");
+        title.setBorder(new EmptyBorder(0, 0, 0, 0));
+        title.setForeground(Color.WHITE);
+        titleBar.add(title, BorderLayout.WEST);
+
+        JButton addCardButton = new JButton();
+        addCardButton.setIcon(ADD_CARD_ICONS.on);
+        addCardButton.setRolloverIcon(ADD_CARD_ICONS.onHover);
+        addCardButton.setPreferredSize(new Dimension(24, 24));
+        addCardButton.setContentAreaFilled(false);
+        addCardButton.setToolTipText("Add a new card");
+        addCardButton.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        addCardButton.setBorder(new EmptyBorder(0, 4, 0, 4));
+        addCardButton.addActionListener(e -> addNewCard());
+        titleBar.add(addCardButton, BorderLayout.EAST);
+
+        topPanel.add(titleBar, BorderLayout.NORTH);
+
 
         // Search field
         IconTextField searchField = new IconTextField();
@@ -139,8 +167,8 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         });
 
         TAG_STYLES.forEach(searchField.getSuggestionListModel()::addElement);
+        topPanel.add(searchField, BorderLayout.SOUTH);
 
-        topPanel.add(searchField, BorderLayout.CENTER);
         return topPanel;
     }
 
@@ -148,7 +176,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         cardsPanel = new ScrollablePanel();
         cardsPanel.setLayout(new BoxLayout(cardsPanel, BoxLayout.Y_AXIS));
         cardsPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        cardsPanel.setBorder(new EmptyBorder(0, 0, 0, 0));
+        cardsPanel.setBorder(new EmptyBorder(0, 5, 0, 5));
 
         cardsScrollPane = new JScrollPane(cardsPanel);
         cardsScrollPane.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -165,13 +193,9 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 5, 0));
         buttonPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-        JButton addBtn = createStyledButton("Add NPC");
-        addBtn.addActionListener(e -> addNewCard());
-
         JButton clearBtn = createStyledButton("Clear All");
         clearBtn.addActionListener(e -> clearAllEntries());
 
-        buttonPanel.add(addBtn);
         buttonPanel.add(clearBtn);
 
         bottomPanel.add(buttonPanel, BorderLayout.CENTER);

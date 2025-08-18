@@ -91,7 +91,6 @@ public class NpcCard extends JPanel {
             }
         });
 
-
         topRow.add(nameField, BorderLayout.CENTER);
 
         // Panel for toggle buttons
@@ -174,11 +173,11 @@ public class NpcCard extends JPanel {
 
         // Remove NPC card button
         JButton removeCardButton = new JButton();
-        removeCardButton.setIcon(BetterNpcHighlightPanel.DELETE_ICONS.on);
-        removeCardButton.setRolloverIcon(BetterNpcHighlightPanel.DELETE_ICONS.onHover);
+        removeCardButton.setIcon(BetterNpcHighlightPanel.REMOVE_CARD_ICONS.on);
+        removeCardButton.setRolloverIcon(BetterNpcHighlightPanel.REMOVE_CARD_ICONS.onHover);
         removeCardButton.setPreferredSize(new Dimension(18, 18));
         removeCardButton.setContentAreaFilled(false);
-        removeCardButton.setToolTipText("Delete this NPC entry");
+        removeCardButton.setToolTipText("Delete this card");
         removeCardButton.addActionListener(e -> panel.removeCard(this));
         togglePanel.add(removeCardButton);
 
@@ -326,7 +325,7 @@ public class NpcCard extends JPanel {
         field.setFont(FontManager.getRunescapeFont());
         field.setCaretColor(Color.WHITE);
         field.setPreferredSize(new Dimension(Integer.MAX_VALUE, 24));
-        field.setMargin(new Insets(5,5,5,5));
+        field.setMargin(new Insets(6,5,4,5));
 
         // Placeholder text functionality
         field.setText(placeholder);
@@ -386,8 +385,6 @@ public class NpcCard extends JPanel {
                 button.setToolTipText(tooltipOff);
             }
         });
-
-
         return button;
     }
 
@@ -401,7 +398,6 @@ public class NpcCard extends JPanel {
 
         for (StyleRow row : styleRows) {
             row.removeButton.setEnabled(canRemove);
-            row.removeButton.setVisible(canRemove);
 
             row.addButton.setEnabled(canAdd);
             row.addButton.setVisible(true);
@@ -409,7 +405,14 @@ public class NpcCard extends JPanel {
             if (!canAdd) {
                 row.addButton.setToolTipText("Maximum of " + BetterNpcHighlightPanel.MAX_STYLE_ROWS + " highlight styles allowed");
             } else {
-                row.addButton.setToolTipText("Add a new highlight style below");
+                row.addButton.setToolTipText("Add a new highlight style");
+            }
+
+            if (!canRemove) {
+                row.removeButton.setToolTipText("Minimum of 1 highlight style required");
+            }
+            else {
+                row.removeButton.setToolTipText("Remove this highlight style");
             }
         }
     }

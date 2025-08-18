@@ -28,14 +28,13 @@ public class StyleRow extends JPanel {
         setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
 
         // Left side: tag style combo and combined color button
-        JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        JPanel leftPanel = new JPanel(new BorderLayout(4, 0));
         leftPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
 
         tagStyleCombo = new JComboBox<>();
         styleComboBox(tagStyleCombo);
         tagStyleCombo.addActionListener(e -> npcCard.panel.saveAllCards(configManager, "betterNpcHighlight"));
-        leftPanel.add(tagStyleCombo);
-        leftPanel.add(Box.createHorizontalStrut(4));
+        leftPanel.add(tagStyleCombo, BorderLayout.CENTER);
 
         // Initialize combined color button with outline and fill colors
         Color initialOutline = entry != null ? entry.outlineColor : Color.CYAN;
@@ -55,9 +54,9 @@ public class StyleRow extends JPanel {
                 initialOutlineWidth, initialAntiAliasing, initialOutlineFeather, colorPickerManager, npcCard.panel.getPlugin(), configManager);
         colorPreviewButton.setOpaque(false);
         checkerPanel.add(colorPreviewButton, BorderLayout.CENTER);
-        leftPanel.add(checkerPanel);
+        leftPanel.add(checkerPanel, BorderLayout.EAST);
 
-        add(leftPanel, BorderLayout.WEST);
+        add(leftPanel, BorderLayout.CENTER);
 
         // Right side: ADD and REMOVE buttons
         JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
@@ -66,8 +65,8 @@ public class StyleRow extends JPanel {
         addButton = new JButton();
         addButton.setPreferredSize(new Dimension(18, 24));
         addButton.setContentAreaFilled(false);
-        addButton.setIcon(BetterNpcHighlightPanel.ADD_ICONS.on);
-        addButton.setRolloverIcon(BetterNpcHighlightPanel.ADD_ICONS.onHover);
+        addButton.setIcon(BetterNpcHighlightPanel.ADD_STYLE_ICONS.on);
+        addButton.setRolloverIcon(BetterNpcHighlightPanel.ADD_STYLE_ICONS.onHover);
         addButton.setToolTipText("Add a new highlight style below");
         addButton.addActionListener(e -> {
             if (npcCard.getStyleRows().size() < BetterNpcHighlightPanel.MAX_STYLE_ROWS) {
@@ -78,12 +77,11 @@ public class StyleRow extends JPanel {
             }
         });
 
-
         removeButton = new JButton();
         removeButton.setPreferredSize(new Dimension(18, 24));
         removeButton.setContentAreaFilled(false);
-        removeButton.setIcon(BetterNpcHighlightPanel.REMOVE_ICONS.on);
-        removeButton.setRolloverIcon(BetterNpcHighlightPanel.REMOVE_ICONS.onHover);
+        removeButton.setIcon(BetterNpcHighlightPanel.REMOVE_STYLE_ICONS.on);
+        removeButton.setRolloverIcon(BetterNpcHighlightPanel.REMOVE_STYLE_ICONS.onHover);
         removeButton.setToolTipText("Remove this highlight style");
         removeButton.addActionListener(e -> {
             if (npcCard.getStyleRows().size() > 1) {
@@ -93,9 +91,10 @@ public class StyleRow extends JPanel {
                 }
             }
         });
-
+        rightPanel.add(Box.createHorizontalStrut(46));
         rightPanel.add(removeButton);
         rightPanel.add(addButton);
+
         add(rightPanel, BorderLayout.EAST);
 
         // Initialize combo box options
@@ -115,9 +114,9 @@ public class StyleRow extends JPanel {
 
     private void styleComboBox(JComboBox<String> comboBox) {
         comboBox.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        comboBox.setForeground(Color.WHITE);
+        comboBox.setForeground(ColorScheme.TEXT_COLOR);
         comboBox.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-        comboBox.setPreferredSize(new Dimension(88, 24));
-        comboBox.setMaximumSize(new Dimension(88, 24));
+        comboBox.setPreferredSize(new Dimension(114, 24));
+        comboBox.setMaximumSize(new Dimension(114, 24));
     }
 }

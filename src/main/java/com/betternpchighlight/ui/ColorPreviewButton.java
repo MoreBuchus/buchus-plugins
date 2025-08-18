@@ -49,7 +49,7 @@ public class ColorPreviewButton extends JButton {
         setFocusPainted(false);
         setOpaque(true);
         setBackground(fillColor);
-        setBorder(BorderFactory.createLineBorder(outlineColor, 2));
+        setBorder(BorderFactory.createLineBorder(outlineColor, 3));
         setToolTipText("Right-click to customize highlight style");
 
         // Right-click menu to choose which color to edit or toggle rave
