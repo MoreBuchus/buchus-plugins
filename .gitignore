@@ -6,4 +6,5 @@ build
 .classpath
 nbactions.xml
 nb-configuration.xml
-nbproject/
+nbproject/GEMINI.md
+Good.patch
