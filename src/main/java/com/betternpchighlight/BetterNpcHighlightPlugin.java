@@ -614,29 +614,14 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         }
 
         String npcName = npc.getName();
-        List<NpcCard> cardsToRemove = new ArrayList<>();
-        List<NpcCardGroupPanel> groupsToUpdate = new ArrayList<>();
 
         for (NpcCardGroupPanel group : panel.getGroups()) {
-            boolean groupChanged = false;
             for (NpcCard card : group.getCards()) {
                 if (npcName.equalsIgnoreCase(card.getNameText())) {
                     card.removeTagStyle(style);
-                    if (card.getAllTagStyles().isEmpty()) {
-                        cardsToRemove.add(card);
-                        groupChanged = true;
-                    }
                 }
             }
-            if (groupChanged) {
-                groupsToUpdate.add(group);
-            }
         }
-
-        for (NpcCardGroupPanel group : groupsToUpdate) {
-            cardsToRemove.forEach(group::removeCard);
-        }
-
         panel.triggerDataChanged();
     }
 
@@ -1028,10 +1013,10 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
 
         // If not found and we are hiding, create a new card
         if (hide) {
-            panel.addNewCardToDefaultGroup(card -> {
+            panel.addCardFromCommand(card -> {
                 card.setNameText(npcIdentifier);
                 card.setHideNpc(true);
-            }, false);
+            });
             printMessage("Hiding " + npcIdentifier);
         } else {
             printMessage(npcIdentifier + " is not currently hidden.");
