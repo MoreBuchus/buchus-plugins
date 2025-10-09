@@ -76,7 +76,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
         npcsToDrawBeneath.forEach(nInfo -> removeActor(graphics, nInfo.getNpc()));
 
         // Debug and Respawn Timer rendering remains separate as they have different logic.
-        if (config.debugNPC()) {
+        if (plugin.isDebugModeEnabled()) {
             for (NPC npc : client.getNpcs()) {
                 NPCComposition npcComposition = npc.getTransformedComposition();
                 //Do not show debug info for NPCs with invisible models

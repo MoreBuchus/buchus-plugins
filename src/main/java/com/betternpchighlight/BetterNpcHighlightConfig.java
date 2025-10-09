@@ -1723,16 +1723,6 @@ public interface BetterNpcHighlightConfig extends Config {
         return npcMinimapMode.OFF;
     }
 
-    @ConfigItem(
-            position = 33,
-            keyName = "debugNPC",
-            name = "Debug NPC Info",
-            description = "Highlights all NPCs with their Name and ID"
-    )
-    default boolean debugNPC() {
-        return false;
-    }
-
     //------------------------------------------------------------//
     // Enums
     //------------------------------------------------------------//

@@ -160,6 +160,9 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
     public ArrayList<Color> turboColors = new ArrayList<>();
     public boolean confirmedWarning = false;
 
+    @Getter
+    private boolean debugModeEnabled = false;
+
     private final Hooks.RenderableDrawListener drawListener = this::shouldDraw;
 
     private static final String HIDE_COMMAND = "!hide";
@@ -1123,6 +1126,13 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                 .type(ChatMessageType.CONSOLE)
                 .runeLiteFormattedMessage(message.build())
                 .build());
+    }
+
+    public void setDebugModeEnabled(boolean enabled) {
+        if (this.debugModeEnabled != enabled) {
+            this.debugModeEnabled = enabled;
+            recreateList(); // Force a repaint of overlays
+        }
     }
 
     public void keyReleased(KeyEvent e) {

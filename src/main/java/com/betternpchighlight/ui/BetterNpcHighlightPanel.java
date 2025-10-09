@@ -125,6 +125,14 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
         mainMenu.addSeparator();
 
+        JCheckBoxMenuItem debugItem = new JCheckBoxMenuItem("NPC Debugging");
+        debugItem.setHorizontalTextPosition(SwingConstants.LEFT);
+        debugItem.setSelected(plugin.isDebugModeEnabled());
+        debugItem.addActionListener(e -> plugin.setDebugModeEnabled(debugItem.isSelected()));
+        mainMenu.add(debugItem);
+
+        mainMenu.addSeparator();
+
         JMenuItem clearAllItem = new JMenuItem("Clear all...");
         clearAllItem.addActionListener(e -> clearAllExceptDefaultGroup());
         mainMenu.add(clearAllItem);
