@@ -7,7 +7,7 @@ public class CardDTO {
     public String uuid;
     public String name;
     public int displayNameColor; // ARGB int
-    public boolean hasCustomDisplayNameColor = false;
+    public boolean overrideDisplayNameColor;
     public boolean hideNpc;
     public boolean drawUnder;
     public boolean displayName;
