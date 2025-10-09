@@ -24,8 +24,6 @@
  */
 package com.betternpchighlight;
 
-//todo: fix tag commands, add debug button
-
 import com.betternpchighlight.data.DataManager;
 import com.betternpchighlight.data.GroupDTO;
 import com.betternpchighlight.data.NpcHighlightEntry;
@@ -1003,23 +1001,37 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         for (NpcCardGroupPanel group : panel.getGroups()) {
             for (NpcCard card : group.getCards()) {
                 if (npcIdentifier.equalsIgnoreCase(card.getNameText())) {
-                    card.setHideNpc(hide);
-                    panel.triggerDataChanged();
-                    printMessage((hide ? "Hiding " : "Unhiding ") + card.getNameText());
+                    if (hide) {
+                        if (card.isHideNpc()) {
+                            printMessage(card.getNameText() + " is already hidden");
+                        } else {
+                            card.setHideNpc(true);
+                            panel.triggerDataChanged();
+                            printMessage("Hiding: " + card.getNameText());
+                        }
+                    } else { // unhiding
+                        if (!card.isHideNpc()) {
+                            printMessage(card.getNameText() + " is not hidden");
+                        } else {
+                            card.setHideNpc(false);
+                            panel.triggerDataChanged();
+                            printMessage("Unhiding: " + card.getNameText());
+                        }
+                    }
                     return;
                 }
             }
         }
 
-        // If not found and we are hiding, create a new card
+        // If no card found
         if (hide) {
             panel.addCardFromCommand(card -> {
                 card.setNameText(npcIdentifier);
                 card.setHideNpc(true);
             });
-            printMessage("Hiding " + npcIdentifier);
+            printMessage("Hiding: " + npcIdentifier);
         } else {
-            printMessage(npcIdentifier + " is not currently hidden.");
+            printMessage(npcIdentifier + " is not hidden");
         }
     }
 
@@ -1033,12 +1045,20 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         for (NpcCardGroupPanel group : panel.getGroups()) {
             for (NpcCard card : group.getCards()) {
                 if (npcIdentifier.equalsIgnoreCase(card.getNameText())) {
-                    if (add) {
+                    if (add) { // Tagging
+                        if (card.getAllTagStyles().contains(style)) {
+                            printMessage("Already tagged: " + card.getNameText() + " (" + style.getName().toLowerCase() + ")");
+                            return;
+                        }
                         card.addTagStyle(style, getPresetOutlineColor(preset), getPresetFillColor(preset));
-                        printMessage("Tagged " + card.getNameText() + " with " + style.getName());
-                    } else {
+                        printMessage("Tagged: " + card.getNameText() + " (" + style.getName().toLowerCase() + ")");
+                    } else { // Untagging
+                        if (!card.getAllTagStyles().contains(style)) {
+                            printMessage("Tag not found: " + card.getNameText() + " (" + style.getName().toLowerCase() + ")");
+                            return;
+                        }
                         card.removeTagStyle(style);
-                        printMessage("Untagged " + card.getNameText() + " from " + style.getName());
+                        printMessage("Untagged: " + card.getNameText() + " (" + style.getName().toLowerCase() + ")");
                     }
                     panel.triggerDataChanged();
                     return;
@@ -1052,9 +1072,9 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                 card.setNameText(npcIdentifier);
                 card.addTagStyle(style, getPresetOutlineColor(preset), getPresetFillColor(preset));
             });
-            printMessage("Tagged " + npcIdentifier + " with " + style.getName());
+            printMessage("Tagged: " + npcIdentifier + " (" + style.getName().toLowerCase() + ")");
         } else {
-            printMessage(npcIdentifier + " is not currently tagged with " + style.getName());
+            printMessage("Tag not found: " + npcIdentifier + " (" + style.getName().toLowerCase() + ")");
         }
     }
 
