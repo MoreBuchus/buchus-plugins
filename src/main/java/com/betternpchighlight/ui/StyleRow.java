@@ -1,122 +1,543 @@
 package com.betternpchighlight.ui;
 
-import com.betternpchighlight.BetterNpcHighlightPanel;
-import com.betternpchighlight.HighlightColor;
+import com.betternpchighlight.HighlightInfo;
+import com.betternpchighlight.TagStyle;
 import com.betternpchighlight.data.NpcHighlightEntry;
-import net.runelite.client.config.ConfigManager;
+import com.betternpchighlight.ui.highlightpreviewpanel.HighlightPreviewPanel;
+import com.betternpchighlight.ui.dropdownbutton.DropDownButtonFactory;
+import com.betternpchighlight.util.IconSet;
+import lombok.Getter;
+
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.components.colorpicker.ColorPickerManager;
+import net.runelite.client.ui.components.colorpicker.RuneliteColorPicker;
 
 import javax.swing.*;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import java.awt.*;
+import java.text.DecimalFormat;
 
+/**
+ * A UI component representing a single highlighting style configuration row.
+ * Each row contains a tag style selector, color preview, and add/remove buttons.
+ */
 public class StyleRow extends JPanel {
-    JComboBox<String> tagStyleCombo;
-    ColorPreviewButton colorPreviewButton; // Combined button
-    JButton addButton;
-    JButton removeButton;
-    private final NpcCard npcCard;
-    private final ConfigManager configManager;
+
+    // Constants
+    private static final int COMPONENT_SIZE = 24;
+    private static final int TOP_PADDING = 4;
+
+    // Icon luminance values
+    private static final int LUMINANCE_ON_HOVER = -50;
+    private static final int LUMINANCE_OFF_HOVER = -130;
+    private static final int LUMINANCE_OFF = -150;
+
+    // Default colors
+    private static final Color DEFAULT_OUTLINE_COLOR = Color.CYAN;
+    private static final Color DEFAULT_FILL_COLOR = new Color(0, 255, 255, 20);
+
+    // Default values for color preview button
+    private static final boolean DEFAULT_RAVE_OUTLINE = false;
+    private static final boolean DEFAULT_RAVE_FILL = false;
+    private static final int DEFAULT_RAVE_SPEED = 6000;
+    private static final double DEFAULT_OUTLINE_WIDTH = 2.0;
+    private static final boolean DEFAULT_ANTI_ALIASING = true;
+    private static final int DEFAULT_OUTLINE_FEATHER = 2;
+    private static final HighlightInfo.TileStyle DEFAULT_TILE_STYLE = HighlightInfo.TileStyle.REGULAR;
+
+    // Icon sets
+    public static final IconSet ADD_STYLE_ICONS = IconSet.loadIconSet(
+            "/add_style.png",
+            LUMINANCE_ON_HOVER,
+            LUMINANCE_OFF,
+            LUMINANCE_OFF_HOVER
+    );
+
+    public static final IconSet REMOVE_STYLE_ICONS = IconSet.loadIconSet(
+            "/remove_style.png",
+            LUMINANCE_ON_HOVER,
+            LUMINANCE_OFF,
+            LUMINANCE_OFF_HOVER
+    );
+    public static final IconSet EDIT_STYLE_ICONS = IconSet.loadIconSet(
+            "/edit_style.png",
+            LUMINANCE_ON_HOVER,
+            LUMINANCE_OFF,
+            LUMINANCE_OFF_HOVER
+    );
+
+    // UI Components
+    private JLabel tagStyleLabel;
+    @Getter
+    private TagStyle tagStyle;
+    @Getter
+    private HighlightPreviewPanel highlightPreviewPanel;
+    private JPanel highlightPreviewPanelWrapper;
+    @Getter
+    private JButton removeButton;
+    private JButton editButton;
+    private JPopupMenu editButtonMenu;
+
+    // Dependencies
+    private final NpcCard parentCard;
     private final ColorPickerManager colorPickerManager;
 
-    public StyleRow(NpcCard npcCard, ConfigManager configManager, ColorPickerManager colorPickerManager, NpcHighlightEntry entry) {
-        super(new BorderLayout(0, 0));
-        this.npcCard = npcCard;
-        this.configManager = configManager;
+    // Constructor
+    public StyleRow(NpcCard npcCard, ColorPickerManager colorPickerManager, NpcHighlightEntry entry) {
+        super();
+        this.parentCard = npcCard;
         this.colorPickerManager = colorPickerManager;
-        setBackground(ColorScheme.DARKER_GRAY_COLOR);
-        setBorder(BorderFactory.createEmptyBorder(4, 0, 0, 0));
 
-        // Left side: tag style combo and combined color button
-        JPanel leftPanel = new JPanel(new BorderLayout(4, 0));
-        leftPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-
-        tagStyleCombo = new JComboBox<>();
-        styleComboBox(tagStyleCombo);
-        tagStyleCombo.addActionListener(e -> npcCard.panel.saveAllCards(configManager, "betterNpcHighlight"));
-        leftPanel.add(tagStyleCombo, BorderLayout.CENTER);
-
-        // Initialize combined color button with outline and fill colors
-        Color initialOutline = entry != null ? entry.outlineColor : Color.CYAN;
-        Color initialFill = entry != null ? entry.fillColor : new Color(0, 255, 255, 20);
-
-        // Get rave settings from entry
-        boolean initialRaveOutline = entry != null && entry.raveOutline;
-        boolean initialRaveFill = entry != null && entry.raveFill;
-        int initialRaveSpeed = entry != null ? entry.raveSpeed : 6000;
-        HighlightColor.TileStyle initialTileStyle = entry != null ? entry.tileStyle : HighlightColor.TileStyle.REGULAR;
-        double initialOutlineWidth = entry != null ? entry.outlineWidth : 2.0;
-        boolean initialAntiAliasing = entry != null ? entry.antiAliasing : true;
-        int initialOutlineFeather = entry != null ? entry.outlineFeather : 2;
-
-        CheckerboardPanel checkerPanel = new CheckerboardPanel();
-        colorPreviewButton = new ColorPreviewButton(initialOutline, initialFill, initialRaveOutline, initialRaveFill, initialRaveSpeed, initialTileStyle,
-                initialOutlineWidth, initialAntiAliasing, initialOutlineFeather, colorPickerManager, npcCard.panel.getPlugin(), configManager);
-        colorPreviewButton.setOpaque(false);
-        checkerPanel.add(colorPreviewButton, BorderLayout.CENTER);
-        leftPanel.add(checkerPanel, BorderLayout.EAST);
-
-        add(leftPanel, BorderLayout.CENTER);
-
-        // Right side: ADD and REMOVE buttons
-        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
-        rightPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-
-        addButton = new JButton();
-        addButton.setPreferredSize(new Dimension(18, 24));
-        addButton.setContentAreaFilled(false);
-        addButton.setIcon(BetterNpcHighlightPanel.ADD_STYLE_ICONS.on);
-        addButton.setRolloverIcon(BetterNpcHighlightPanel.ADD_STYLE_ICONS.onHover);
-        addButton.setToolTipText("Add a new highlight style below");
-        addButton.addActionListener(e -> {
-            if (npcCard.getStyleRows().size() < BetterNpcHighlightPanel.MAX_STYLE_ROWS) {
-                int index = npcCard.getStyleRows().indexOf(this);
-                if (index != -1) {
-                    npcCard.addStyleRowAt(index + 1, null);
-                }
-            }
-        });
-
-        removeButton = new JButton();
-        removeButton.setPreferredSize(new Dimension(18, 24));
-        removeButton.setContentAreaFilled(false);
-        removeButton.setIcon(BetterNpcHighlightPanel.REMOVE_STYLE_ICONS.on);
-        removeButton.setRolloverIcon(BetterNpcHighlightPanel.REMOVE_STYLE_ICONS.onHover);
-        removeButton.setToolTipText("Remove this highlight style");
-        removeButton.addActionListener(e -> {
-            if (npcCard.getStyleRows().size() > 1) {
-                int index = npcCard.getStyleRows().indexOf(this);
-                if (index != -1) {
-                    npcCard.removeStyleRowAt(index);
-                }
-            }
-        });
-        rightPanel.add(Box.createHorizontalStrut(46));
-        rightPanel.add(removeButton);
-        rightPanel.add(addButton);
-
-        add(rightPanel, BorderLayout.EAST);
-
-        // Initialize combo box options
-        npcCard.updateTagStyleComboBoxOptions(tagStyleCombo);
-        tagStyleCombo.addActionListener(e -> npcCard.refreshAllTagStyleComboBoxes());
-        if (entry != null && entry.tagStyle != null) {
-            tagStyleCombo.setSelectedItem(entry.tagStyle);
+        if (entry == null || entry.tagStyle == null) {
+            throw new IllegalArgumentException("StyleRow must be initialized with a valid TagStyle.");
         }
-        // Add listener to save changes when selection changes
-        tagStyleCombo.addActionListener(e -> {
-            npcCard.refreshAllTagStyleComboBoxes();
-            npcCard.panel.saveAllCards(configManager, "betterNpcHighlight");  // Save on change
-        });
 
-        npcCard.updateStyleButtons();
+        initializeRowLayout();
+
+        createComponents(entry);
+        layoutComponents();
+        applyEntryData(entry);
+        styleActionButton(editButton, EDIT_STYLE_ICONS, "Edit highlight style");
+        updateComponentStates();
     }
 
-    private void styleComboBox(JComboBox<String> comboBox) {
-        comboBox.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        comboBox.setForeground(ColorScheme.TEXT_COLOR);
-        comboBox.setFont(net.runelite.client.ui.FontManager.getRunescapeSmallFont());
-        comboBox.setPreferredSize(new Dimension(114, 24));
-        comboBox.setMaximumSize(new Dimension(114, 24));
+    // Initialization Methods
+    private void initializeRowLayout() {
+        setBackground(ColorScheme.DARKER_GRAY_COLOR);
+        setBorder(BorderFactory.createCompoundBorder(BorderFactory.createMatteBorder(2, 0, 0, 0, ColorScheme.DARK_GRAY_COLOR), BorderFactory.createEmptyBorder(TOP_PADDING, 0, TOP_PADDING, 0)));
+        setLayout(new BorderLayout());
+    }
+
+    private void createComponents(NpcHighlightEntry entry) {
+        createTagStyleLabel();
+        createHighlightPreviewPanel(entry);
+        editButtonMenu = createEditButtonMenu(); // Menu is now built dynamically
+        createActionButtons();
+    }
+
+    private void createTagStyleLabel() {
+        tagStyleLabel = new JLabel();
+        styleTagStyleLabel(tagStyleLabel);
+    }
+
+    private JPopupMenu createEditButtonMenu() {
+        JPopupMenu menu = new JPopupMenu();
+
+        // Add listener to rebuild menu whenever it’s about to open
+        menu.addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                menu.removeAll(); // clear old items
+                rebuildEditButtonMenu(menu, tagStyle);
+            }
+
+            @Override
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+            }
+
+            @Override
+            public void popupMenuCanceled(PopupMenuEvent e) {
+            }
+        });
+
+        return menu;
+    }
+
+    private void rebuildEditButtonMenu(JPopupMenu menu, TagStyle tagStyle) {
+        addMenuItems_Color(menu, tagStyle);
+        addMenuItems_Dimensions(menu, tagStyle);
+        menu.addSeparator();
+        addMenuItems_Rave(menu, tagStyle);
+        addMenuItems_Style(menu, tagStyle);
+    }
+
+    private void addMenuItems_Color(JPopupMenu menu, TagStyle tagStyle) {
+        if (tagStyle != TagStyle.AREA) {
+            JMenuItem setOutline = new JMenuItem("Outline color");
+            setOutline.addActionListener(e -> openColorPicker(true));
+            menu.add(setOutline);
+        }
+
+        if (tagStyle != TagStyle.OUTLINE) {
+            JMenuItem setFill = new JMenuItem("Fill color");
+            setFill.addActionListener(e -> openColorPicker(false));
+            menu.add(setFill);
+        }
+    }
+
+    private void addMenuItems_Dimensions(JPopupMenu menu, TagStyle tagStyle) {
+        if (tagStyle == null) return;
+
+        if (tagStyle.toString().contains("Tile") || tagStyle == TagStyle.HULL || tagStyle == TagStyle.CLICKBOX) {
+            DecimalFormat df = new DecimalFormat("#.#");
+            JMenuItem setWidth = new JMenuItem("Outline width: " + df.format(highlightPreviewPanel.getOutlineWidth()));
+            setWidth.addActionListener(e -> showOutlineWidthDialog(0.0, 0.1));
+            menu.add(setWidth);
+        } else if (tagStyle == TagStyle.OUTLINE) {
+            JMenuItem setWidth = new JMenuItem("Outline width: " + (int) highlightPreviewPanel.getOutlineWidth());
+            setWidth.addActionListener(e -> showOutlineWidthDialog(1.0, 1.0));
+            menu.add(setWidth);
+
+            JMenuItem setFeather = new JMenuItem("Outline feather: " + highlightPreviewPanel.getOutlineFeather());
+            setFeather.addActionListener(e -> {
+                int originalFeather = highlightPreviewPanel.getOutlineFeather();
+                SpinnerNumberModel model = new SpinnerNumberModel(originalFeather, 0, 5, 1);
+                JSpinner spinner = new JSpinner(model);
+
+                spinner.addChangeListener(ev -> {
+                    highlightPreviewPanel.setOutlineFeather((Integer) spinner.getValue());
+                    parentCard.triggerDataChanged();
+                });
+
+                if (!showSpinnerDialog(spinner, "Outline feather:", "Outline Feather")) {
+                    highlightPreviewPanel.setOutlineFeather(originalFeather);
+                    parentCard.triggerDataChanged();
+                }
+            });
+            menu.add(setFeather);
+        }
+    }
+
+    private void addMenuItems_Rave(JPopupMenu menu, TagStyle tagStyle) {
+        if (tagStyle != TagStyle.AREA) {
+            JCheckBoxMenuItem raveOutlineItem = createStyledCheckBox("Rave outline", highlightPreviewPanel.isRaveOutline(), (selected) -> highlightPreviewPanel.setRaveOutline(selected));
+            menu.add(raveOutlineItem);
+        }
+
+        if (tagStyle != TagStyle.OUTLINE) {
+            JCheckBoxMenuItem raveFillItem = createStyledCheckBox("Rave fill", highlightPreviewPanel.isRaveFill(), (selected) -> highlightPreviewPanel.setRaveFill(selected));
+            menu.add(raveFillItem);
+        }
+
+        JMenuItem setRaveSpeed = new JMenuItem("Rave speed: " + highlightPreviewPanel.getRaveSpeed() + "ms");
+        setRaveSpeed.addActionListener(e -> {
+            int originalSpeed = highlightPreviewPanel.getRaveSpeed();
+            SpinnerNumberModel model = new SpinnerNumberModel(originalSpeed, 100, 100000, 10);
+            JSpinner spinner = new JSpinner(model);
+
+            spinner.addChangeListener(ev -> {
+                highlightPreviewPanel.setRaveSpeed((Integer) spinner.getValue());
+                parentCard.triggerDataChanged();
+            });
+
+            if (!showSpinnerDialog(spinner, "Rave speed (milliseconds):", "Rave Speed")) {
+                highlightPreviewPanel.setRaveSpeed(originalSpeed);
+                parentCard.triggerDataChanged();
+            }
+        });
+        menu.add(setRaveSpeed);
+    }
+
+    private void addMenuItems_Style(JPopupMenu menu, TagStyle tagStyle) {
+        if (tagStyle == null) return;
+
+        boolean separatorAdded = false;
+        if (tagStyle.toString().contains("Tile") || tagStyle == TagStyle.HULL || tagStyle == TagStyle.CLICKBOX) {
+            menu.addSeparator();
+            separatorAdded = true;
+
+            JCheckBoxMenuItem enableAA = createStyledCheckBox("Anti-aliasing", highlightPreviewPanel.isAntiAliasing(), (selected) -> highlightPreviewPanel.setAntiAliasing(selected));
+            menu.add(enableAA);
+        }
+
+        if (tagStyle.toString().contains("Tile")) {
+            if (!separatorAdded) menu.addSeparator();
+
+            String currentStyleName = highlightPreviewPanel.getTileStyle().name().charAt(0) + highlightPreviewPanel.getTileStyle().name().substring(1).toLowerCase();
+            JMenu tileStyleMenu = new JMenu("Tile style: " + currentStyleName);
+            ButtonGroup group = new ButtonGroup();
+            for (HighlightInfo.TileStyle style : HighlightInfo.TileStyle.values()) {
+                String styleName = style.name().charAt(0) + style.name().substring(1).toLowerCase();
+                JRadioButtonMenuItem item = new JRadioButtonMenuItem(styleName);
+                item.setSelected(highlightPreviewPanel.getTileStyle() == style);
+                item.addActionListener(e -> {
+                    highlightPreviewPanel.setTileStyle(style);
+                    tileStyleMenu.setText("Tile style: " + styleName);
+                    parentCard.triggerDataChanged();
+                });
+                group.add(item);
+                tileStyleMenu.add(item);
+            }
+            menu.add(tileStyleMenu);
+        } else {
+            // Ensure non-tile styles don't retain a non-regular tile style
+            if (highlightPreviewPanel.getTileStyle() != HighlightInfo.TileStyle.REGULAR) {
+                highlightPreviewPanel.setTileStyle(HighlightInfo.TileStyle.REGULAR);
+                parentCard.triggerDataChanged();
+            }
+        }
+    }
+
+    private JCheckBoxMenuItem createStyledCheckBox(String text, boolean isSelected, java.util.function.Consumer<Boolean> onToggle) {
+        JCheckBoxMenuItem item = new JCheckBoxMenuItem(text, isSelected);
+        item.setHorizontalTextPosition(SwingConstants.LEFT);
+        if (isSelected) {
+            item.setFont(item.getFont().deriveFont(Font.BOLD));
+        }
+        item.addActionListener(e -> {
+            onToggle.accept(item.isSelected());
+            parentCard.triggerDataChanged();
+        });
+        return item;
+    }
+
+    private void showOutlineWidthDialog(double min, double step) {
+        double originalWidth = highlightPreviewPanel.getOutlineWidth();
+        SpinnerNumberModel model = new SpinnerNumberModel(originalWidth, min, 50.0, step);
+        JSpinner spinner = new JSpinner(model);
+
+        spinner.addChangeListener(e -> {
+            highlightPreviewPanel.setOutlineWidth(((Number) spinner.getValue()).doubleValue());
+            parentCard.triggerDataChanged();
+        });
+
+        boolean confirmed = showSpinnerDialog(spinner, "Outline width:", "Outline Width");
+
+        if (!confirmed) {
+            highlightPreviewPanel.setOutlineWidth(originalWidth);
+            parentCard.triggerDataChanged();
+        }
+    }
+
+    private boolean showSpinnerDialog(JSpinner spinner, String labelText, String title) {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.add(new JLabel(labelText), BorderLayout.NORTH);
+        panel.add(spinner, BorderLayout.CENTER);
+
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                panel,
+                title,
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        return result == JOptionPane.OK_OPTION;
+    }
+
+    private void openColorPicker(boolean isOutline) {
+        Color initial = isOutline ? highlightPreviewPanel.getOutlineColor() : highlightPreviewPanel.getFillColor();
+        String title = isOutline ? "Outline Color" : "Fill Color";
+
+        RuneliteColorPicker picker = colorPickerManager.create(
+                SwingUtilities.getWindowAncestor(this),
+                initial,
+                title,
+                false
+        );
+
+        picker.setOnColorChange(color -> {
+            if (isOutline) {
+                highlightPreviewPanel.setOutlineColor(color);
+            } else {
+                highlightPreviewPanel.setFillColor(color);
+            }
+        });
+
+        picker.setOnClose(color -> parentCard.triggerDataChanged());
+
+        Point panelLocation = parentCard.getPanel().getLocationOnScreen();
+        picker.setLocation(panelLocation.x - picker.getWidth(), panelLocation.y);
+
+        picker.setVisible(true);
+    }
+
+    private void createHighlightPreviewPanel(NpcHighlightEntry entry) {
+        HighlightPreviewPanelConfig config = createHighlightPreviewPanelConfig(entry);
+        TagStyle initialTagStyle = entry != null ? entry.tagStyle : null;
+
+        highlightPreviewPanel = new HighlightPreviewPanel(
+                initialTagStyle.toString(),
+                config.outlineColor,
+                config.fillColor,
+                config.raveOutline,
+                config.raveFill,
+                config.raveSpeed,
+                config.tileStyle,
+                config.outlineWidth,
+                config.antiAliasing,
+                config.outlineFeather,
+                () -> parentCard.getPlugin().getRaveColor(highlightPreviewPanel.getCurrentRaveSpeed())
+        );
+
+        styleHighlightPreviewPanel();
+    }
+
+    private void updateComponentStates() {
+        highlightPreviewPanel.setTagStyle(tagStyle != null ? tagStyle.toString() : "None");
+        if (tagStyle == null) {
+            editButton.setEnabled(false);
+            highlightPreviewPanelWrapper.setVisible(false);
+            editButton.setToolTipText("This style has no configurable options");
+        } else if (tagStyle == TagStyle.TURBO) {
+            editButton.setEnabled(false);
+            highlightPreviewPanelWrapper.setVisible(true);
+            editButton.setToolTipText("This style has no configurable options");
+        } else {
+            editButton.setEnabled(true);
+            highlightPreviewPanelWrapper.setVisible(true);
+            editButton.setToolTipText("Edit highlight style");
+        }
+        rebuildEditButtonMenu(editButtonMenu, tagStyle);
+    }
+
+    private HighlightPreviewPanelConfig createHighlightPreviewPanelConfig(NpcHighlightEntry entry) {
+        if (entry == null) {
+            return createDefaultConfig();
+        }
+
+        return new HighlightPreviewPanelConfig(
+                entry.outlineColor,
+                entry.fillColor,
+                entry.raveOutline,
+                entry.raveFill,
+                entry.raveSpeed,
+                entry.tileStyle,
+                entry.outlineWidth,
+                entry.antiAliasing,
+                entry.outlineFeather
+        );
+    }
+
+    private HighlightPreviewPanelConfig createDefaultConfig() {
+        return new HighlightPreviewPanelConfig(
+                DEFAULT_OUTLINE_COLOR,
+                DEFAULT_FILL_COLOR,
+                DEFAULT_RAVE_OUTLINE,
+                DEFAULT_RAVE_FILL,
+                DEFAULT_RAVE_SPEED,
+                DEFAULT_TILE_STYLE,
+                DEFAULT_OUTLINE_WIDTH,
+                DEFAULT_ANTI_ALIASING,
+                DEFAULT_OUTLINE_FEATHER
+        );
+    }
+
+    private void styleHighlightPreviewPanel() {
+        highlightPreviewPanel.setOpaque(false);
+        highlightPreviewPanel.setPreferredSize(new Dimension(24, 24));
+        highlightPreviewPanel.setMaximumSize(new Dimension(24, 24));
+    }
+
+    private void createActionButtons() {
+        editButton = DropDownButtonFactory.createDropDownButton(EDIT_STYLE_ICONS.getOn(), editButtonMenu);
+        removeButton = createButton("Remove this highlight style", REMOVE_STYLE_ICONS, this::handleRemoveButtonClick);
+    }
+
+    private JButton createButton(String tooltip, IconSet icons, Runnable onClick) {
+        JButton button = new JButton();
+        styleActionButton(button, icons, tooltip);
+        button.addActionListener(e -> onClick.run());
+        return button;
+    }
+
+    private void styleActionButton(JButton button, IconSet icons, String tooltip) {
+        button.setPreferredSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
+        button.setMinimumSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
+        button.setMaximumSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
+        button.setIcon(icons.getOn());
+        button.setRolloverIcon(icons.getOnHover());
+        button.setToolTipText(tooltip);
+        BetterNpcHighlightPanel.styleButton(button);
+    }
+
+    private void layoutComponents() {
+        // Left: Tag style combo box
+        add(tagStyleLabel, BorderLayout.CENTER);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 1, 0));
+        buttonPanel.setBackground(null);
+
+        // Center: Highlight preview panel
+        highlightPreviewPanelWrapper = new JPanel(new BorderLayout());
+        highlightPreviewPanelWrapper.setOpaque(false);
+        highlightPreviewPanelWrapper.setPreferredSize(new Dimension(24, 24));
+        highlightPreviewPanelWrapper.setMaximumSize(new Dimension(24, 24));
+        highlightPreviewPanelWrapper.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        highlightPreviewPanelWrapper.add(highlightPreviewPanel);
+
+        buttonPanel.add(highlightPreviewPanelWrapper, BorderLayout.CENTER);
+
+        // Right: Action buttons
+        buttonPanel.add(editButton);
+        buttonPanel.add(removeButton);
+        add(buttonPanel, BorderLayout.EAST);
+    }
+
+    private void applyEntryData(NpcHighlightEntry entry) {
+        if (entry != null && entry.tagStyle != null) {
+            setTagStyle(TagStyle.fromString(entry.tagStyle.toString()));
+        }
+        parentCard.updateStyleButtons();
+    }
+
+    // Event Handlers
+    private void handleRemoveButtonClick() {
+        int index = getRowIndex();
+        if (index != -1) {
+            parentCard.removeStyleRowAt(index);
+        }
+    }
+
+    private boolean canRemoveStyleRow() {
+        return true; // A row can always be removed.
+    }
+
+    private int getRowIndex() {
+        return parentCard.getStyleRows().indexOf(this);
+    }
+
+    // Styling Methods
+    private void styleTagStyleLabel(JLabel label) {
+        label.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        label.setForeground(ColorScheme.TEXT_COLOR);
+        label.setFont(FontManager.getRunescapeSmallFont());
+        label.setPreferredSize(new Dimension(115, COMPONENT_SIZE));
+        label.setMaximumSize(label.getPreferredSize());
+        label.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
+    }
+
+    // Public API
+    public void setTagStyle(TagStyle style) {
+        this.tagStyle = style;
+        this.tagStyleLabel.setText(style.getName());
+        updateComponentStates();
+    }
+
+    // Configuration Helper Class
+    private static class HighlightPreviewPanelConfig {
+        final Color outlineColor;
+        final Color fillColor;
+        final boolean raveOutline;
+        final boolean raveFill;
+        final int raveSpeed;
+        final HighlightInfo.TileStyle tileStyle;
+        final double outlineWidth;
+        final boolean antiAliasing;
+        final int outlineFeather;
+
+        HighlightPreviewPanelConfig(
+                Color outlineColor,
+                Color fillColor,
+                boolean raveOutline,
+                boolean raveFill,
+                int raveSpeed,
+                HighlightInfo.TileStyle tileStyle,
+                double outlineWidth,
+                boolean antiAliasing,
+                int outlineFeather
+        ) {
+            this.outlineColor = outlineColor;
+            this.fillColor = fillColor;
+            this.raveOutline = raveOutline;
+            this.raveFill = raveFill;
+            this.raveSpeed = raveSpeed;
+            this.tileStyle = tileStyle;
+            this.outlineWidth = outlineWidth;
+            this.antiAliasing = antiAliasing;
+            this.outlineFeather = outlineFeather;
+        }
     }
 }

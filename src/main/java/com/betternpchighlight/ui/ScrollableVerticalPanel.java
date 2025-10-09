@@ -3,8 +3,15 @@ package com.betternpchighlight.ui;
 import javax.swing.*;
 import java.awt.*;
 
-// A panel that wraps its contents to the width of the scroll pane
-public class ScrollablePanel extends JPanel implements Scrollable {
+/**
+ * A panel that can be scrolled vertically and forces its content to fit the width of the viewport.
+ */
+public class ScrollableVerticalPanel extends JPanel implements Scrollable {
+    public ScrollableVerticalPanel() {
+        super();
+        setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+    }
+
     @Override
     public Dimension getPreferredScrollableViewportSize() {
         return getPreferredSize();
@@ -22,7 +29,7 @@ public class ScrollablePanel extends JPanel implements Scrollable {
 
     @Override
     public boolean getScrollableTracksViewportWidth() {
-        return true; // This is the key: force width to match viewport
+        return true; // Force width to match viewport
     }
 
     @Override
