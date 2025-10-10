@@ -43,6 +43,7 @@ public class NpcCardGroupPanel extends JPanel {
     private JButton collapseButton;
     private JPanel saveButtonPanel;
     private JButton menuButton;
+    private JButton addCardButton;
     private String originalGroupName;
     private final ScrollableVerticalPanel cardsContainer;
     private final Color backgroundColor = new Color(25, 25, 25);
@@ -297,6 +298,8 @@ public class NpcCardGroupPanel extends JPanel {
         originalGroupName = groupName;
         groupNameField.setFocusable(true);
         groupNameField.setEditable(true);
+        menuButton.setVisible(false);
+        addCardButton.setVisible(false);
         saveButtonPanel.setVisible(true);
         SwingUtilities.invokeLater(() -> {
             groupNameField.requestFocusInWindow();
@@ -312,6 +315,8 @@ public class NpcCardGroupPanel extends JPanel {
         groupNameField.setEditable(false);
         groupNameField.setFocusable(false);
         saveButtonPanel.setVisible(false);
+        menuButton.setVisible(true);
+        addCardButton.setVisible(true);
         this.requestFocusInWindow();
         revalidate();
         repaint();
@@ -325,12 +330,14 @@ public class NpcCardGroupPanel extends JPanel {
         groupNameField.setEditable(false);
         groupNameField.setFocusable(false);
         saveButtonPanel.setVisible(false);
+        menuButton.setVisible(true);
+        addCardButton.setVisible(true);
         this.requestFocusInWindow();
         revalidate();
         repaint();
     }
 
-    // --- Collapse/Expand ---
+    // Collapse/Expand
     public void toggleCollapse() {
         collapsed = !collapsed;
         cardsContainer.setVisible(!collapsed);
