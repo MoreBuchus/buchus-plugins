@@ -21,6 +21,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
+import java.awt.event.ItemEvent;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.List;
@@ -127,7 +128,14 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         JCheckBoxMenuItem debugItem = new JCheckBoxMenuItem("NPC Debugging");
         debugItem.setHorizontalTextPosition(SwingConstants.LEFT);
         debugItem.setSelected(plugin.isDebugModeEnabled());
-        debugItem.addActionListener(e -> plugin.setDebugModeEnabled(debugItem.isSelected()));
+        debugItem.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                debugItem.setFont(debugItem.getFont().deriveFont(Font.BOLD));
+            } else {
+                debugItem.setFont(debugItem.getFont().deriveFont(Font.PLAIN));
+            }
+            plugin.setDebugModeEnabled(debugItem.isSelected());
+        });
         mainMenu.add(debugItem);
 
         mainMenu.addSeparator();
@@ -161,6 +169,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         sortButton.setSelectedIcon(SORT_MENU_ICONS.getOn());
         sortButton.setRolloverSelectedIcon(SORT_MENU_ICONS.getOnHover());
         sortButton.setContentAreaFilled(false);
+        sortButton.setSelected(configManager.getConfiguration("betternpchighlight", "sortCardsByName").equals("true"));
         sortButton.setToolTipText("Sort by Name (A-Z)");
         sortButton.addActionListener(e -> toggleSort(sortButton.isSelected()));
 
@@ -190,6 +199,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     }
 
     private void toggleSort(boolean sortByName) {
+        configManager.setConfiguration("betternpchighlight", "sortCardsByName", sortByName);
         for (NpcCardGroupPanel group : groups) {
             group.reorderCards(sortByName);
         }
@@ -203,8 +213,17 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
     private void scrollToComponent(Component component) {
         SwingUtilities.invokeLater(() -> {
-            Point location = SwingUtilities.convertPoint(component.getParent(), component.getLocation(), cardsPanel);
-            cardsScrollPane.getViewport().setViewPosition(location);
+            JViewport viewport = cardsScrollPane.getViewport();
+            Point compPoint = SwingUtilities.convertPoint(component.getParent(), component.getLocation(), cardsPanel);
+
+            int viewHeight = viewport.getExtentSize().height;
+            int compHeight = component.getHeight();
+
+            // Center the component vertically
+            int targetY = compPoint.y - (viewHeight / 2) + (compHeight / 2);
+            targetY = Math.max(0, targetY);
+
+            viewport.setViewPosition(new Point(0, targetY));
         });
     }
 
@@ -301,7 +320,11 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         NpcCard card = new NpcCard(this, colorPickerManager);
         group.addCard(card, true);
         resort(); // Re-sort after adding a new card
-        scrollToCard(card, true);
+        if (group.isCollapsed()) {
+            group.toggleCollapse();
+        }
+        card.focusNameField();
+        //scrollToCard(card, true);
         triggerDataChanged();
     }
 
@@ -430,7 +453,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             groups.clear(); // Clear existing groups
             List<NpcCardGroupPanel> loadedGroups = dataManager.loadGroups(configGroup, this);
             groups.addAll(loadedGroups);
-            sortButton.setSelected(false);
+            sortButton.setSelected(configManager.getConfiguration("betternpchighlight", "sortCardsByName").equals("true"));
             sortAndRebuildGroups();
         } finally {
             isBatchUpdating = false;
@@ -445,6 +468,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         cardsPanel.removeAll();
         for (NpcCardGroupPanel group : groups) {
             cardsPanel.add(group);
+            group.reorderCards(sortButton.isSelected());
         }
         cardsPanel.revalidate();
         cardsPanel.repaint();

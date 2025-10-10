@@ -355,15 +355,14 @@ public class NpcCard extends JPanel {
         entityHiderItem = createCheckBoxMenuItem("Hide NPC");
         drawUnderItem = createCheckBoxMenuItem("Draw overlay beneath NPC");
 
-        // Parent menu instead of plain checkbox
         displayNameMenu = new JMenu("Display name above NPC");
         displayNameItem = createCheckBoxMenuItem("Enable");
         displayNameItem.addItemListener(e -> panel.triggerDataChanged());
 
-        overrideDisplayNameColorItem = createCheckBoxMenuItem("Override display name color");
+        overrideDisplayNameColorItem = createCheckBoxMenuItem("Enable custom name color");
         overrideDisplayNameColorItem.addItemListener(e -> panel.triggerDataChanged());
 
-        JMenuItem setDisplayNameColorItem = new JMenuItem("Set display name color...");
+        JMenuItem setDisplayNameColorItem = new JMenuItem("Set custom name color...");
         setDisplayNameColorItem.addActionListener(e -> openColorPicker());
 
         displayNameMenu.add(displayNameItem);
@@ -400,7 +399,14 @@ public class NpcCard extends JPanel {
     private JCheckBoxMenuItem createCheckBoxMenuItem(String text) {
         JCheckBoxMenuItem item = new JCheckBoxMenuItem(text, false);
         item.setHorizontalTextPosition(SwingConstants.LEFT);
-        item.addItemListener(e -> panel.triggerDataChanged());
+        item.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                item.setFont(item.getFont().deriveFont(Font.BOLD));
+            } else {
+                item.setFont(item.getFont().deriveFont(Font.PLAIN));
+            }
+            panel.triggerDataChanged();
+        });
         return item;
     }
 
@@ -471,7 +477,7 @@ public class NpcCard extends JPanel {
         }
 
         String newName = nameEditor.getText().trim();
-        // If the editor is empty, ensure we save an empty string to trigger placeholder logic.
+        // If the editor is empty, ensure we save an empty string to trigger placeholder logic
         if (newName.equals(PLACEHOLDER_TEXT)) {
             newName = "";
         }
@@ -491,7 +497,7 @@ public class NpcCard extends JPanel {
         cancelButton.setVisible(false);
         editNameButton.setVisible(true);
 
-        // Request focus on the card panel itself to prevent the editor from re-engaging.
+        // Request focus on the card panel itself to prevent the editor from re-engaging
         SwingUtilities.invokeLater(this::requestFocusInWindow);
         panel.resort();
         panel.triggerDataChanged();
@@ -551,8 +557,6 @@ public class NpcCard extends JPanel {
 
     // Style Row Management
     public void addStyleRow(NpcHighlightEntry entry) {
-        // Don't add a style row for entries that don't have a visual style.
-        // These entries are just for storing toggle states like "Hide NPC".
         if (entry == null || entry.tagStyle == null) {
             return;
         }
@@ -622,13 +626,12 @@ public class NpcCard extends JPanel {
             return new ArrayList<>();
         }
 
-        // If there are no style rows, create a single "base" entry that only contains the card's toggle settings.
-        // This replaces the need for a "None" style.
+        // If there are no style rows, create a single "base" entry that only contains the card's toggle settings
         if (styleRows.isEmpty()) {
             return List.of(createBaseEntry(npcNameOrId));
         }
 
-        // Otherwise, create an entry for each style row.
+        // Otherwise, create an entry for each style row
         List<NpcHighlightEntry> entries = new ArrayList<>();
         for (StyleRow row : styleRows) {
             entries.add(createEntryFromStyleRow(npcNameOrId, row));
@@ -759,7 +762,7 @@ public class NpcCard extends JPanel {
 
     // TagStyle with preset colors
     public void addTagStyle(TagStyle style, Color outlineColor, Color fillColor) {
-        // If the style is null (e.g. from an old config), do nothing.
+        // If the style is null (e.g. from an old config), do nothing
         if (style == null) {
             return;
         }
@@ -769,7 +772,7 @@ public class NpcCard extends JPanel {
             return; // Style already exists, do not add.
         }
 
-        // Add a new style row.
+        // Add a new style row
         NpcHighlightEntry newEntry = new NpcHighlightEntry(getNameText(), style, getPlugin().getConfig());
         if (outlineColor != null) newEntry.outlineColor = outlineColor;
         if (fillColor != null) newEntry.fillColor = fillColor;
@@ -823,7 +826,6 @@ public class NpcCard extends JPanel {
     private boolean isDuplicateName(String name) {
         for (NpcCardGroupPanel group : panel.getGroups()) {
             for (NpcCard card : group.getCards()) {
-                // Make sure we're not comparing the card to itself
                 if (card.getCardId().equals(this.getCardId())) {
                     continue;
                 }

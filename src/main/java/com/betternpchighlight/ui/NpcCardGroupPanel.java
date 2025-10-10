@@ -19,11 +19,9 @@ import java.util.List;
 import java.util.UUID;
 
 public class NpcCardGroupPanel extends JPanel {
-    // Dependencies
     private final ColorPickerManager colorPickerManager;
     private final BetterNpcHighlightPanel panel;
 
-    // Group Data
     @Getter
     private final UUID groupId;
     @Getter
@@ -34,7 +32,6 @@ public class NpcCardGroupPanel extends JPanel {
     private boolean collapsed = false;
     @Getter
     private final boolean isDefault;
-    // Getters
     @Getter
     private final List<NpcCard> cards = new ArrayList<>();
 
