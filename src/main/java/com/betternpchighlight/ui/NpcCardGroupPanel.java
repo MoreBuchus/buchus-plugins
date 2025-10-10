@@ -41,7 +41,6 @@ public class NpcCardGroupPanel extends JPanel {
     // UI Components
     private JTextField groupNameField;
     private JButton collapseButton;
-    private JButton addCardButton;
     private JPanel saveButtonPanel;
     private JButton menuButton;
     private String originalGroupName;
