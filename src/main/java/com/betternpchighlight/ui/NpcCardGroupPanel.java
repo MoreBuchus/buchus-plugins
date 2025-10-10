@@ -44,6 +44,7 @@ public class NpcCardGroupPanel extends JPanel {
     private JButton addCardButton;
     private JPanel saveButtonPanel;
     private JButton menuButton;
+    private String originalGroupName;
     private final ScrollableVerticalPanel cardsContainer;
     private final Color backgroundColor = new Color(25, 25, 25);
 
@@ -121,7 +122,7 @@ public class NpcCardGroupPanel extends JPanel {
 
     private JTextField createGroupNameField() {
         JTextField field = new JTextField();
-        field.setDocument(new LengthRestrictedDocument(25));
+        field.setDocument(new LengthRestrictedDocument(20));
         field.setText(groupName);
         field.setOpaque(false);
         field.setEditable(false);
@@ -137,13 +138,7 @@ public class NpcCardGroupPanel extends JPanel {
             @Override
             public void focusLost(FocusEvent e) {
                 if (field.isEditable() && !e.isTemporary()) {
-                    if (!field.getText().trim().equals(groupName) && !field.getText().trim().isEmpty()) {
-                        finishNameEdit();
-                    } else {
-                        cancelNameEdit();
-                    }
-                    saveButtonPanel.setVisible(false);
-                    addCardButton.setVisible(true);
+                    cancelNameEdit();
                 }
             }
         });
@@ -240,9 +235,6 @@ public class NpcCardGroupPanel extends JPanel {
         JPopupMenu menu = new JPopupMenu();
 
         menu.removeAll();
-        JMenuItem addCardItem = new JMenuItem("Add card to group");
-        addCardItem.addActionListener(e -> panel.addCardToGroup(this));
-        menu.add(addCardItem);
 
         JMenuItem renameItem = new JMenuItem("Rename group");
         renameItem.addActionListener(e -> startNameEdit());
@@ -303,7 +295,7 @@ public class NpcCardGroupPanel extends JPanel {
     public void startNameEdit() {
         if (isDefault) return;
         if (groupNameField.isEditable()) return;
-        groupNameField.setText(groupName);
+        originalGroupName = groupName;
         groupNameField.setFocusable(true);
         groupNameField.setEditable(true);
         saveButtonPanel.setVisible(true);
@@ -315,8 +307,7 @@ public class NpcCardGroupPanel extends JPanel {
 
     public void finishNameEdit() {
         String newName = groupNameField.getText().trim();
-        if (newName.isEmpty()) newName = "Unnamed Group";
-        else if (newName.length() > 25) newName = newName.substring(0, 25).trim();
+        if (newName.isEmpty()) newName = "New Group";
         groupName = newName;
         groupNameField.setText(groupName);
         groupNameField.setEditable(false);
@@ -330,7 +321,8 @@ public class NpcCardGroupPanel extends JPanel {
 
     public void cancelNameEdit() {
         if (!groupNameField.isEditable()) return;
-        groupNameField.setText(groupName);
+        groupName = originalGroupName;
+        groupNameField.setText(originalGroupName);
         groupNameField.setEditable(false);
         groupNameField.setFocusable(false);
         saveButtonPanel.setVisible(false);

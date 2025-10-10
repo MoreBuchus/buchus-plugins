@@ -165,7 +165,9 @@ public class NpcCard extends JPanel {
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent mouseEvent) {
-                finishEditingName();
+                if (mouseEvent.getButton() == MouseEvent.BUTTON1) {
+                    finishEditingName();
+                }
             }
         });
         button.setToolTipText("Save");
@@ -182,7 +184,9 @@ public class NpcCard extends JPanel {
         button.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent mouseEvent) {
-                cancelEditingName();
+                if (mouseEvent.getButton() == MouseEvent.BUTTON1) {
+                    cancelEditingName();
+                }
             }
         });
         button.setToolTipText("Cancel");

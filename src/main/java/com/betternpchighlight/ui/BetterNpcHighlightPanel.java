@@ -1,7 +1,5 @@
 package com.betternpchighlight.ui;
 
-//todo: add sorting mode, focus card on add
-
 import com.betternpchighlight.BetterNpcHighlightPlugin;
 import com.betternpchighlight.TagStyle;
 import com.betternpchighlight.data.DataManager;
@@ -23,8 +21,6 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.List;
@@ -55,7 +51,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     public static final IconSet CARD_MENU_VERTICAL_ICONS = IconSet.loadIconSet("/card_menu_vertical.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
     public static final IconSet ADD_CARD_ICONS = IconSet.loadIconSet("/add_card.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
     public static final IconSet GROUP_MENU_ICONS = IconSet.loadIconSet("/group_menu.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
-    public static final IconSet SORT_MENU_ICONS = IconSet.loadIconSet("/sort_menu.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
+    public static final IconSet SORT_MENU_ICONS = IconSet.loadIconSet("/sort.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
 
     @Setter
     private DataChangedListener dataChangedListener;
@@ -164,9 +160,8 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         sortButton.setRolloverIcon(SORT_MENU_ICONS.getOffHover());
         sortButton.setSelectedIcon(SORT_MENU_ICONS.getOn());
         sortButton.setRolloverSelectedIcon(SORT_MENU_ICONS.getOnHover());
-        sortButton.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        sortButton.setContentAreaFilled(false);
         sortButton.setToolTipText("Sort by Name (A-Z)");
-        styleButton(sortButton);
         sortButton.addActionListener(e -> toggleSort(sortButton.isSelected()));
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0,0));
@@ -201,7 +196,6 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     }
 
     public void resort() {
-        // If the sort button is active, re-apply sort to all groups.
         if (sortButton.isSelected()) {
             toggleSort(true);
         }
