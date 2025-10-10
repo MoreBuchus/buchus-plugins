@@ -14,6 +14,7 @@ import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -79,7 +80,7 @@ public class NpcCardGroupPanel extends JPanel {
 
         addMouseListener(new MouseAdapter() {
             @Override
-            public void mouseClicked(MouseEvent e) {
+            public void mousePressed(MouseEvent e) {
                 if (SwingUtilities.isLeftMouseButton(e) && e.getX() < getInsets().left) {
                     toggleCollapse();
                 }
@@ -414,5 +415,25 @@ public class NpcCardGroupPanel extends JPanel {
     public void setAccentColor(Color accentColor) {
         this.accentColor = accentColor;
         setBorder(new CompoundBorder(BorderFactory.createEmptyBorder(6, 0, 0, 0), BorderFactory.createMatteBorder(0, 4, 0, 0, accentColor)));
+    }
+
+    public void reorderCards(boolean sortByName) {
+        List<NpcCard> cardsToDisplay;
+        if (sortByName) {
+            // Create a sorted copy for display
+            cardsToDisplay = new ArrayList<>(this.cards);
+            cardsToDisplay.sort(Comparator.comparing(NpcCard::getNameText, String.CASE_INSENSITIVE_ORDER));
+        } else {
+            // Use the original list to restore the default order
+            cardsToDisplay = this.cards;
+        }
+
+        // Rebuild the UI with the new sort order
+        cardsContainer.removeAll();
+        for (NpcCard card : cardsToDisplay) {
+            cardsContainer.add(card);
+        }
+        cardsContainer.revalidate();
+        cardsContainer.repaint();
     }
 }

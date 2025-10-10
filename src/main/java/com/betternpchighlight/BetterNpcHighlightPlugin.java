@@ -549,9 +549,9 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                 .setType(MenuAction.RUNELITE)
                 .onClick(e -> {
                     if (isTagged) {
-                        removeNpcFromStyle(npc, style);
+                        removeStyleFromNpc(npc, style);
                     } else {
-                        addNpcToStyle(npc, style);
+                        addStyleToNpc(npc, style);
                     }
                 });
     }
@@ -572,7 +572,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         return false;
     }
 
-    public void addNpcToStyle(NPC npc, TagStyle style) {
+    public void addStyleToNpc(NPC npc, TagStyle style) {
         if (panel == null || npc == null || npc.getName() == null) {
             return;
         }
@@ -585,6 +585,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                 if (npcName.equalsIgnoreCase(card.getNameText())) {
                     card.addTagStyle(style);
                     panel.triggerDataChanged();
+                    panel.scrollToCard(card, false);
                     return;
                 }
             }
@@ -609,7 +610,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         }
     }
 
-    public void removeNpcFromStyle(NPC npc, TagStyle style) {
+    public void removeStyleFromNpc(NPC npc, TagStyle style) {
         if (panel == null || npc == null || npc.getName() == null) {
             return;
         }
@@ -1054,6 +1055,8 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                             return;
                         }
                         card.addTagStyle(style, getPresetOutlineColor(preset), getPresetFillColor(preset));
+                        panel.resort();
+                        panel.scrollToCard(card, false);
                         printMessage("Tagged: " + card.getNameText() + " (" + style.getName().toLowerCase() + ")");
                     } else { // Untagging
                         if (!card.getAllTagStyles().contains(style)) {

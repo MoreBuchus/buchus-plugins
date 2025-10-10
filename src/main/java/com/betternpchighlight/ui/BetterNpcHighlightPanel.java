@@ -1,6 +1,6 @@
 package com.betternpchighlight.ui;
 
-//todo: add sorting mode
+//todo: add sorting mode, focus card on add
 
 import com.betternpchighlight.BetterNpcHighlightPlugin;
 import com.betternpchighlight.TagStyle;
@@ -23,6 +23,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.List;
@@ -31,6 +33,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
 
     private ScrollableVerticalPanel cardsPanel;
     private IconTextField searchField;
+    private JToggleButton sortButton;
     @Getter
     private final List<NpcCardGroupPanel> groups = new ArrayList<>();
     private JScrollPane cardsScrollPane;
@@ -52,6 +55,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     public static final IconSet CARD_MENU_VERTICAL_ICONS = IconSet.loadIconSet("/card_menu_vertical.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
     public static final IconSet ADD_CARD_ICONS = IconSet.loadIconSet("/add_card.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
     public static final IconSet GROUP_MENU_ICONS = IconSet.loadIconSet("/group_menu.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
+    public static final IconSet SORT_MENU_ICONS = IconSet.loadIconSet("/sort_menu.png", luminanceOnHover + 30, luminanceOff, luminanceOffHover);
 
     @Setter
     private DataChangedListener dataChangedListener;
@@ -97,17 +101,16 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         // Titlebar
         JPanel titleBar = new JPanel(new BorderLayout());
         titleBar.setBackground(ColorScheme.DARK_GRAY_COLOR);
-        //titleBar.setBorder(new EmptyBorder(0, 4, 0, 0));
 
         JLabel title = new JLabel("Better NPC Highlight");
         title.setBorder(new EmptyBorder(0, 4, 0, 0));
         title.setForeground(Color.WHITE);
         titleBar.add(title, BorderLayout.WEST);
 
-        // Create popup menu
+        // Create main menu
         JPopupMenu mainMenu = new JPopupMenu();
         JMenuItem addCardItem = new JMenuItem("Add new card");
-        addCardItem.addActionListener(e -> addNewCardToDefaultGroup(NpcCard::focusNameField));
+        addCardItem.addActionListener(e -> addNewCardToDefaultGroup(NpcCard::startEditingName, false));
         JMenuItem addGroupItem = new JMenuItem("Add new group");
         addGroupItem.addActionListener(e -> addNewGroup());
         mainMenu.add(addCardItem);
@@ -141,7 +144,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         JButton mainMenuButton = DropDownButtonFactory.createDropDownButton(MAIN_MENU_ICONS.getOn(), mainMenu);
         mainMenuButton.setIcon(MAIN_MENU_ICONS.getOn());
         mainMenuButton.setRolloverIcon(MAIN_MENU_ICONS.getOnHover());
-        mainMenuButton.setBackground(topPanel.getBackground());
+        mainMenuButton.setBackground(ColorScheme.DARK_GRAY_COLOR);
         mainMenuButton.setPreferredSize(new Dimension(30, 30));
         mainMenuButton.setToolTipText("Menu");
         styleButton(mainMenuButton);
@@ -156,7 +159,22 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             }
         });
 
-        titleBar.add(mainMenuButton, BorderLayout.EAST);
+        // Create sort button
+        sortButton = new JToggleButton(SORT_MENU_ICONS.getOff());
+        sortButton.setRolloverIcon(SORT_MENU_ICONS.getOffHover());
+        sortButton.setSelectedIcon(SORT_MENU_ICONS.getOn());
+        sortButton.setRolloverSelectedIcon(SORT_MENU_ICONS.getOnHover());
+        sortButton.setBackground(ColorScheme.DARK_GRAY_COLOR);
+        sortButton.setToolTipText("Sort by Name (A-Z)");
+        styleButton(sortButton);
+        sortButton.addActionListener(e -> toggleSort(sortButton.isSelected()));
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0,0));
+
+        buttonPanel.add(sortButton);
+        buttonPanel.add(mainMenuButton);
+
+        titleBar.add(buttonPanel, BorderLayout.EAST);
         topPanel.add(titleBar, BorderLayout.NORTH);
 
         // Search field
@@ -176,14 +194,46 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         return topPanel;
     }
 
+    private void toggleSort(boolean sortByName) {
+        for (NpcCardGroupPanel group : groups) {
+            group.reorderCards(sortByName);
+        }
+    }
+
+    public void resort() {
+        // If the sort button is active, re-apply sort to all groups.
+        if (sortButton.isSelected()) {
+            toggleSort(true);
+        }
+    }
+
+    private void scrollToComponent(Component component) {
+        SwingUtilities.invokeLater(() -> {
+            Point location = SwingUtilities.convertPoint(component.getParent(), component.getLocation(), cardsPanel);
+            cardsScrollPane.getViewport().setViewPosition(location);
+        });
+    }
+
+    public void scrollToCard(NpcCard card, boolean focus) {
+        // Ensure the card's parent group is not collapsed before trying to scroll
+        if (card.getParentGroup() != null && card.getParentGroup().isCollapsed()) {
+            card.getParentGroup().toggleCollapse();
+        }
+        scrollToComponent(card);
+        SwingUtilities.invokeLater(() -> {
+            if (focus) {
+                card.focusNameField();
+            }
+        });
+    }
+
     public static void styleButton(AbstractButton button) {
-        Color color = button.getBackground(); // example
+        Color color = button.getBackground();
         String hex = String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
 
         button.putClientProperty(FlatClientProperties.STYLE, "disabledBackground: null; hoverBackground: null; pressedBackground: lighten(" + hex + ",5%); selectedBackground: null; arc: 8");
         button.setBorderPainted(false);
         button.setFocusPainted(false);
-        button.setContentAreaFilled(true);
     }
 
     private void updateFilter() {
@@ -256,19 +306,9 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     public void addCardToGroup(NpcCardGroupPanel group) {
         NpcCard card = new NpcCard(this, colorPickerManager);
         group.addCard(card, true);
-
-        SwingUtilities.invokeLater(() -> {
-            card.focusNameField();
-            if (group.isCollapsed()) {
-                group.toggleCollapse();
-            }
-        });
-
+        resort(); // Re-sort after adding a new card
+        scrollToCard(card, true);
         triggerDataChanged();
-    }
-
-    public void addNewCardToDefaultGroup(Consumer<NpcCard> cardInitializer) {
-        addNewCardToDefaultGroup(cardInitializer, true);
     }
 
     public void addNewCardToDefaultGroup(Consumer<NpcCard> cardInitializer, boolean focus) {
@@ -290,14 +330,8 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         targetGroup.addCard(card, true);
 
         cardInitializer.accept(card);
-
-        SwingUtilities.invokeLater(() -> {
-            if (focus) card.focusNameField();
-            if (targetGroup.isCollapsed()) {
-                targetGroup.toggleCollapse();
-            }
-        });
-
+        resort(); // Re-sort after adding a new card
+        scrollToCard(card, focus);
         triggerDataChanged();
     }
 
@@ -320,7 +354,8 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         defaultGroup.addCard(card, false, 0); // Add to top
 
         cardInitializer.accept(card);
-
+        resort();
+        scrollToCard(card, false);
         triggerDataChanged();
     }
 
@@ -401,6 +436,7 @@ public class BetterNpcHighlightPanel extends PluginPanel {
             groups.clear(); // Clear existing groups
             List<NpcCardGroupPanel> loadedGroups = dataManager.loadGroups(configGroup, this);
             groups.addAll(loadedGroups);
+            sortButton.setSelected(false);
             sortAndRebuildGroups();
         } finally {
             isBatchUpdating = false;

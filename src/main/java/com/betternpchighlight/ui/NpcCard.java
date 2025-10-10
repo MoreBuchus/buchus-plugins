@@ -162,7 +162,12 @@ public class NpcCard extends JPanel {
         button.setPreferredSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         button.setIcon(NpcCardGroupPanel.SAVE_EDIT_GROUPNAME_ICONS.getOn());
         button.setRolloverIcon(NpcCardGroupPanel.SAVE_EDIT_GROUPNAME_ICONS.getOnHover());
-        button.addActionListener(e -> finishEditingName());
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent mouseEvent) {
+                finishEditingName();
+            }
+        });
         button.setToolTipText("Save");
         button.setVisible(false);
         BetterNpcHighlightPanel.styleButton(button);
@@ -174,7 +179,12 @@ public class NpcCard extends JPanel {
         button.setPreferredSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         button.setIcon(NpcCardGroupPanel.CANCEL_EDIT_GROUPNAME_ICONS.getOn());
         button.setRolloverIcon(NpcCardGroupPanel.CANCEL_EDIT_GROUPNAME_ICONS.getOnHover());
-        button.addActionListener(e -> cancelEditingName());
+        button.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent mouseEvent) {
+                cancelEditingName();
+            }
+        });
         button.setToolTipText("Cancel");
         button.setVisible(false);
         BetterNpcHighlightPanel.styleButton(button);
@@ -408,14 +418,14 @@ public class NpcCard extends JPanel {
     }
 
     // Name Editing Methods
-    private void startEditingName() {
+    void startEditingName() {
         originalNameText = getNameText();
         if (originalNameText.isEmpty()) {
             nameEditor = createNameEditor(PLACEHOLDER_TEXT);
         } else {
             nameEditor = createNameEditor(originalNameText);
         }
-        replaceNameLabelWithEditor();
+        SwingUtilities.invokeLater(this::replaceNameLabelWithEditor);
         editNameButton.setVisible(false);
         saveButton.setVisible(true);
         cancelButton.setVisible(true);
@@ -479,10 +489,10 @@ public class NpcCard extends JPanel {
 
         // Request focus on the card panel itself to prevent the editor from re-engaging.
         SwingUtilities.invokeLater(this::requestFocusInWindow);
-
+        panel.resort();
+        panel.triggerDataChanged();
         revalidate();
         repaint();
-        panel.triggerDataChanged();
     }
 
     private void replaceEditorWithNameLabel() {
@@ -502,15 +512,9 @@ public class NpcCard extends JPanel {
         field.addFocusListener(new FocusAdapter() {
             @Override
             public void focusLost(FocusEvent e) {
-                if (field.isEditable() && !e.isTemporary()) {
-                    if (!field.getText().trim().equals(text) && !field.getText().trim().isEmpty()) {
-                        finishEditingName();
-                    } else {
-                        cancelEditingName();
-                    }
-                    saveButton.setVisible(false);
-                    cancelButton.setVisible(false);
-                    editNameButton.setVisible(true);
+                Component oppositeComponent = e.getOppositeComponent();
+                if (field.isEditable() && !e.isTemporary() && oppositeComponent != saveButton && oppositeComponent != cancelButton) {
+                    cancelEditingName();
                 }
             }
         });
@@ -737,7 +741,11 @@ public class NpcCard extends JPanel {
     }
 
     public void focusNameField() {
-        SwingUtilities.invokeLater(this::startEditingName);
+        SwingUtilities.invokeLater(() -> {
+            if (isShowing()) {
+                startEditingName();
+            }
+        });
     }
 
     // TagStyle with default settings

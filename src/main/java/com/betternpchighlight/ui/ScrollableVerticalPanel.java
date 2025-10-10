@@ -24,7 +24,7 @@ public class ScrollableVerticalPanel extends JPanel implements Scrollable {
 
     @Override
     public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
-        return visibleRect.height; // For page-up/page-down
+        return visibleRect.height;
     }
 
     @Override
