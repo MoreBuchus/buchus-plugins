@@ -12,6 +12,8 @@ import net.runelite.client.ui.components.colorpicker.RuneliteColorPicker;
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -237,6 +239,42 @@ public class NpcCardGroupPanel extends JPanel {
         renameItem.addActionListener(e -> startNameEdit());
         renameItem.setEnabled(!isDefault);
         menu.add(renameItem);
+
+        JMenu moveMenu = new JMenu("Move group");
+        moveMenu.setEnabled(!isDefault);
+
+        JMenuItem moveUpItem = new JMenuItem("Move up");
+        moveUpItem.addActionListener(e -> panel.moveGroup(this, -1));
+        moveMenu.add(moveUpItem);
+
+        JMenuItem moveDownItem = new JMenuItem("Move down");
+        moveDownItem.addActionListener(e -> panel.moveGroup(this, 1));
+        moveMenu.add(moveDownItem);
+
+        moveMenu.addSeparator();
+
+        JMenuItem moveToTopItem = new JMenuItem("Move to top");
+        moveToTopItem.addActionListener(e -> panel.moveGroupToTop(this));
+        moveMenu.add(moveToTopItem);
+
+        JMenuItem moveToBottomItem = new JMenuItem("Move to bottom");
+        moveToBottomItem.addActionListener(e -> panel.moveGroupToBottom(this));
+        moveMenu.add(moveToBottomItem);
+
+        JMenuItem moveToPositionItem = new JMenuItem("Move to position...");
+        moveToPositionItem.addActionListener(e -> panel.moveGroupToPositionDialog(this));
+        moveMenu.add(moveToPositionItem);
+
+        menu.add(moveMenu);
+
+        moveMenu.getPopupMenu().addPopupMenuListener(new PopupMenuListener() {
+            @Override
+            public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
+                panel.updateMoveActionStates(NpcCardGroupPanel.this, moveUpItem, moveDownItem, moveToTopItem, moveToBottomItem);
+            }
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
+            public void popupMenuCanceled(PopupMenuEvent e) {}
+        });
 
         JMenuItem changeColorItem = new JMenuItem("Change accent color");
         changeColorItem.addActionListener(ev -> showColorPicker());

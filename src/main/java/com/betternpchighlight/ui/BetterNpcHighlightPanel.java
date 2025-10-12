@@ -474,6 +474,97 @@ public class BetterNpcHighlightPanel extends PluginPanel {
         cardsPanel.repaint();
     }
 
+    // Group Reordering Logic
+    public void moveGroup(NpcCardGroupPanel group, int offset) {
+        if (group.isDefault()) return;
+
+        int currentIndex = groups.indexOf(group);
+        if (currentIndex == -1) return;
+
+        int newIndex = currentIndex + offset;
+
+        // Ensure the move is within the bounds of non-default groups
+        if (newIndex >= 0 && newIndex < getNonDefaultGroupCount()) {
+            Collections.swap(groups, currentIndex, newIndex);
+            sortAndRebuildGroups();
+            triggerDataChanged();
+        }
+    }
+
+    public void moveGroupToTop(NpcCardGroupPanel group) {
+        if (group.isDefault()) return;
+        if (groups.indexOf(group) > 0) {
+            groups.remove(group);
+            groups.add(0, group);
+            sortAndRebuildGroups();
+            triggerDataChanged();
+        }
+    }
+
+    public void moveGroupToBottom(NpcCardGroupPanel group) {
+        if (group.isDefault()) return;
+        int nonDefaultCount = getNonDefaultGroupCount();
+        if (groups.indexOf(group) < nonDefaultCount - 1) {
+            groups.remove(group);
+            groups.add(nonDefaultCount - 1, group);
+            sortAndRebuildGroups();
+            triggerDataChanged();
+        }
+    }
+
+    public void moveGroupToPositionDialog(NpcCardGroupPanel group) {
+        if (group.isDefault()) return;
+
+        int nonDefaultCount = getNonDefaultGroupCount();
+        if (nonDefaultCount <= 1) return;
+
+        int currentPosition = groups.indexOf(group) + 1;
+        SpinnerNumberModel model = new SpinnerNumberModel(currentPosition, 1, nonDefaultCount, 1);
+        JSpinner spinner = new JSpinner(model);
+
+        JPanel panel = new JPanel(new BorderLayout());
+        JLabel label = new JLabel("<html>"
+                + "Current position: <b>" + currentPosition + " </b>"
+                + "Move to position:"
+                + "</html>");
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        panel.add(label, BorderLayout.NORTH);
+        panel.add(spinner, BorderLayout.CENTER);
+        int result = JOptionPane.showOptionDialog(
+                this,
+                panel,
+                "Move to position",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE,
+                null, null, null
+        );
+
+        if (result == JOptionPane.OK_OPTION) {
+            int newPosition = (int) spinner.getValue() - 1;
+            groups.remove(group);
+            groups.add(newPosition, group);
+            sortAndRebuildGroups();
+            triggerDataChanged();
+        }
+    }
+
+    public void updateMoveActionStates(NpcCardGroupPanel group, JMenuItem up, JMenuItem down, JMenuItem top, JMenuItem bottom) {
+        int currentIndex = groups.indexOf(group);
+        int nonDefaultCount = getNonDefaultGroupCount();
+
+        boolean canMoveUp = currentIndex > 0;
+        boolean canMoveDown = currentIndex < nonDefaultCount - 1;
+
+        up.setEnabled(canMoveUp);
+        top.setEnabled(canMoveUp);
+        down.setEnabled(canMoveDown);
+        bottom.setEnabled(canMoveDown);
+    }
+
+    private int getNonDefaultGroupCount() {
+        return (int) groups.stream().filter(g -> !g.isDefault()).count();
+    }
+
     private interface SimpleDocumentListener extends javax.swing.event.DocumentListener {
         void update(DocumentEvent e);
 
