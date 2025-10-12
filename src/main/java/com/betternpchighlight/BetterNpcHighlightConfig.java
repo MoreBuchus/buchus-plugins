@@ -40,7 +40,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "Tile",
-            description = "Tile Plugins",
+            description = "Default Tile Settings",
             position = 0,
             closedByDefault = true
     )
@@ -48,7 +48,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "True Tile",
-            description = "True Tile Plugins",
+            description = "Default True Tile Settings",
             position = 1,
             closedByDefault = true
     )
@@ -56,7 +56,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "South West Tile",
-            description = "South West Tile Plugins",
+            description = "Default South West Tile Settings",
             position = 2,
             closedByDefault = true
     )
@@ -64,7 +64,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "South West True Tile",
-            description = "South West True Tile Plugins",
+            description = "Default South West True Tile Settings",
             position = 3,
             closedByDefault = true
     )
@@ -72,7 +72,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "Hull",
-            description = "Hull Plugins",
+            description = "Default Hull Settings",
             position = 4,
             closedByDefault = true
     )
@@ -80,7 +80,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "Area",
-            description = "Area Plugins",
+            description = "Default Area Settings",
             position = 5,
             closedByDefault = true
     )
@@ -88,7 +88,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "Outline",
-            description = "Outline Plugins",
+            description = "Default Outline Settings",
             position = 6,
             closedByDefault = true
     )
@@ -96,7 +96,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "Clickbox",
-            description = "Clickbox Plugins",
+            description = "Default Clickbox Settings",
             position = 7,
             closedByDefault = true
     )
@@ -112,7 +112,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "Slayer",
-            description = "Slayer Plugins",
+            description = "Slayer Highlight Settings",
             position = 9,
             closedByDefault = true
     )
@@ -120,7 +120,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "Entity Hider",
-            description = "Entity Hider Plugins",
+            description = "Entity Hider Settings",
             position = 10,
             closedByDefault = true
     )
@@ -128,7 +128,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @ConfigSection(
             name = "Presets",
-            description = "Presets Plugins",
+            description = "Color Presets",
             position = 11,
             closedByDefault = true
     )
@@ -155,42 +155,6 @@ public interface BetterNpcHighlightConfig extends Config {
     default boolean tileHighlight() {
         return false;
     }
-
-    @ConfigItem(
-            position = 2,
-            keyName = "tileNames",
-            name = "Tile Names",
-            description = "List of NPCs to highlight by tile",
-            section = tileSection
-    )
-    default String tileNames() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "tileNames",
-            name = "",
-            description = ""
-    )
-    void setTileNames(String names);
-
-    @ConfigItem(
-            position = 3,
-            keyName = "tileIds",
-            name = "Tile IDs",
-            description = "List of NPCs to highlight by tile",
-            section = tileSection
-    )
-    default String tileIds() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "tileIds",
-            name = "",
-            description = ""
-    )
-    void setTileIds(String ids);
 
     @Alpha
     @ConfigItem(
@@ -287,42 +251,6 @@ public interface BetterNpcHighlightConfig extends Config {
         return false;
     }
 
-    @ConfigItem(
-            position = 2,
-            keyName = "trueTileNames",
-            name = "True Tile Names",
-            description = "List of npc's to highlight true tile",
-            section = trueTileSection
-    )
-    default String trueTileNames() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "trueTileNames",
-            name = "",
-            description = ""
-    )
-    void setTrueTileNames(String names);
-
-    @ConfigItem(
-            position = 3,
-            keyName = "trueTileIds",
-            name = "True Tile IDs",
-            description = "List of npc's to highlight true tile",
-            section = trueTileSection
-    )
-    default String trueTileIds() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "trueTileIds",
-            name = "",
-            description = ""
-    )
-    void setTrueTileIds(String ids);
-
     @Alpha
     @ConfigItem(
             position = 4,
@@ -417,42 +345,6 @@ public interface BetterNpcHighlightConfig extends Config {
     default boolean swTileHighlight() {
         return false;
     }
-
-    @ConfigItem(
-            position = 2,
-            keyName = "swTileNames",
-            name = "South West Tile Names",
-            description = "List of npc's to highlight south west tile",
-            section = swTileSection
-    )
-    default String swTileNames() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "swTileNames",
-            name = "",
-            description = ""
-    )
-    void setSwTileNames(String names);
-
-    @ConfigItem(
-            position = 3,
-            keyName = "swTileIds",
-            name = "South West Tile IDs",
-            description = "List of npc's to highlight south west tile",
-            section = swTileSection
-    )
-    default String swTileIds() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "swTileIds",
-            name = "",
-            description = ""
-    )
-    void setSwTileIds(String ids);
 
     @Alpha
     @ConfigItem(
@@ -549,42 +441,6 @@ public interface BetterNpcHighlightConfig extends Config {
         return false;
     }
 
-    @ConfigItem(
-            position = 2,
-            keyName = "swTrueTileNames",
-            name = "South West True Tile Names",
-            description = "List of NPCs to highlight by their south west true tile",
-            section = swTrueTileSection
-    )
-    default String swTrueTileNames() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "swTrueTileNames",
-            name = "",
-            description = ""
-    )
-    void setSwTrueTileNames(String names);
-
-    @ConfigItem(
-            position = 3,
-            keyName = "swTrueTileIds",
-            name = "South West True Tile IDs",
-            description = "List of NPCs to highlight by their south west true tile",
-            section = swTrueTileSection
-    )
-    default String swTrueTileIds() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "swTrueTileIds",
-            name = "",
-            description = ""
-    )
-    void setSwTrueTileIds(String ids);
-
     @Alpha
     @ConfigItem(
             position = 4,
@@ -680,42 +536,6 @@ public interface BetterNpcHighlightConfig extends Config {
         return false;
     }
 
-    @ConfigItem(
-            position = 2,
-            keyName = "hullNames",
-            name = "Hull Names",
-            description = "List of npc's to highlight hull",
-            section = hullSection
-    )
-    default String hullNames() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "hullNames",
-            name = "",
-            description = ""
-    )
-    void setHullNames(String names);
-
-    @ConfigItem(
-            position = 3,
-            keyName = "hullIds",
-            name = "Hull IDs",
-            description = "List of npc's to highlight hull",
-            section = hullSection
-    )
-    default String hullIds() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "hullIds",
-            name = "",
-            description = ""
-    )
-    void setHullIds(String ids);
-
     @Alpha
     @ConfigItem(
             position = 4,
@@ -800,42 +620,6 @@ public interface BetterNpcHighlightConfig extends Config {
         return false;
     }
 
-    @ConfigItem(
-            position = 2,
-            keyName = "areaNames",
-            name = "Area Names",
-            description = "List of npc's to highlight area",
-            section = areaSection
-    )
-    default String areaNames() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "areaNames",
-            name = "",
-            description = ""
-    )
-    void setAreaNames(String names);
-
-    @ConfigItem(
-            position = 3,
-            keyName = "areaIds",
-            name = "Area IDs",
-            description = "List of npc's to highlight area",
-            section = areaSection
-    )
-    default String areaIds() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "areaIds",
-            name = "",
-            description = ""
-    )
-    void setAreaIds(String ids);
-
     @Alpha
     @ConfigItem(
             position = 4,
@@ -884,42 +668,6 @@ public interface BetterNpcHighlightConfig extends Config {
     default boolean outlineHighlight() {
         return false;
     }
-
-    @ConfigItem(
-            position = 2,
-            keyName = "outlineNames",
-            name = "Outline Names",
-            description = "List of npc's to highlight outline",
-            section = outlineSection
-    )
-    default String outlineNames() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "outlineNames",
-            name = "",
-            description = ""
-    )
-    void setOutlineNames(String names);
-
-    @ConfigItem(
-            position = 3,
-            keyName = "outlineIds",
-            name = "Outline IDs",
-            description = "List of npc's to highlight outline",
-            section = outlineSection
-    )
-    default String outlineIds() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "outlineIds",
-            name = "",
-            description = ""
-    )
-    void setOutlineIds(String ids);
 
     @Alpha
     @ConfigItem(
@@ -993,42 +741,6 @@ public interface BetterNpcHighlightConfig extends Config {
     default boolean clickboxHighlight() {
         return false;
     }
-
-    @ConfigItem(
-            position = 2,
-            keyName = "clickboxNames",
-            name = "Clickbox Names",
-            description = "List of NPCs to highlight by clickbox",
-            section = clickboxSection
-    )
-    default String clickboxNames() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "clickboxNames",
-            name = "",
-            description = ""
-    )
-    void setClickboxNames(String names);
-
-    @ConfigItem(
-            position = 3,
-            keyName = "clickboxIds",
-            name = "Clickbox IDs",
-            description = "List of NPCs to highlight by clickbox",
-            section = clickboxSection
-    )
-    default String clickboxIds() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "clickboxIds",
-            name = "",
-            description = ""
-    )
-    void setClickboxIds(String ids);
 
     @Alpha
     @ConfigItem(
@@ -1122,42 +834,6 @@ public interface BetterNpcHighlightConfig extends Config {
     default boolean turboHighlight() {
         return false;
     }
-
-    @ConfigItem(
-            position = 2,
-            keyName = "turboNames",
-            name = "Turbo Names",
-            description = "List of NPCs to do things with",
-            section = turboSection
-    )
-    default String turboNames() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "turboNames",
-            name = "",
-            description = ""
-    )
-    void setTurboNames(String names);
-
-    @ConfigItem(
-            position = 3,
-            keyName = "turboIds",
-            name = "Turbo IDs",
-            description = "Can be used to see ghosts if you really want to",
-            section = turboSection
-    )
-    default String turboIds() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "turboIds",
-            name = "",
-            description = ""
-    )
-    void setTurboIds(String ids);
 
     //------------------------------------------------------------//
     // Slayer Section
@@ -1266,42 +942,6 @@ public interface BetterNpcHighlightConfig extends Config {
     default boolean entityHiderCommands() {
         return true;
     }
-
-    @ConfigItem(
-            position = 3,
-            keyName = "entityHiderNames",
-            name = "Entity Hider Names",
-            description = "NPCs by Name to hide",
-            section = entityHiderSection
-    )
-    default String entityHiderNames() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "entityHiderNames",
-            name = "",
-            description = ""
-    )
-    void setEntityHiderNames(String names);
-
-    @ConfigItem(
-            position = 4,
-            keyName = "entityHiderIds",
-            name = "Entity Hider IDs",
-            description = "NPCs by ID to hide",
-            section = entityHiderSection
-    )
-    default String entityHiderIds() {
-        return "";
-    }
-
-    @ConfigItem(
-            keyName = "entityHiderIds",
-            name = "",
-            description = ""
-    )
-    void setEntityHiderIds(String ids);
 
     //------------------------------------------------------------//
     // Presets Section
@@ -1560,36 +1200,6 @@ public interface BetterNpcHighlightConfig extends Config {
         return false;
     }
 
-    @ConfigItem(
-            position = 17,
-            keyName = "ignoreDeadExclusion",
-            name = "Ignore Dead Exclusion Name List",
-            description = "List of NPC names to not remove highlight when dead"
-    )
-    default String ignoreDeadExclusion() {
-        return "";
-    }
-
-    @ConfigItem(
-            position = 18,
-            keyName = "ignoreDeadExclusionID",
-            name = "Ignore Dead Exclusion ID List",
-            description = "List of NPC IDs to not remove highlight when dead"
-    )
-    default String ignoreDeadExclusionID() {
-        return "";
-    }
-
-    @ConfigItem(
-            position = 19,
-            keyName = "drawBeneath",
-            name = "Draw Overlays Beneath NPCs",
-            description = "Overlays will appear behind/below NPCs. GPU plugin must be turned on"
-    )
-    default boolean drawBeneath() {
-        return false;
-    }
-
     @Range(max = 20)
     @ConfigItem(
             position = 20,
@@ -1599,16 +1209,6 @@ public interface BetterNpcHighlightConfig extends Config {
     )
     default int drawBeneathLimit() {
         return 10;
-    }
-
-    @ConfigItem(
-            position = 21,
-            keyName = "drawBeneathList",
-            name = "Draw Beneath List",
-            description = "Sets specific NPCs to have the overlay draw beneath. Empty list will use Draw Beneath Limit"
-    )
-    default String drawBeneathList() {
-        return "";
     }
 
     @ConfigItem(
@@ -1691,16 +1291,6 @@ public interface BetterNpcHighlightConfig extends Config {
     )
     default int respawnTileWidth() {
         return 2;
-    }
-
-    @ConfigItem(
-            position = 30,
-            keyName = "displayName",
-            name = "Display Name",
-            description = "Shows name of NPCs in the list above them"
-    )
-    default String displayName() {
-        return "";
     }
 
     @ConfigItem(

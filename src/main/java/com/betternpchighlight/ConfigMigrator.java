@@ -5,20 +5,15 @@ import com.betternpchighlight.data.DataManager;
 import com.betternpchighlight.data.GroupDTO;
 import com.betternpchighlight.data.StyleDTO;
 import com.google.gson.Gson;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 import net.runelite.client.config.ConfigManager;
+
+import java.awt.*;
+import java.util.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public final class ConfigMigrator {
 
-    private final BetterNpcHighlightConfig config;
     private final ConfigManager configManager;
     private final Gson gson;
     private final List<String> ignoreDeadExclusionNames;
@@ -28,16 +23,15 @@ public final class ConfigMigrator {
     private final List<String> entityHiderNames;
     private final List<String> entityHiderIds;
 
-    public ConfigMigrator(BetterNpcHighlightConfig config, ConfigManager configManager, Gson gson) {
-        this.config = config;
+    public ConfigMigrator(ConfigManager configManager, Gson gson) {
         this.configManager = configManager;
         this.gson = gson;
-        this.ignoreDeadExclusionNames = parseConfigList(config.ignoreDeadExclusion());
-        this.ignoreDeadExclusionIds = parseConfigList(config.ignoreDeadExclusionID());
-        this.drawBeneathListNames = parseConfigList(config.drawBeneathList());
-        this.displayNameNames = parseConfigList(config.displayName());
-        this.entityHiderNames = parseConfigList(config.entityHiderNames());
-        this.entityHiderIds = parseConfigList(config.entityHiderIds());
+        this.ignoreDeadExclusionNames = parseConfigList(getString("ignoreDeadExclusion"));
+        this.ignoreDeadExclusionIds = parseConfigList(getString("ignoreDeadExclusionID"));
+        this.drawBeneathListNames = parseConfigList(getString("drawBeneathList"));
+        this.displayNameNames = parseConfigList(getString("displayName"));
+        this.entityHiderNames = parseConfigList(getString("entityHiderNames"));
+        this.entityHiderIds = parseConfigList(getString("entityHiderIds"));
     }
 
     public void migrate() {
@@ -48,24 +42,24 @@ public final class ConfigMigrator {
 
         // 1. Collect all unique NPC names/IDs from all old config fields.
         HashSet<String> allNpcIdentifiers = new HashSet<>();
-        addIdentifiers(allNpcIdentifiers, config.tileNames());
-        addIdentifiers(allNpcIdentifiers, config.tileIds());
-        addIdentifiers(allNpcIdentifiers, config.trueTileNames());
-        addIdentifiers(allNpcIdentifiers, config.trueTileIds());
-        addIdentifiers(allNpcIdentifiers, config.swTileNames());
-        addIdentifiers(allNpcIdentifiers, config.swTileIds());
-        addIdentifiers(allNpcIdentifiers, config.swTrueTileNames());
-        addIdentifiers(allNpcIdentifiers, config.swTrueTileIds());
-        addIdentifiers(allNpcIdentifiers, config.hullNames());
-        addIdentifiers(allNpcIdentifiers, config.hullIds());
-        addIdentifiers(allNpcIdentifiers, config.areaNames());
-        addIdentifiers(allNpcIdentifiers, config.areaIds());
-        addIdentifiers(allNpcIdentifiers, config.outlineNames());
-        addIdentifiers(allNpcIdentifiers, config.outlineIds());
-        addIdentifiers(allNpcIdentifiers, config.clickboxNames());
-        addIdentifiers(allNpcIdentifiers, config.clickboxIds());
-        addIdentifiers(allNpcIdentifiers, config.turboNames());
-        addIdentifiers(allNpcIdentifiers, config.turboIds());
+        addIdentifiers(allNpcIdentifiers, getString("tileNames"));
+        addIdentifiers(allNpcIdentifiers, getString("tileIds"));
+        addIdentifiers(allNpcIdentifiers, getString("trueTileNames"));
+        addIdentifiers(allNpcIdentifiers, getString("trueTileIds"));
+        addIdentifiers(allNpcIdentifiers, getString("swTileNames"));
+        addIdentifiers(allNpcIdentifiers, getString("swTileIds"));
+        addIdentifiers(allNpcIdentifiers, getString("swTrueTileNames"));
+        addIdentifiers(allNpcIdentifiers, getString("swTrueTileIds"));
+        addIdentifiers(allNpcIdentifiers, getString("hullNames"));
+        addIdentifiers(allNpcIdentifiers, getString("hullIds"));
+        addIdentifiers(allNpcIdentifiers, getString("areaNames"));
+        addIdentifiers(allNpcIdentifiers, getString("areaIds"));
+        addIdentifiers(allNpcIdentifiers, getString("outlineNames"));
+        addIdentifiers(allNpcIdentifiers, getString("outlineIds"));
+        addIdentifiers(allNpcIdentifiers, getString("clickboxNames"));
+        addIdentifiers(allNpcIdentifiers, getString("clickboxIds"));
+        addIdentifiers(allNpcIdentifiers, getString("turboNames"));
+        addIdentifiers(allNpcIdentifiers, getString("turboIds"));
         allNpcIdentifiers.addAll(ignoreDeadExclusionNames);
         allNpcIdentifiers.addAll(ignoreDeadExclusionIds);
         allNpcIdentifiers.addAll(drawBeneathListNames);
@@ -117,20 +111,20 @@ public final class ConfigMigrator {
         card.hideNpc = entityHiderNames.contains(identifier) || entityHiderIds.contains(identifier);
 
         // Check and apply each visual style
-        addStyleIfPresent(card, identifier, TagStyle.TILE, config.tileNames(), config.tileIds(), config.tileColor(), config.tileFillColor(), config.tileWidth(), config.tileAA(), config.tileRave(), config.tileRaveSpeed(), config.tileLines(), 0);
-        addStyleIfPresent(card, identifier, TagStyle.TRUE_TILE, config.trueTileNames(), config.trueTileIds(), config.trueTileColor(), config.trueTileFillColor(), config.trueTileWidth(), config.trueTileAA(), config.trueTileRave(), config.trueTileRaveSpeed(), config.trueTileLines(), 0);
-        addStyleIfPresent(card, identifier, TagStyle.SW_TILE, config.swTileNames(), config.swTileIds(), config.swTileColor(), config.swTileFillColor(), config.swTileWidth(), config.swTileAA(), config.swTileRave(), config.swTileRaveSpeed(), config.swTileLines(), 0);
-        addStyleIfPresent(card, identifier, TagStyle.SW_TRUE_TILE, config.swTrueTileNames(), config.swTrueTileIds(), config.swTrueTileColor(), config.swTrueTileFillColor(), config.swTrueTileWidth(), config.swTrueTileAA(), config.swTrueTileRave(), config.swTrueTileRaveSpeed(), config.swTrueTileLines(), 0);
-        addStyleIfPresent(card, identifier, TagStyle.HULL, config.hullNames(), config.hullIds(), config.hullColor(), config.hullFillColor(), config.hullWidth(), config.hullAA(), config.hullRave(), config.hullRaveSpeed(), null, 0);
-        addStyleIfPresent(card, identifier, TagStyle.AREA, config.areaNames(), config.areaIds(), config.areaColor(), null, 0, false, config.areaRave(), config.areaRaveSpeed(), null, 0);
-        addStyleIfPresent(card, identifier, TagStyle.OUTLINE, config.outlineNames(), config.outlineIds(), config.outlineColor(), null, config.outlineWidth(), true, config.outlineRave(), config.outlineRaveSpeed(), null, config.outlineFeather());
-        addStyleIfPresent(card, identifier, TagStyle.CLICKBOX, config.clickboxNames(), config.clickboxIds(), config.clickboxColor(), config.clickboxFillColor(), config.clickboxWidth(), config.clickboxAA(), config.clickboxRave(), config.clickboxRaveSpeed(), null, 0);
-        addStyleIfPresent(card, identifier, TagStyle.TURBO, config.turboNames(), config.turboIds(), null, null, 0, false, false, 0, null, 0);
+        addStyleIfPresent(card, identifier, TagStyle.TILE, getString("tileNames"), getString("tileIds"), getColor("tileColor"), getColor("tileFillColor"), getDouble("tileWidth"), getBoolean("tileAA"), getBoolean("tileRave"), getInt("tileRaveSpeed"), getLineType("tileLines"), 0);
+        addStyleIfPresent(card, identifier, TagStyle.TRUE_TILE, getString("trueTileNames"), getString("trueTileIds"), getColor("trueTileColor"), getColor("trueTileFillColor"), getDouble("trueTileWidth"), getBoolean("trueTileAA"), getBoolean("trueTileRave"), getInt("trueTileRaveSpeed"), getLineType("trueTileLines"), 0);
+        addStyleIfPresent(card, identifier, TagStyle.SW_TILE, getString("swTileNames"), getString("swTileIds"), getColor("swTileColor"), getColor("swTileFillColor"), getDouble("swTileWidth"), getBoolean("swTileAA"), getBoolean("swTileRave"), getInt("swTileRaveSpeed"), getLineType("swTileLines"), 0);
+        addStyleIfPresent(card, identifier, TagStyle.SW_TRUE_TILE, getString("swTrueTileNames"), getString("swTrueTileIds"), getColor("swTrueTileColor"), getColor("swTrueTileFillColor"), getDouble("swTrueTileWidth"), getBoolean("swTrueTileAA"), getBoolean("swTrueTileRave"), getInt("swTrueTileRaveSpeed"), getLineType("swTrueTileLines"), 0);
+        addStyleIfPresent(card, identifier, TagStyle.HULL, getString("hullNames"), getString("hullIds"), getColor("hullColor"), getColor("hullFillColor"), getDouble("hullWidth"), getBoolean("hullAA"), getBoolean("hullRave"), getInt("hullRaveSpeed"), null, 0);
+        addStyleIfPresent(card, identifier, TagStyle.AREA, getString("areaNames"), getString("areaIds"), null, getColor("areaColor"), 0, false, getBoolean("areaRave"), getInt("areaRaveSpeed"), null, 0);
+        addStyleIfPresent(card, identifier, TagStyle.OUTLINE, getString("outlineNames"), getString("outlineIds"), getColor("outlineColor"), null, getInt("outlineWidth"), true, getBoolean("outlineRave"), getInt("outlineRaveSpeed"), null, getInt("outlineFeather"));
+        addStyleIfPresent(card, identifier, TagStyle.CLICKBOX, getString("clickboxNames"), getString("clickboxIds"), getColor("clickboxColor"), getColor("clickboxFillColor"), getDouble("clickboxWidth"), getBoolean("clickboxAA"), getBoolean("clickboxRave"), getInt("clickboxRaveSpeed"), null, 0);
+        addStyleIfPresent(card, identifier, TagStyle.TURBO, getString("turboNames"), getString("turboIds"), null, null, 0, false, false, 0, null, 0);
 
         return card;
     }
 
-    private void addStyleIfPresent(CardDTO card, String identifier, TagStyle style, String names, String ids, java.awt.Color outlineColor, java.awt.Color fillColor, double width, boolean antiAliasing, boolean rave, int raveSpeed, BetterNpcHighlightConfig.lineType lineType, int feather) {
+    private void addStyleIfPresent(CardDTO card, String identifier, TagStyle style, String names, String ids, Color outlineColor, Color fillColor, double width, boolean antiAliasing, boolean rave, int raveSpeed, BetterNpcHighlightConfig.lineType lineType, int feather) {
         int preset = 0;
         boolean found = false;
 
@@ -170,10 +164,10 @@ public final class ConfigMigrator {
             StyleDTO styleDTO = new StyleDTO();
             styleDTO.tagStyle = style.toString();
 
-            java.awt.Color finalOutlineColor = getPresetColor(preset, false);
+            Color finalOutlineColor = getPresetColor(preset, false);
             if (finalOutlineColor == null) finalOutlineColor = outlineColor;
 
-            java.awt.Color finalFillColor = getPresetColor(preset, true);
+            Color finalFillColor = getPresetColor(preset, true);
             if (finalFillColor == null) finalFillColor = fillColor;
 
             if (finalOutlineColor != null) styleDTO.outlineColor = finalOutlineColor.getRGB();
@@ -190,18 +184,18 @@ public final class ConfigMigrator {
         }
     }
 
-    private java.awt.Color getPresetColor(int preset, boolean isFill) {
+    private Color getPresetColor(int preset, boolean isFill) {
         switch (preset) {
             case 1:
-                return isFill ? config.presetFillColor1() : config.presetColor1();
+                return isFill ? getColor("presetFillColor1") : getColor("presetColor1");
             case 2:
-                return isFill ? config.presetFillColor2() : config.presetColor2();
+                return isFill ? getColor("presetFillColor2") : getColor("presetColor2");
             case 3:
-                return isFill ? config.presetFillColor3() : config.presetColor3();
+                return isFill ? getColor("presetFillColor3") : getColor("presetColor3");
             case 4:
-                return isFill ? config.presetFillColor4() : config.presetColor4();
+                return isFill ? getColor("presetFillColor4") : getColor("presetColor4");
             case 5:
-                return isFill ? config.presetFillColor5() : config.presetColor5();
+                return isFill ? getColor("presetFillColor5") : getColor("presetColor5");
             default:
                 return null;
         }
@@ -227,5 +221,49 @@ public final class ConfigMigrator {
         }
         return Arrays.stream(configString.toLowerCase().split(","))
                 .map(String::trim).collect(Collectors.toList());
+    }
+
+    // Helper methods to get raw config values
+    private String getString(String key) {
+        return configManager.getConfiguration(BetterNpcHighlightConfig.CONFIG_GROUP, key);
+    }
+
+    private boolean getBoolean(String key) {
+        String value = getString(key);
+        return "true".equalsIgnoreCase(value);
+    }
+
+    private int getInt(String key) {
+        String value = getString(key);
+        if (value != null) {
+            try {
+                return Integer.parseInt(value);
+            } catch (NumberFormatException ignored) {}
+        }
+        return 0;
+    }
+
+    private double getDouble(String key) {
+        String value = getString(key);
+        if (value != null) {
+            try {
+                return Double.parseDouble(value);
+            } catch (NumberFormatException ignored) {}
+        }
+        return 0.0;
+    }
+
+    private Color getColor(String key) {
+        return configManager.getConfiguration(BetterNpcHighlightConfig.CONFIG_GROUP, key, Color.class);
+    }
+
+    private BetterNpcHighlightConfig.lineType getLineType(String key) {
+        String value = getString(key);
+        if (value != null) {
+            try {
+                return BetterNpcHighlightConfig.lineType.valueOf(value.toUpperCase());
+            } catch (IllegalArgumentException ignored) {}
+        }
+        return BetterNpcHighlightConfig.lineType.REGULAR;
     }
 }

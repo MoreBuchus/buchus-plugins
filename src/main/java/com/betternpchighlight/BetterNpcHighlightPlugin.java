@@ -178,7 +178,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
     protected void startUp() {
         clientThread.invokeLater(() -> {
             reset();
-            new ConfigMigrator(config, configManager, gson).migrate();
+            new ConfigMigrator(configManager, gson).migrate();
             overlayManager.add(overlay);
             overlayManager.add(mapOverlay);
             hooks.registerRenderableDrawListener(drawListener);
