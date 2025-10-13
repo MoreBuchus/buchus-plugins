@@ -767,25 +767,36 @@ public class NpcCard extends JPanel {
             return;
         }
 
-        // Check for duplicates before proceeding
-        if (styleRows.stream().anyMatch(row -> row.getTagStyle() == style)) {
-            return; // Style already exists, do not add.
+        // If the style already exists, update its colors instead of adding a new row
+        StyleRow existingRow = styleRows.stream()
+                .filter(row -> row.getTagStyle() == style)
+                .findFirst()
+                .orElse(null);
+
+        if (existingRow != null) {
+            Color finalOutline = (outlineColor != null) ? outlineColor : getPlugin().getPresetOutlineColor(0);
+            Color finalFill = (fillColor != null) ? fillColor : getPlugin().getPresetFillColor(0);
+
+            existingRow.getHighlightPreviewPanel().setOutlineColor(finalOutline);
+            existingRow.getHighlightPreviewPanel().setFillColor(finalFill);
+            panel.triggerDataChanged();
+        } else {
+            // If the style doesn't exist, add a new style row.
+            NpcHighlightEntry newEntry = new NpcHighlightEntry(getNameText(), style, getPlugin().getConfig());
+            // Use provided colors, or fall back to defaults if null
+            newEntry.outlineColor = (outlineColor != null) ? outlineColor : getPlugin().getPresetOutlineColor(0);
+            newEntry.fillColor = (fillColor != null) ? fillColor : getPlugin().getPresetFillColor(0);
+
+            // Inherit the card's main toggle settings
+            newEntry.hideNpc = isHideNpc();
+            newEntry.drawUnder = isDrawUnder();
+            newEntry.displayName = isDisplayName();
+            newEntry.overrideDisplayNameColor = isOverrideDisplayNameColor();
+            newEntry.displayNameColor = getDisplayNameColor();
+            newEntry.highlightDead = isHighlightDead();
+
+            addStyleRow(newEntry);
         }
-
-        // Add a new style row
-        NpcHighlightEntry newEntry = new NpcHighlightEntry(getNameText(), style, getPlugin().getConfig());
-        if (outlineColor != null) newEntry.outlineColor = outlineColor;
-        if (fillColor != null) newEntry.fillColor = fillColor;
-
-        // Inherit the card's main toggle settings
-        newEntry.hideNpc = isHideNpc();
-        newEntry.drawUnder = isDrawUnder();
-        newEntry.displayName = isDisplayName();
-        newEntry.overrideDisplayNameColor = isOverrideDisplayNameColor();
-        newEntry.displayNameColor = getDisplayNameColor();
-        newEntry.highlightDead = isHighlightDead();
-
-        addStyleRow(newEntry);
     }
 
     public void removeTagStyle(TagStyle style) {
@@ -805,6 +816,22 @@ public class NpcCard extends JPanel {
                 .map(StyleRow::getTagStyle)
                 .filter(Objects::nonNull)
                 .collect(java.util.stream.Collectors.toList());
+    }
+
+    public Color getOutlineColorForStyle(TagStyle style) {
+        return styleRows.stream()
+                .filter(row -> row.getTagStyle() == style)
+                .findFirst()
+                .map(row -> row.getHighlightPreviewPanel().getOutlineColor())
+                .orElse(null);
+    }
+
+    public Color getFillColorForStyle(TagStyle style) {
+        return styleRows.stream()
+                .filter(row -> row.getTagStyle() == style)
+                .findFirst()
+                .map(row -> row.getHighlightPreviewPanel().getFillColor())
+                .orElse(null);
     }
 
     @Override

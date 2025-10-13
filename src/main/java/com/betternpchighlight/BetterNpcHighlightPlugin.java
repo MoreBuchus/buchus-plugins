@@ -40,6 +40,7 @@ import javax.swing.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
+import net.runelite.api.Menu;
 import net.runelite.api.coords.WorldPoint;
 import net.runelite.api.events.*;
 import net.runelite.api.vars.InputType;
@@ -543,17 +544,119 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         boolean isTagged = isNpcTaggedWithStyle(npc, style, entries);
         String option = isTagged ? "Untag-" + style.getName() : "Tag-" + style.getName();
 
-        client.createMenuEntry(-1)
-                .setOption(option)
-                .setTarget(event.getTarget())
-                .setType(MenuAction.RUNELITE)
-                .onClick(e -> {
-                    if (isTagged) {
-                        removeStyleFromNpc(npc, style);
-                    } else {
-                        addStyleToNpc(npc, style);
+        // If no presets are configured, create a simple Tag/Untag option without a submenu.
+        if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.ZERO) {
+            client.createMenuEntry(-1)
+                    .setOption(option)
+                    .setTarget(event.getTarget())
+                    .setType(MenuAction.RUNELITE)
+                    .onClick(e -> {
+                        if (isTagged) {
+                            removeStyleFromNpc(npc, style);
+                        } else {
+                            // Use preset 0 for the default color
+                            addStyleToNpc(npc, style, 0);
+                        }
+                    });
+        } else {
+            // If presets are configured, create a submenu.
+            MenuEntry parent = client.createMenuEntry(-1)
+                    .setOption(option)
+                    .setTarget(event.getTarget())
+                    .setType(MenuAction.RUNELITE)
+                    .onClick(e -> {
+                        if (isTagged) {
+                            removeStyleFromNpc(npc, style);
+                        } else {
+                            addStyleToNpc(npc, style, 0);
+                        }
+                    });
+
+            if (parent != null) {
+                customColorTag(-1, npc, parent);
+            }
+        }
+    }
+
+    private void customColorTag(int idx, NPC npc, MenuEntry parent)
+    {
+        List<Color> colors = new ArrayList<>();
+        Menu submenu = parent.createSubMenu();
+        // add X amount of preset colors based off of config
+        if (config.presetColorAmount() != BetterNpcHighlightConfig.presetColorAmount.ZERO)
+        {
+            if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.ONE)
+            {
+                colors.add(config.presetColor1());
+            }
+            else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.TWO)
+            {
+                colors.add(config.presetColor1());
+                colors.add(config.presetColor2());
+            }
+            else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.THREE)
+            {
+                colors.add(config.presetColor1());
+                colors.add(config.presetColor2());
+                colors.add(config.presetColor3());
+            }
+            else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.FOUR)
+            {
+                colors.add(config.presetColor1());
+                colors.add(config.presetColor2());
+                colors.add(config.presetColor3());
+                colors.add(config.presetColor4());
+            }
+            else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.FIVE)
+            {
+                colors.add(config.presetColor1());
+                colors.add(config.presetColor2());
+                colors.add(config.presetColor3());
+                colors.add(config.presetColor4());
+                colors.add(config.presetColor5());
+            }
+
+            if (!colors.isEmpty())
+            {
+                int index = 1;
+                for (final Color c : colors)
+                {
+                    if (c != null)
+                    {
+                        int preset = index;
+                        submenu.createMenuEntry(0)
+                                .setOption(ColorUtil.prependColorTag("Preset color " + index, c))
+                                .setType(MenuAction.RUNELITE)
+                                .onClick(e ->
+                                {
+                                    if (npc.getName() != null)
+                                    {
+                                        addStyleToNpc(npc, getTagStyleFromConfig(), preset);
+                                    }
+                                });
+                        index++;
                     }
-                });
+                }
+            }
+        }
+
+        for (NPCInfo n : npcList)
+        {
+            if (n.getNpc() == npc)
+            {
+                submenu.createMenuEntry(0)
+                        .setOption("Reset color")
+                        .setType(MenuAction.RUNELITE)
+                        .onClick(e ->
+                        {
+                            if (npc.getName() != null)
+                            {
+                                addStyleToNpc(npc, getTagStyleFromConfig(), 0);
+                            }
+                        });
+                break;
+            }
+        }
     }
 
     private boolean isNpcTaggedWithStyle(NPC npc, TagStyle style, List<NpcHighlightEntry> entries) {
@@ -572,7 +675,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         return false;
     }
 
-    public void addStyleToNpc(NPC npc, TagStyle style) {
+    public void addStyleToNpc(NPC npc, TagStyle style, int preset) {
         if (panel == null || npc == null || npc.getName() == null) {
             return;
         }
@@ -583,7 +686,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         for (NpcCardGroupPanel group : panel.getGroups()) {
             for (NpcCard card : group.getCards()) {
                 if (npcName.equalsIgnoreCase(card.getNameText())) {
-                    card.addTagStyle(style);
+                    card.addTagStyle(style, getPresetOutlineColor(preset), getPresetFillColor(preset));
                     panel.triggerDataChanged();
                     panel.scrollToCard(card, false);
                     return;
@@ -594,7 +697,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         // If no card exists, create a new one in the default group
         panel.addNewCardToDefaultGroup(card -> {
             card.setNameText(npcName);
-            card.addTagStyle(style);
+            card.addTagStyle(style, getPresetOutlineColor(preset), getPresetFillColor(preset));
         }, false);
     }
 
@@ -1007,7 +1110,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                 if (npcIdentifier.equalsIgnoreCase(card.getNameText())) {
                     if (hide) {
                         if (card.isHideNpc()) {
-                            printMessage(card.getNameText() + " is already hidden");
+                            printMessage("Already hidden: " + card.getNameText());
                         } else {
                             card.setHideNpc(true);
                             panel.triggerDataChanged();
@@ -1015,7 +1118,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                         }
                     } else { // unhiding
                         if (!card.isHideNpc()) {
-                            printMessage(card.getNameText() + " is not hidden");
+                            printMessage("Not hidden: " + card.getNameText());
                         } else {
                             card.setHideNpc(false);
                             panel.triggerDataChanged();
@@ -1050,14 +1153,32 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
             for (NpcCard card : group.getCards()) {
                 if (npcIdentifier.equalsIgnoreCase(card.getNameText())) {
                     if (add) { // Tagging
-                        if (card.getAllTagStyles().contains(style)) {
-                            printMessage("Already tagged: " + card.getNameText() + " (" + style.getName().toLowerCase() + ")");
-                            return;
+                        boolean alreadyTagged = card.getAllTagStyles().contains(style);
+                        if (alreadyTagged) {
+                            Color newOutlineColor = getPresetOutlineColor(preset);
+                            Color newFillColor = getPresetFillColor(preset);
+                            Color existingOutlineColor = card.getOutlineColorForStyle(style);
+                            Color existingFillColor = card.getFillColorForStyle(style);
+
+                            // If the new colors match the existing ones, do nothing.
+                            if (Objects.equals(newOutlineColor, existingOutlineColor) && Objects.equals(newFillColor, existingFillColor)) {
+                                String message = "Already tagged: " + card.getNameText() + " (" + style.getName().toLowerCase() + ")";
+                                if (preset > 0) {
+                                    message += " with preset " + preset;
+                                }
+                                printMessage(message);
+                                return;
+                            }
                         }
                         card.addTagStyle(style, getPresetOutlineColor(preset), getPresetFillColor(preset));
                         panel.resort();
                         panel.scrollToCard(card, false);
-                        printMessage("Tagged: " + card.getNameText() + " (" + style.getName().toLowerCase() + ")");
+                        String message = alreadyTagged ? "Recolored: " : "Tagged: ";
+                        message += card.getNameText() + " (" + style.getName().toLowerCase() + ")";
+                        if (preset > 0) {
+                            message += " with preset " + preset;
+                        }
+                        printMessage(message);
                     } else { // Untagging
                         if (!card.getAllTagStyles().contains(style)) {
                             printMessage("Tag not found: " + card.getNameText() + " (" + style.getName().toLowerCase() + ")");
@@ -1078,15 +1199,20 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                 card.setNameText(npcIdentifier);
                 card.addTagStyle(style, getPresetOutlineColor(preset), getPresetFillColor(preset));
             });
-            printMessage("Tagged: " + npcIdentifier + " (" + style.getName().toLowerCase() + ")");
+            String message = "Tagged: " + npcIdentifier + " (" + style.getName().toLowerCase() + ")";
+            if (preset > 0) {
+                message += " with preset " + preset;
+            }
+            printMessage(message);
         } else {
             printMessage("Tag not found: " + npcIdentifier + " (" + style.getName().toLowerCase() + ")");
         }
     }
 
-    private Color getPresetOutlineColor(int preset) {
-        if (preset <= 0) return null;
+    public Color getPresetOutlineColor(int preset) {
         switch (preset) {
+            case 0: // Default color
+                return getDefaultOutlineColor(getTagStyleFromConfig());
             case 1:
                 return config.presetColor1();
             case 2:
@@ -1102,9 +1228,10 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         }
     }
 
-    private Color getPresetFillColor(int preset) {
-        if (preset <= 0) return null;
+    public Color getPresetFillColor(int preset) {
         switch (preset) {
+            case 0: // Default color
+                return getDefaultFillColor(getTagStyleFromConfig());
             case 1:
                 return config.presetFillColor1();
             case 2:
@@ -1117,6 +1244,35 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                 return config.presetFillColor5();
             default:
                 return null;
+        }
+    }
+
+    private Color getDefaultOutlineColor(TagStyle style) {
+        if (style == null) return null;
+        switch (style) {
+            case TILE: return config.tileColor();
+            case TRUE_TILE: return config.trueTileColor();
+            case SW_TILE: return config.swTileColor();
+            case SW_TRUE_TILE: return config.swTrueTileColor();
+            case HULL: return config.hullColor();
+            case AREA: return config.areaColor();
+            case OUTLINE: return config.outlineColor();
+            case CLICKBOX: return config.clickboxColor();
+            default: return null;
+        }
+    }
+
+    private Color getDefaultFillColor(TagStyle style) {
+        if (style == null) return null;
+        switch (style) {
+            case TILE: return config.tileFillColor();
+            case TRUE_TILE: return config.trueTileFillColor();
+            case SW_TILE: return config.swTileFillColor();
+            case SW_TRUE_TILE: return config.swTrueTileFillColor();
+            case HULL: return config.hullFillColor();
+            case AREA: return config.areaColor();
+            case CLICKBOX: return config.clickboxFillColor();
+            default: return null;
         }
     }
 
