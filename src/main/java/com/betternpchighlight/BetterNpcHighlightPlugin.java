@@ -506,23 +506,25 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
             return;
         }
 
-        // Highlight existing menu entries
-        if (config.highlightMenuNames()) {
-            Color color;
-            if (npcUtil.isDying(npc)) {
-                color = config.deadNpcMenuColor();
-            } else {
-                color = getDisplayNameColorForNpc(npc);
-            }
+        Color color = null;
 
-            if (color != null) {
-                MenuEntry[] menuEntries = client.getMenuEntries();
+        // Prioritize dead NPC menu color if the NPC is dying and a color is set.
+        // This works even if highlightMenuNames is off.
+        if (npcUtil.isDying(npc) && config.deadNpcMenuColor() != null) {
+            color = config.deadNpcMenuColor();
+        }
+        // If not a dying NPC with a special color, check for regular menu highlighting.
+        else if (config.highlightMenuNames()) {
+            color = getDisplayNameColorForNpc(npc);
+        }
+
+        if (color != null) {
+            MenuEntry[] menuEntries = client.getMenuEntries();
                 final MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
                 final String target = ColorUtil.prependColorTag(Text.removeTags(event.getTarget()), color);
                 menuEntry.setTarget(target);
                 client.setMenuEntries(menuEntries);
             }
-        }
 
         // Add "Tag" / "Untag" options on shift-click
         if (event.getType() == MenuAction.EXAMINE_NPC.getId() && client.isKeyPressed(KeyCode.KC_SHIFT)) {
@@ -839,7 +841,11 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
 
     @VisibleForTesting
     boolean shouldDraw(Renderable renderable, boolean drawingUI) {
-        if (renderable instanceof NPC) {
+        if (!config.entityHiderToggle())
+        {
+            return true;
+        }
+        else if (renderable instanceof NPC) {
             NPC npc = (NPC) renderable;
             for (NPCInfo npcInfo : npcList) {
                 if (npcInfo.getNpc().getIndex() == npc.getIndex() && npcInfo.isHideNpc()) {
@@ -1048,6 +1054,9 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
     }
 
     private void tagNPCCommand(String text, int var) {
+        if (!config.tagCommands()) {
+            return;
+        }
         if (text.trim().equals(TAG_COMMAND) || text.trim().equals(UNTAG_COMMAND)) {
             printMessage("Please enter a tag abbreviation followed by a valid NPC name or ID!");
             clientThread.invokeLater(() -> client.setVarcStrValue(var, ""));
@@ -1099,6 +1108,9 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
     }
 
     private void updateNpcHide(String npcIdentifier, boolean hide) {
+        if (!config.entityHiderCommands()) {
+            return;
+        }
         if (panel == null || npcIdentifier == null || npcIdentifier.trim().isEmpty()) {
             printMessage("Please enter a valid NPC name or ID!");
             return;

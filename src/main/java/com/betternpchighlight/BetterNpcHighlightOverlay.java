@@ -161,7 +161,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
         }
 
         return plugin.npcList.stream()
-                .filter(NPCInfo::isDrawOverlayBeneathNpc)
+                .filter(npcInfo -> config.drawBeneathNpcs() || npcInfo.isDrawOverlayBeneathNpc())
                 .filter(n -> n.getNpc().getLocalLocation() != null && !n.getNpc().isDead() && !npcUtil.isDying(n.getNpc()))
                 .sorted(Comparator.comparingInt(n -> n.getNpc().getLocalLocation().distanceTo(localPlayerLp)))
                 .limit(config.drawBeneathLimit())
@@ -186,9 +186,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
         // Render highlights
         if (npcInfo.hasAnyHighlight()) {
             if (config.slayerHighlight() && npcInfo.isTask()) {
-                for (TagStyle style : config.taskHighlightStyle()) {
-                    renderNpcOverlay(graphics, npcInfo, style.name());
-                }
+                renderNpcOverlay(graphics, npcInfo, config.taskHighlightStyle().name());
             } else {
                 // This is more data-driven and avoids a long chain of if-statements.
                 npcInfo.getHighlights().forEach((style, highlight) -> {
@@ -288,16 +286,8 @@ public class BetterNpcHighlightOverlay extends Overlay {
             boolean isTask = npcInfo.isTask() && config.slayerHighlight(); // Keep for OUTLINE and AREA
 
             switch (highlightStyleName.toUpperCase()) {
-                case "HULL":
-                    HighlightInfo hullHighlight = npcInfo.getHull();
-                    renderStyle = getRenderStyle(npcInfo, hullHighlight);
-
-                    Shape hull = npc.getConvexHull();
-                    if (hull != null) {
-                        renderPoly(graphics, renderStyle.line, renderStyle.fill, renderStyle.lineAlpha, renderStyle.fillAlpha, hull, hullHighlight.getOutlineWidth(), renderStyle.antiAlias);
-                    }
-                    break;
                 case "TILE":
+                    if (!config.tileHighlight()) break;
                     HighlightInfo tileHighlight = npcInfo.getTile();
                     renderStyle = getRenderStyle(npcInfo, tileHighlight);
 
@@ -320,6 +310,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                     }
                     break;
                 case "TRUE_TILE":
+                    if (!config.trueTileHighlight()) break;
                     HighlightInfo trueTileHighlight = npcInfo.getTrueTile();
                     renderStyle = getRenderStyle(npcInfo, trueTileHighlight);
 
@@ -343,6 +334,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                     }
                     break;
                 case "SW_TILE":
+                    if (!config.swTileHighlight()) break;
                     HighlightInfo swTileHighlight = npcInfo.getSwTile();
                     renderStyle = getRenderStyle(npcInfo, swTileHighlight);
 
@@ -367,6 +359,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                     }
                     break;
                 case "SW_TRUE_TILE":
+                    if (!config.swTrueTileHighlight()) break;
                     HighlightInfo swTrueTileHighlight = npcInfo.getSwTrueTile();
                     renderStyle = getRenderStyle(npcInfo, swTrueTileHighlight);
 
@@ -388,7 +381,18 @@ public class BetterNpcHighlightOverlay extends Overlay {
                         }
                     }
                     break;
+                case "HULL":
+                    if (!config.hullHighlight()) break;
+                    HighlightInfo hullHighlight = npcInfo.getHull();
+                    renderStyle = getRenderStyle(npcInfo, hullHighlight);
+
+                    Shape hull = npc.getConvexHull();
+                    if (hull != null) {
+                        renderPoly(graphics, renderStyle.line, renderStyle.fill, renderStyle.lineAlpha, renderStyle.fillAlpha, hull, hullHighlight.getOutlineWidth(), renderStyle.antiAlias);
+                    }
+                    break;
                 case "OUTLINE":
+                    if (!config.outlineHighlight()) break;
                     HighlightInfo outlineHighlight = npcInfo.getOutline();
                     Color line = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskColor()
                             : outlineHighlight.isRaveOutline() ? plugin.getRaveColor(outlineHighlight.getRaveSpeed()) : outlineHighlight.getColor();
@@ -396,6 +400,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                     modelOutlineRenderer.drawOutline(npc, (int) outlineHighlight.getOutlineWidth(), line, outlineHighlight.getOutlineFeather());
                     break;
                 case "AREA":
+                    if (!config.areaHighlight()) break;
                     HighlightInfo areaHighlight = npcInfo.getArea();
                     Color color = areaHighlight.getFill() != null ? areaHighlight.getFill() : areaHighlight.getColor();
                     Color fill = isTask ? config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor()
@@ -410,6 +415,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                     }
                     break;
                 case "CLICKBOX":
+                    if (!config.clickboxHighlight()) break;
                     HighlightInfo clickboxHighlight = npcInfo.getClickbox();
                     renderStyle = getRenderStyle(npcInfo, clickboxHighlight);
 
@@ -421,6 +427,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                     }
                     break;
                 case "TURBO":
+                    if (!config.turboHighlight()) break;
                     int turboIndex = plugin.npcList.indexOf(npcInfo);
                     if (turboIndex < 0 || turboIndex >= plugin.turboColors.size()) {
                         break;

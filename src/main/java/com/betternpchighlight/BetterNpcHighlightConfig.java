@@ -1164,7 +1164,7 @@ public interface BetterNpcHighlightConfig extends Config {
     @ConfigItem(
             position = 13,
             keyName = "tagStyleMode",
-            name = "Default Highlight Style",
+            name = "Default Tag Style",
             description = "Sets the default highlight style for new cards and for the 'Tag' right-click option.")
     default DefaultHighlightStyle tagStyleMode() {
         return DefaultHighlightStyle.TILE;
@@ -1197,6 +1197,16 @@ public interface BetterNpcHighlightConfig extends Config {
             description = "Doesn't highlight dead NPCs"
     )
     default boolean ignoreDeadNpcs() {
+        return false;
+    }
+
+    @ConfigItem(
+            position = 17,
+            keyName = "drawBeneathNpcs",
+            name = "Draw Overlay Beneath NPCs",
+            description = "Enable drawing the overlay beneath all NPCs"
+    )
+    default boolean drawBeneathNpcs() {
         return false;
     }
 
