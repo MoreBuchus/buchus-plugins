@@ -856,8 +856,8 @@ public interface BetterNpcHighlightConfig extends Config {
             description = "Picks the highlight style you want for NPCs on your slayer task",
             section = slayerSection
     )
-    default Set<TagStyle> taskHighlightStyle() {
-        return Collections.emptySet();
+    default TagStyle taskHighlightStyle() {
+        return TagStyle.TILE;
     }
 
     @Alpha
@@ -1164,7 +1164,7 @@ public interface BetterNpcHighlightConfig extends Config {
     @ConfigItem(
             position = 13,
             keyName = "tagStyleMode",
-            name = "Tag Style",
+            name = "Default Highlight Style",
             description = "Sets the default highlight style for new cards and for the 'Tag' right-click option.")
     default DefaultHighlightStyle tagStyleMode() {
         return DefaultHighlightStyle.TILE;
