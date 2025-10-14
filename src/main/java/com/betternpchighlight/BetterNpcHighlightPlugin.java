@@ -510,7 +510,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
 
         // Prioritize dead NPC menu color if the NPC is dying and a color is set.
         // This works even if highlightMenuNames is off.
-        if (npcUtil.isDying(npc) && config.deadNpcMenuColor() != null) {
+        if (npcUtil.isDying(npc) && config.deadNpcMenuNames() && config.deadNpcMenuColor() != null) {
             color = config.deadNpcMenuColor();
         }
         // If not a dying NPC with a special color, check for regular menu highlighting.
@@ -877,7 +877,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
     public void exportGroupsToFile() {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Export cards");
-        fileChooser.setSelectedFile(new java.io.File("npc_highlight_groups.json"));
+        fileChooser.setSelectedFile(new java.io.File("better_npc_highlight_cards.json"));
 
         FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON file (*.json)", "json");
         fileChooser.setFileFilter(filter);

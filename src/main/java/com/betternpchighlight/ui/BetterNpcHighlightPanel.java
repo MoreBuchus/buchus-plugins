@@ -252,9 +252,8 @@ public class BetterNpcHighlightPanel extends PluginPanel {
     private void updateFilter() {
         String text = searchField.getText().toLowerCase();
 
-        for (NpcCardGroupPanel group : groups) {
-            boolean groupMatches = group.getGroupName().toLowerCase().contains(text);
-
+        for (NpcCardGroupPanel group : groups)
+        {
             boolean anyCardMatches = false;
             for (NpcCard card : group.getCards()) {
                 boolean cardMatches = text.isEmpty()
@@ -267,8 +266,8 @@ public class BetterNpcHighlightPanel extends PluginPanel {
                 }
             }
 
-            // Show group if either group matches, or at least one card matches
-            group.setVisible(text.isEmpty() || groupMatches || anyCardMatches);
+            // A group is visible if the search is empty or if any of its cards match.
+            group.setVisible(text.isEmpty() || anyCardMatches);
         }
 
         cardsPanel.revalidate();

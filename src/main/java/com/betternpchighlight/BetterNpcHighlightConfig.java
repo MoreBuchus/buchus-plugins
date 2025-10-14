@@ -852,7 +852,7 @@ public interface BetterNpcHighlightConfig extends Config {
     @ConfigItem(
             position = 2,
             keyName = "taskHighlightStyle",
-            name = "Slayer Highlight Style",
+            name = "Slayer Tag Style",
             description = "Picks the highlight style you want for NPCs on your slayer task",
             section = slayerSection
     )
@@ -1212,7 +1212,7 @@ public interface BetterNpcHighlightConfig extends Config {
 
     @Range(max = 20)
     @ConfigItem(
-            position = 20,
+            position = 18,
             keyName = "drawBeneathLimit",
             name = "Draw Beneath Limit",
             description = "Sets the amount of NPCs to have the overlay draw beneath. The higher the number, the more it affects FPS"
@@ -1222,7 +1222,7 @@ public interface BetterNpcHighlightConfig extends Config {
     }
 
     @ConfigItem(
-            position = 22,
+            position = 19,
             keyName = "renderDistance",
             name = "Render Distance",
             description = "Limits overlays to be drawn to within the chosen distance from the local player. <br>Short = 7 tiles, Medium = 11 tiles"
@@ -1232,7 +1232,7 @@ public interface BetterNpcHighlightConfig extends Config {
     }
 
     @ConfigItem(
-            position = 23,
+            position = 20,
             keyName = "highlightPets",
             name = "Highlight pets",
             description = "Highlights followers/pets that are in any of your lists"
@@ -1242,10 +1242,20 @@ public interface BetterNpcHighlightConfig extends Config {
     }
 
     @ConfigItem(
+            position = 21,
+            keyName = "deadNpcMenuNames",
+            name = "Highlight Dead NPC Menu Names",
+            description = "Highlights dead NPC names in right click menu"
+    )
+    default boolean deadNpcMenuNames() {
+        return false;
+    }
+
+    @ConfigItem(
             position = 24,
             keyName = "deadNpcMenuColor",
             name = "Dead NPC Menu Color",
-            description = "Highlights names in right click menu entry when an NPC is dead"
+            description = "Sets the color of dead NPC names in right click menu"
     )
     Color deadNpcMenuColor();
 
