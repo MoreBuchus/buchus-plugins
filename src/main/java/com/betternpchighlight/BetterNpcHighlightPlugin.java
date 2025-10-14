@@ -244,7 +244,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                 if (panel != null) {
                     List<NpcHighlightEntry> entries = panel.getNpcHighlightEntries();
 
-                    for (NPC npc : client.getNpcs()) {
+                    for (NPC npc : client.getTopLevelWorldView().npcs()) {
                         NPCInfo info = buildNpcInfoFromPanelEntries(npc, entries);
                         if (info != null && (info.hasAnyHighlight() || info.isHideNpc() || info.isDisplayNameAboveNpc() || info.isDrawOverlayBeneathNpc())) {
                             npcList.add(info);
@@ -375,7 +375,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
     private void addSlayerTaskNpcs() {
         if (slayerPluginService == null) return;
 
-        for (NPC npc : client.getNpcs()) {
+        for (NPC npc : client.getTopLevelWorldView().npcs()) {
             if (slayerPluginService.getTargets().contains(npc)) {
                 // Check if this NPC is already in the list from panel entries
                 Optional<NPCInfo> existingInfo = npcList.stream()
@@ -402,6 +402,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                     recreateList();
                     break;
                 case "turboHighlight":
+                    assert event.getNewValue() != null;
                     if (event.getNewValue().equals("true")) {
                         if (!confirmedWarning) {
                             showEpilepsyWarning();
@@ -430,7 +431,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         for (NpcSpawn n : npcSpawns) {
             if (npc.getIndex() == n.index && npc.getId() == n.id) {
                 if (n.spawnPoint == null && n.diedOnTick != -1) {
-                    n.spawnPoint = client.isInInstancedRegion() ?
+                    n.spawnPoint = client.getTopLevelWorldView().isInstance() ?
                             WorldPoint.fromLocalInstance(client, npc.getLocalLocation()) :
                             WorldPoint.fromLocal(client, npc.getLocalLocation());
                     n.respawnTime = client.getTickCount() - n.diedOnTick + 1;
@@ -508,22 +509,20 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
 
         Color color = null;
 
-        // Prioritize dead NPC menu color if the NPC is dying and a color is set.
-        // This works even if highlightMenuNames is off.
+        // Prioritize dead NPC menu color if the NPC is dying and a color is set
         if (npcUtil.isDying(npc) && config.deadNpcMenuNames() && config.deadNpcMenuColor() != null) {
             color = config.deadNpcMenuColor();
         }
-        // If not a dying NPC with a special color, check for regular menu highlighting.
         else if (config.highlightMenuNames()) {
             color = getDisplayNameColorForNpc(npc);
         }
 
         if (color != null) {
-            MenuEntry[] menuEntries = client.getMenuEntries();
+            MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
                 final MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
                 final String target = ColorUtil.prependColorTag(Text.removeTags(event.getTarget()), color);
                 menuEntry.setTarget(target);
-                client.setMenuEntries(menuEntries);
+                client.getMenu().setMenuEntries(menuEntries);
             }
 
         // Add "Tag" / "Untag" options on shift-click
@@ -548,7 +547,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
 
         // If no presets are configured, create a simple Tag/Untag option without a submenu.
         if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.ZERO) {
-            client.createMenuEntry(-1)
+            client.getMenu().createMenuEntry(-1)
                     .setOption(option)
                     .setTarget(event.getTarget())
                     .setType(MenuAction.RUNELITE)
@@ -562,7 +561,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                     });
         } else {
             // If presets are configured, create a submenu.
-            MenuEntry parent = client.createMenuEntry(-1)
+            MenuEntry parent = client.getMenu().createMenuEntry(-1)
                     .setOption(option)
                     .setTarget(event.getTarget())
                     .setType(MenuAction.RUNELITE)
@@ -575,12 +574,12 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                     });
 
             if (parent != null) {
-                customColorTag(-1, npc, parent);
+                customColorTag(npc, parent);
             }
         }
     }
 
-    private void customColorTag(int idx, NPC npc, MenuEntry parent)
+    private void customColorTag(NPC npc, MenuEntry parent)
     {
         List<Color> colors = new ArrayList<>();
         Menu submenu = parent.createSubMenu();

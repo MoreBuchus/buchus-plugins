@@ -77,7 +77,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
 
         // Debug and Respawn Timer rendering remains separate as they have different logic.
         if (plugin.isDebugModeEnabled()) {
-            for (NPC npc : client.getNpcs()) {
+            for (NPC npc : client.getTopLevelWorldView().npcs()) {
                 NPCComposition npcComposition = npc.getTransformedComposition();
                 //Do not show debug info for NPCs with invisible models
                 if (npcComposition != null && ((npc.getName() != null && !npc.getName().isEmpty() && !npc.getName().equals("null")) || !isInvisible(npc.getModel()))) {
@@ -104,7 +104,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                     final LocalPoint lp = LocalPoint.fromWorld(client, n.spawnPoint.getX(), n.spawnPoint.getY());
 
                     if (lp != null) {
-                        final LocalPoint centerLp = new LocalPoint(lp.getX() + Perspective.LOCAL_TILE_SIZE * (n.size - 1) / 2, lp.getY() + Perspective.LOCAL_TILE_SIZE * (n.size - 1) / 2);
+                        final LocalPoint centerLp = new LocalPoint(lp.getX() + Perspective.LOCAL_TILE_SIZE * (n.size - 1) / 2, lp.getY() + Perspective.LOCAL_TILE_SIZE * (n.size - 1) / 2, client.getTopLevelWorldView());
                         Color outlineColor = config.respawnOutlineColor();
                         Color fillColor = config.respawnFillColor();
                         Color raveColor = Color.WHITE;
@@ -316,7 +316,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
 
                     lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
                     if (lp != null) {
-                        lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64);
+                        lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64, client.getTopLevelWorldView());
                         tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
                         if (tilePoly != null) {
                             switch (trueTileHighlight.getLineType()) {
@@ -342,7 +342,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                     if (lp != null) {
                         int x = lp.getX() - (size - 1) * 128 / 2;
                         int y = lp.getY() - (size - 1) * 128 / 2;
-                        tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
+                        tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y, client.getTopLevelWorldView()));
                         if (tilePoly != null) {
                             switch (swTileHighlight.getLineType()) {
                                 case REGULAR:
@@ -455,7 +455,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                         } else if (plugin.turboModeStyle == 1) {
                             lp = LocalPoint.fromWorld(client, npc.getWorldLocation());
                             if (lp != null) {
-                                lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64);
+                                lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64, client.getTopLevelWorldView());
                                 tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
                                 if (tilePoly != null) {
                                     if (tileMode == 0) {
@@ -472,7 +472,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                             if (lp != null) {
                                 int x = lp.getX() - (size - 1) * 128 / 2;
                                 int y = lp.getY() - (size - 1) * 128 / 2;
-                                tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
+                                tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y, client.getTopLevelWorldView()));
                                 if (tilePoly != null) {
                                     if (tileMode == 0) {
                                         renderPoly(graphics, turboLine, turboFill, turboLine.getAlpha(), turboFill.getAlpha(), tilePoly, plugin.turboTileWidth, true);
@@ -671,8 +671,8 @@ public class BetterNpcHighlightOverlay extends Overlay {
         final int localY = lp.getY();
         final int northEastX = lp.getX() + Perspective.LOCAL_TILE_SIZE * (size - 1) / 2;
         final int northEastY = lp.getY() + Perspective.LOCAL_TILE_SIZE * (size - 1) / 2;
-        final LocalPoint northEastLp = new LocalPoint(northEastX, northEastY);
-        int localZ = Perspective.getTileHeight(client, northEastLp, client.getPlane());
+        final LocalPoint northEastLp = new LocalPoint(northEastX, northEastY, client.getTopLevelWorldView());
+        int localZ = Perspective.getTileHeight(client, northEastLp, client.getTopLevelWorldView().getPlane());
         int rotation = actor.getCurrentOrientation();
 
         Perspective.modelToCanvas(client, vCount, localX, localY, localZ, rotation, x3d, z3d, y3d, x2d, y2d);
