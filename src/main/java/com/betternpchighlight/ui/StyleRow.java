@@ -45,7 +45,7 @@ public class StyleRow extends JPanel {
     private static final double DEFAULT_OUTLINE_WIDTH = 2.0;
     private static final boolean DEFAULT_ANTI_ALIASING = true;
     private static final int DEFAULT_OUTLINE_FEATHER = 2;
-    private static final HighlightInfo.TileStyle DEFAULT_TILE_STYLE = HighlightInfo.TileStyle.REGULAR;
+    private static final HighlightInfo.LineType DEFAULT_TILE_STYLE = HighlightInfo.LineType.REGULAR;
 
     // Icon sets
     public static final IconSet ADD_STYLE_ICONS = IconSet.loadIconSet(
@@ -245,26 +245,26 @@ public class StyleRow extends JPanel {
         if (tagStyle.toString().contains("Tile")) {
             if (!separatorAdded) menu.addSeparator();
 
-            String currentStyleName = highlightPreviewPanel.getTileStyle().name().charAt(0) + highlightPreviewPanel.getTileStyle().name().substring(1).toLowerCase();
-            JMenu tileStyleMenu = new JMenu("Tile style: " + currentStyleName);
+            String currentStyleName = highlightPreviewPanel.getLineType().name().charAt(0) + highlightPreviewPanel.getLineType().name().substring(1).toLowerCase();
+            JMenu lineTypeMenu = new JMenu("Tile style: " + currentStyleName);
             ButtonGroup group = new ButtonGroup();
-            for (HighlightInfo.TileStyle style : HighlightInfo.TileStyle.values()) {
-                String styleName = style.name().charAt(0) + style.name().substring(1).toLowerCase();
-                JRadioButtonMenuItem item = new JRadioButtonMenuItem(styleName);
-                item.setSelected(highlightPreviewPanel.getTileStyle() == style);
+            for (HighlightInfo.LineType type : HighlightInfo.LineType.values()) {
+                String typeName = type.name().charAt(0) + type.name().substring(1).toLowerCase();
+                JRadioButtonMenuItem item = new JRadioButtonMenuItem(typeName);
+                item.setSelected(highlightPreviewPanel.getLineType() == type);
                 item.addActionListener(e -> {
-                    highlightPreviewPanel.setTileStyle(style);
-                    tileStyleMenu.setText("Tile style: " + styleName);
+                    highlightPreviewPanel.setLineType(type);
+                    lineTypeMenu.setText("Line type: " + typeName);
                     parentCard.triggerDataChanged();
                 });
                 group.add(item);
-                tileStyleMenu.add(item);
+                lineTypeMenu.add(item);
             }
-            menu.add(tileStyleMenu);
+            menu.add(lineTypeMenu);
         } else {
             // Ensure non-tile styles don't retain a non-regular tile style
-            if (highlightPreviewPanel.getTileStyle() != HighlightInfo.TileStyle.REGULAR) {
-                highlightPreviewPanel.setTileStyle(HighlightInfo.TileStyle.REGULAR);
+            if (highlightPreviewPanel.getLineType() != HighlightInfo.LineType.REGULAR) {
+                highlightPreviewPanel.setLineType(HighlightInfo.LineType.REGULAR);
                 parentCard.triggerDataChanged();
             }
         }
@@ -355,7 +355,7 @@ public class StyleRow extends JPanel {
                 config.raveOutline,
                 config.raveFill,
                 config.raveSpeed,
-                config.tileStyle,
+                config.lineType,
                 config.outlineWidth,
                 config.antiAliasing,
                 config.outlineFeather,
@@ -394,7 +394,7 @@ public class StyleRow extends JPanel {
                 entry.raveOutline,
                 entry.raveFill,
                 entry.raveSpeed,
-                entry.tileStyle,
+                entry.lineType,
                 entry.outlineWidth,
                 entry.antiAliasing,
                 entry.outlineFeather
@@ -513,7 +513,7 @@ public class StyleRow extends JPanel {
         final boolean raveOutline;
         final boolean raveFill;
         final int raveSpeed;
-        final HighlightInfo.TileStyle tileStyle;
+        final HighlightInfo.LineType lineType;
         final double outlineWidth;
         final boolean antiAliasing;
         final int outlineFeather;
@@ -524,7 +524,7 @@ public class StyleRow extends JPanel {
                 boolean raveOutline,
                 boolean raveFill,
                 int raveSpeed,
-                HighlightInfo.TileStyle tileStyle,
+                HighlightInfo.LineType lineType,
                 double outlineWidth,
                 boolean antiAliasing,
                 int outlineFeather
@@ -534,7 +534,7 @@ public class StyleRow extends JPanel {
             this.raveOutline = raveOutline;
             this.raveFill = raveFill;
             this.raveSpeed = raveSpeed;
-            this.tileStyle = tileStyle;
+            this.lineType = lineType;
             this.outlineWidth = outlineWidth;
             this.antiAliasing = antiAliasing;
             this.outlineFeather = outlineFeather;

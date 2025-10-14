@@ -657,7 +657,7 @@ public class NpcCard extends JPanel {
                 row.getHighlightPreviewPanel().isRaveOutline(),
                 row.getHighlightPreviewPanel().isRaveFill(),
                 row.getHighlightPreviewPanel().getRaveSpeed(),
-                row.getHighlightPreviewPanel().getTileStyle(),
+                row.getHighlightPreviewPanel().getLineType(),
                 row.getHighlightPreviewPanel().getOutlineWidth(),
                 row.getHighlightPreviewPanel().isAntiAliasing(),
                 row.getHighlightPreviewPanel().getOutlineFeather()

@@ -46,7 +46,7 @@ public class HighlightPreviewPanel extends JPanel implements RaveTimerManager.Re
 
     // Style properties
     @Setter(AccessLevel.NONE)
-    private HighlightInfo.TileStyle tileStyle;
+    private HighlightInfo.LineType lineType;
     private double outlineWidth;
     private boolean antiAliasing;
     private int outlineFeather;
@@ -60,7 +60,7 @@ public class HighlightPreviewPanel extends JPanel implements RaveTimerManager.Re
             boolean raveOutline,
             boolean raveFill,
             int raveSpeed,
-            HighlightInfo.TileStyle tileStyle,
+            HighlightInfo.LineType lineType,
             double outlineWidth,
             boolean antiAliasing,
             int outlineFeather,
@@ -72,7 +72,7 @@ public class HighlightPreviewPanel extends JPanel implements RaveTimerManager.Re
         this.raveOutline = raveOutline;
         this.raveFill = raveFill;
         this.raveSpeed = raveSpeed;
-        this.tileStyle = tileStyle;
+        this.lineType = lineType;
         this.outlineWidth = outlineWidth;
         this.antiAliasing = antiAliasing;
         this.outlineFeather = outlineFeather;
@@ -129,7 +129,7 @@ public class HighlightPreviewPanel extends JPanel implements RaveTimerManager.Re
             float width = getWidth();
             float height = getHeight();
 
-            switch (getCurrentTileStyle()) {
+            switch (getCurrentLineType()) {
                 case REGULAR:
                     drawRegularBorder(g2d, width, height, stroke, offset);
                     break;
@@ -231,11 +231,11 @@ public class HighlightPreviewPanel extends JPanel implements RaveTimerManager.Re
         return outlineColor;
     }
 
-    private HighlightInfo.TileStyle getCurrentTileStyle() {
+    private HighlightInfo.LineType getCurrentLineType() {
         if ("Turbo".equals(tagStyle)) {
-            return HighlightInfo.TileStyle.values()[random.nextInt(HighlightInfo.TileStyle.values().length)];
+            return HighlightInfo.LineType.values()[random.nextInt(HighlightInfo.LineType.values().length)];
         }
-        return tileStyle;
+        return lineType;
     }
 
     public int getCurrentRaveSpeed() {
@@ -265,8 +265,8 @@ public class HighlightPreviewPanel extends JPanel implements RaveTimerManager.Re
         updateRaveState();
     }
 
-    public void setTileStyle(HighlightInfo.TileStyle tileStyle) {
-        this.tileStyle = tileStyle;
+    public void setLineType(HighlightInfo.LineType lineType) {
+        this.lineType = lineType;
         repaint();
     }
 

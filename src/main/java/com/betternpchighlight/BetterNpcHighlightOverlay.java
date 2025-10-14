@@ -295,7 +295,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                     if (lp != null) {
                         tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
                         if (tilePoly != null) {
-                            switch (tileHighlight.getTileStyle()) {
+                            switch (tileHighlight.getLineType()) {
                                 case REGULAR:
                                     renderPoly(graphics, renderStyle.line, renderStyle.fill, renderStyle.lineAlpha, renderStyle.fillAlpha, tilePoly, tileHighlight.getOutlineWidth(), renderStyle.antiAlias);
                                     break;
@@ -319,7 +319,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                         lp = new LocalPoint(lp.getX() + size * 128 / 2 - 64, lp.getY() + size * 128 / 2 - 64);
                         tilePoly = Perspective.getCanvasTileAreaPoly(client, lp, size);
                         if (tilePoly != null) {
-                            switch (trueTileHighlight.getTileStyle()) {
+                            switch (trueTileHighlight.getLineType()) {
                                 case REGULAR:
                                     renderPoly(graphics, renderStyle.line, renderStyle.fill, renderStyle.lineAlpha, renderStyle.fillAlpha, tilePoly, trueTileHighlight.getOutlineWidth(), renderStyle.antiAlias);
                                     break;
@@ -344,7 +344,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                         int y = lp.getY() - (size - 1) * 128 / 2;
                         tilePoly = Perspective.getCanvasTilePoly(client, new LocalPoint(x, y));
                         if (tilePoly != null) {
-                            switch (swTileHighlight.getTileStyle()) {
+                            switch (swTileHighlight.getLineType()) {
                                 case REGULAR:
                                     renderPoly(graphics, renderStyle.line, renderStyle.fill, renderStyle.lineAlpha, renderStyle.fillAlpha, tilePoly, swTileHighlight.getOutlineWidth(), renderStyle.antiAlias);
                                     break;
@@ -367,7 +367,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
                     if (lp != null) {
                         tilePoly = Perspective.getCanvasTilePoly(client, lp);
                         if (tilePoly != null) {
-                            switch (swTrueTileHighlight.getTileStyle()) {
+                            switch (swTrueTileHighlight.getLineType()) {
                                 case REGULAR:
                                     renderPoly(graphics, renderStyle.line, renderStyle.fill, renderStyle.lineAlpha, renderStyle.fillAlpha, tilePoly, swTrueTileHighlight.getOutlineWidth(), renderStyle.antiAlias);
                                     break;
@@ -421,7 +421,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
 
                     lp = npc.getLocalLocation();
                     if (lp != null) {
-                        Shape clickbox = Perspective.getClickbox(client, npc.getModel(), npc.getCurrentOrientation(), lp.getX(), lp.getY(),
+                        Shape clickbox = Perspective.getClickbox(client, npc.getWorldView(), npc.getModel(), npc.getCurrentOrientation(), lp.getX(), lp.getY(),
                                 Perspective.getTileHeight(client, lp, npc.getWorldLocation().getPlane()));
                         renderClickbox(graphics, clickbox, client.getMouseCanvasPosition(), renderStyle.line, renderStyle.fill, renderStyle.lineAlpha, renderStyle.fillAlpha, renderStyle.line.darker(), clickboxHighlight.getOutlineWidth(), renderStyle.antiAlias);
                     }

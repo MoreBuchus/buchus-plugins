@@ -7,7 +7,7 @@ public class StyleDTO {
     public boolean raveOutline;
     public boolean raveFill;
     public int raveSpeed;
-    public String tileStyle;
+    public String lineType;
     public double outlineWidth;
     public boolean antiAliasing;
     public int outlineFeather;

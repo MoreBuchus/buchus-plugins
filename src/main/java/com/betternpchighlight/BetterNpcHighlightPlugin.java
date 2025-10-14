@@ -301,7 +301,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
      * This allows for layering multiple highlights on a single NPC.
      */
     private void applyHighlightFromEntry(NPCInfo info, NpcHighlightEntry entry) {
-        HighlightInfo highlight = new HighlightInfo(true, entry.outlineColor, entry.fillColor, entry.raveOutline, entry.raveFill, entry.raveSpeed, entry.tileStyle, entry.outlineWidth, entry.antiAliasing, entry.outlineFeather);
+        HighlightInfo highlight = new HighlightInfo(true, entry.outlineColor, entry.fillColor, entry.raveOutline, entry.raveFill, entry.raveSpeed, entry.lineType, entry.outlineWidth, entry.antiAliasing, entry.outlineFeather);
         switch (entry.tagStyle) {
             case TILE:
                 info.setTile(highlight);

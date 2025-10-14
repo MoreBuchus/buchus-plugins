@@ -20,14 +20,14 @@ public class NpcHighlightEntry {
     public boolean raveOutline;
     public boolean raveFill;
     public int raveSpeed;
-    public HighlightInfo.TileStyle tileStyle;
+    public HighlightInfo.LineType lineType;
     public double outlineWidth;
     public boolean antiAliasing;
     public int outlineFeather;
 
     public NpcHighlightEntry(String nameOrId, TagStyle tagStyle, Color outlineColor, Color fillColor,
                              boolean hideNpc, boolean drawUnder, boolean displayName, Color displayNameColor, boolean overrideDisplayNameColor,
-                             boolean highlightDead, boolean raveOutline, boolean raveFill, int raveSpeed, HighlightInfo.TileStyle tileStyle,
+                             boolean highlightDead, boolean raveOutline, boolean raveFill, int raveSpeed, HighlightInfo.LineType lineType,
                              double outlineWidth, boolean antiAliasing, int outlineFeather) {
         this.nameOrId = nameOrId;
         this.tagStyle = tagStyle;
@@ -42,7 +42,7 @@ public class NpcHighlightEntry {
         this.raveOutline = raveOutline;
         this.raveFill = raveFill;
         this.raveSpeed = raveSpeed;
-        this.tileStyle = tileStyle;
+        this.lineType = lineType;
         this.outlineWidth = outlineWidth;
         this.antiAliasing = antiAliasing;
         this.outlineFeather = outlineFeather;
@@ -65,7 +65,7 @@ public class NpcHighlightEntry {
                 false, // raveOutline
                 false, // raveFill
                 6000,  // raveSpeed
-                HighlightInfo.TileStyle.REGULAR, // tileStyle
+                HighlightInfo.LineType.REGULAR, // lineType
                 2.0,   // outlineWidth
                 true,  // antiAliasing
                 2);    // outlineFeather
@@ -93,7 +93,7 @@ public class NpcHighlightEntry {
                     this.raveOutline = config.tileRave();
                     this.raveFill = config.tileRave();
                     this.raveSpeed = config.tileRaveSpeed();
-                    this.tileStyle = HighlightInfo.TileStyle.valueOf(config.tileLines().name());
+                    this.lineType = HighlightInfo.LineType.valueOf(config.tileLines().name());
                     this.outlineWidth = config.tileWidth();
                     this.antiAliasing = config.tileAA();
                     this.outlineFeather = 0;
@@ -104,7 +104,7 @@ public class NpcHighlightEntry {
                     this.raveOutline = config.trueTileRave();
                     this.raveFill = config.trueTileRave();
                     this.raveSpeed = config.trueTileRaveSpeed();
-                    this.tileStyle = HighlightInfo.TileStyle.valueOf(config.trueTileLines().name());
+                    this.lineType = HighlightInfo.LineType.valueOf(config.trueTileLines().name());
                     this.outlineWidth = config.trueTileWidth();
                     this.antiAliasing = config.trueTileAA();
                     this.outlineFeather = 0;
@@ -115,7 +115,7 @@ public class NpcHighlightEntry {
                     this.raveOutline = config.swTileRave();
                     this.raveFill = config.swTileRave();
                     this.raveSpeed = config.swTileRaveSpeed();
-                    this.tileStyle = HighlightInfo.TileStyle.valueOf(config.swTileLines().name());
+                    this.lineType = HighlightInfo.LineType.valueOf(config.swTileLines().name());
                     this.outlineWidth = config.swTileWidth();
                     this.antiAliasing = config.swTileAA();
                     this.outlineFeather = 0;
@@ -126,7 +126,7 @@ public class NpcHighlightEntry {
                     this.raveOutline = config.swTrueTileRave();
                     this.raveFill = config.swTrueTileRave();
                     this.raveSpeed = config.swTrueTileRaveSpeed();
-                    this.tileStyle = HighlightInfo.TileStyle.valueOf(config.swTrueTileLines().name());
+                    this.lineType = HighlightInfo.LineType.valueOf(config.swTrueTileLines().name());
                     this.outlineWidth = config.swTrueTileWidth();
                     this.antiAliasing = config.swTrueTileAA();
                     this.outlineFeather = 0;
@@ -137,7 +137,7 @@ public class NpcHighlightEntry {
                     this.raveOutline = config.hullRave();
                     this.raveFill = config.hullRave();
                     this.raveSpeed = config.hullRaveSpeed();
-                    this.tileStyle = HighlightInfo.TileStyle.REGULAR;
+                    this.lineType = HighlightInfo.LineType.REGULAR;
                     this.outlineWidth = config.hullWidth();
                     this.antiAliasing = config.hullAA();
                     this.outlineFeather = 0;
@@ -148,7 +148,7 @@ public class NpcHighlightEntry {
                     this.raveOutline = config.areaRave();
                     this.raveFill = config.areaRave();
                     this.raveSpeed = config.areaRaveSpeed();
-                    this.tileStyle = HighlightInfo.TileStyle.REGULAR;
+                    this.lineType = HighlightInfo.LineType.REGULAR;
                     this.outlineWidth = 0;
                     this.antiAliasing = false;
                     this.outlineFeather = 0;
@@ -159,7 +159,7 @@ public class NpcHighlightEntry {
                     this.raveOutline = config.outlineRave();
                     this.raveFill = false;
                     this.raveSpeed = config.outlineRaveSpeed();
-                    this.tileStyle = HighlightInfo.TileStyle.REGULAR;
+                    this.lineType = HighlightInfo.LineType.REGULAR;
                     this.outlineWidth = config.outlineWidth();
                     this.antiAliasing = true;
                     this.outlineFeather = config.outlineFeather();
@@ -170,7 +170,7 @@ public class NpcHighlightEntry {
                     this.raveOutline = config.clickboxRave();
                     this.raveFill = config.clickboxRave();
                     this.raveSpeed = config.clickboxRaveSpeed();
-                    this.tileStyle = HighlightInfo.TileStyle.REGULAR;
+                    this.lineType = HighlightInfo.LineType.REGULAR;
                     this.outlineWidth = config.clickboxWidth();
                     this.antiAliasing = config.clickboxAA();
                     this.outlineFeather = 0;

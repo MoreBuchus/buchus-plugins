@@ -176,7 +176,7 @@ public final class ConfigMigrator {
             styleDTO.raveOutline = rave;
             styleDTO.raveFill = rave;
             styleDTO.raveSpeed = raveSpeed;
-            styleDTO.tileStyle = toTileStyle(lineType).name();
+            styleDTO.lineType = toLineType(lineType).name();
             styleDTO.outlineWidth = width;
             styleDTO.antiAliasing = antiAliasing;
             styleDTO.outlineFeather = feather;
@@ -201,17 +201,17 @@ public final class ConfigMigrator {
         }
     }
 
-    private HighlightInfo.TileStyle toTileStyle(BetterNpcHighlightConfig.lineType lineType) {
+    private HighlightInfo.LineType toLineType(BetterNpcHighlightConfig.lineType lineType) {
         if (lineType == null) {
-            return HighlightInfo.TileStyle.REGULAR;
+            return HighlightInfo.LineType.REGULAR;
         }
         switch (lineType) {
             case DASHED:
-                return HighlightInfo.TileStyle.DASHED;
+                return HighlightInfo.LineType.DASHED;
             case CORNER:
-                return HighlightInfo.TileStyle.CORNER;
+                return HighlightInfo.LineType.CORNER;
             default:
-                return HighlightInfo.TileStyle.REGULAR;
+                return HighlightInfo.LineType.REGULAR;
         }
     }
 

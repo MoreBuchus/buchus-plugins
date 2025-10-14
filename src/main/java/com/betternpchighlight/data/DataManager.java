@@ -108,7 +108,7 @@ public final class DataManager {
                 s.raveOutline = e.raveOutline;
                 s.raveFill = e.raveFill;
                 s.raveSpeed = e.raveSpeed;
-                s.tileStyle = e.tileStyle.name();
+                s.lineType = e.lineType.name();
                 s.outlineWidth = e.outlineWidth;
                 s.antiAliasing = e.antiAliasing;
                 s.outlineFeather = e.outlineFeather;
@@ -133,9 +133,9 @@ public final class DataManager {
             final List<NpcHighlightEntry> entries = cardDto.styles.stream()
                     .map(s -> {
                         final int raveSpeed = s.raveSpeed == 0 ? DEFAULT_RAVE_SPEED : s.raveSpeed;
-                        final HighlightInfo.TileStyle tileStyle = s.tileStyle == null
-                                ? HighlightInfo.TileStyle.REGULAR
-                                : HighlightInfo.TileStyle.valueOf(s.tileStyle);
+                        final HighlightInfo.LineType lineType = s.lineType == null
+                                ? HighlightInfo.LineType.REGULAR
+                                : HighlightInfo.LineType.valueOf(s.lineType);
                         return new NpcHighlightEntry(
                                 cardDto.name,
                                 TagStyle.fromString(s.tagStyle),
@@ -150,7 +150,7 @@ public final class DataManager {
                                 s.raveOutline,
                                 s.raveFill,
                                 raveSpeed,
-                                tileStyle,
+                                lineType,
                                 s.outlineWidth,
                                 s.antiAliasing,
                                 s.outlineFeather
