@@ -70,6 +70,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.Set;
+import java.util.Objects;
 
 import static net.runelite.api.MenuAction.MENU_ACTION_DEPRIORITIZE_OFFSET;
 
@@ -858,7 +859,8 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener
 	@Subscribe(priority = -1)
 	public void onGameTick(GameTick event)
 	{
-		if (checkSlayerPluginEnabled() && !currentTask.equals(slayerPluginService.getTask()))
+		String slayerTask = slayerPluginService.getTask();
+		if (checkSlayerPluginEnabled() && !StringUtils.isEmpty(slayerTask) && !Objects.equals(currentTask, slayerTask))
 		{
 			recreateList();
 		}
