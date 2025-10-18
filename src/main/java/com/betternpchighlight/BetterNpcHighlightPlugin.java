@@ -82,7 +82,7 @@ import java.util.stream.Collectors;
 @PluginDescriptor(
         name = "Better NPC Highlight",
         description = "A more customizable NPC highlight with modern GUI",
-        tags = {"npc", "highlight", "indicators", "custom", "gui", "table"}
+        tags = {"npc", "highlight", "indicators", "respawn", "hide", "entity", "custom", "id", "name"}
 )
 @PluginDependency(SlayerPlugin.class)
 public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, BetterNpcHighlightPanel.DataChangedListener {
