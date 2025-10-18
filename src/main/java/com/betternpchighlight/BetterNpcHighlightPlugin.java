@@ -33,10 +33,6 @@ import com.betternpchighlight.ui.NpcCardGroupPanel;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.gson.Gson;
 import com.google.inject.Provides;
-
-import java.util.*;
-import javax.swing.*;
-
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import net.runelite.api.*;
@@ -56,11 +52,7 @@ import net.runelite.client.events.ConfigChanged;
 import net.runelite.client.game.NpcUtil;
 import net.runelite.client.input.KeyListener;
 import net.runelite.client.input.KeyManager;
-import net.runelite.client.plugins.Plugin;
-import net.runelite.client.plugins.PluginManager;
-import net.runelite.client.plugins.PluginDependency;
-import net.runelite.client.plugins.PluginDescriptor;
-import net.runelite.client.plugins.PluginInstantiationException;
+import net.runelite.client.plugins.*;
 import net.runelite.client.plugins.slayer.SlayerPlugin;
 import net.runelite.client.plugins.slayer.SlayerPluginService;
 import net.runelite.client.ui.ClientToolbar;
@@ -69,12 +61,12 @@ import net.runelite.client.ui.components.colorpicker.ColorPickerManager;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
-import net.runelite.client.util.WildcardMatcher;
 import net.runelite.client.util.Text;
-
+import net.runelite.client.util.WildcardMatcher;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.inject.Inject;
+import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -82,6 +74,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.time.Instant;
+import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -284,9 +277,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                 // Always apply toggles from any matching entry.
                 applyTogglesFromEntry(info, entry);
 
-                // Apply the visual highlight from this matching entry, but only if it's not "None".
-                // We don't break here, allowing multiple rules to apply to the same NPC,
-                // layering highlights and toggles.
+                // Apply the visual highlight from this matching entry, but only if it's not null.
                 if (entry.tagStyle != null) {
                     applyHighlightFromEntry(info, entry);
                 }
@@ -483,7 +474,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
 
     @Subscribe(priority = -1)
     public void onGameTick(GameTick event) {
-        if (checkSlayerPluginEnabled() && !currentTask.equals(slayerPluginService.getTask())) {
+        if (slayerPluginService != null && checkSlayerPluginEnabled() && currentTask != null && !currentTask.equals(slayerPluginService.getTask())) {
             recreateList();
         }
 
@@ -512,18 +503,17 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         // Prioritize dead NPC menu color if the NPC is dying and a color is set
         if (npcUtil.isDying(npc) && config.deadNpcMenuNames() && config.deadNpcMenuColor() != null) {
             color = config.deadNpcMenuColor();
-        }
-        else if (config.highlightMenuNames()) {
+        } else if (config.highlightMenuNames()) {
             color = getDisplayNameColorForNpc(npc);
         }
 
         if (color != null) {
             MenuEntry[] menuEntries = client.getMenu().getMenuEntries();
-                final MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
-                final String target = ColorUtil.prependColorTag(Text.removeTags(event.getTarget()), color);
-                menuEntry.setTarget(target);
-                client.getMenu().setMenuEntries(menuEntries);
-            }
+            final MenuEntry menuEntry = menuEntries[menuEntries.length - 1];
+            final String target = ColorUtil.prependColorTag(Text.removeTags(event.getTarget()), color);
+            menuEntry.setTarget(target);
+            client.getMenu().setMenuEntries(menuEntries);
+        }
 
         // Add "Tag" / "Untag" options on shift-click
         if (event.getType() == MenuAction.EXAMINE_NPC.getId() && client.isKeyPressed(KeyCode.KC_SHIFT)) {
@@ -545,7 +535,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         boolean isTagged = isNpcTaggedWithStyle(npc, style, entries);
         String option = isTagged ? "Untag-" + style.getName() : "Tag-" + style.getName();
 
-        // If no presets are configured, create a simple Tag/Untag option without a submenu.
+        // If no presets are configured, create a tag/untag option without a submenu.
         if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.ZERO) {
             client.getMenu().createMenuEntry(-1)
                     .setOption(option)
@@ -579,37 +569,26 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         }
     }
 
-    private void customColorTag(NPC npc, MenuEntry parent)
-    {
+    private void customColorTag(NPC npc, MenuEntry parent) {
         List<Color> colors = new ArrayList<>();
         Menu submenu = parent.createSubMenu();
         // add X amount of preset colors based off of config
-        if (config.presetColorAmount() != BetterNpcHighlightConfig.presetColorAmount.ZERO)
-        {
-            if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.ONE)
-            {
+        if (config.presetColorAmount() != BetterNpcHighlightConfig.presetColorAmount.ZERO) {
+            if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.ONE) {
                 colors.add(config.presetColor1());
-            }
-            else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.TWO)
-            {
+            } else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.TWO) {
                 colors.add(config.presetColor1());
                 colors.add(config.presetColor2());
-            }
-            else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.THREE)
-            {
+            } else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.THREE) {
                 colors.add(config.presetColor1());
                 colors.add(config.presetColor2());
                 colors.add(config.presetColor3());
-            }
-            else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.FOUR)
-            {
+            } else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.FOUR) {
                 colors.add(config.presetColor1());
                 colors.add(config.presetColor2());
                 colors.add(config.presetColor3());
                 colors.add(config.presetColor4());
-            }
-            else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.FIVE)
-            {
+            } else if (config.presetColorAmount() == BetterNpcHighlightConfig.presetColorAmount.FIVE) {
                 colors.add(config.presetColor1());
                 colors.add(config.presetColor2());
                 colors.add(config.presetColor3());
@@ -617,21 +596,17 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
                 colors.add(config.presetColor5());
             }
 
-            if (!colors.isEmpty())
-            {
+            if (!colors.isEmpty()) {
                 int index = 1;
-                for (final Color c : colors)
-                {
-                    if (c != null)
-                    {
+                for (final Color c : colors) {
+                    if (c != null) {
                         int preset = index;
                         submenu.createMenuEntry(0)
                                 .setOption(ColorUtil.prependColorTag("Preset color " + index, c))
                                 .setType(MenuAction.RUNELITE)
                                 .onClick(e ->
                                 {
-                                    if (npc.getName() != null)
-                                    {
+                                    if (npc.getName() != null) {
                                         addStyleToNpc(npc, getTagStyleFromConfig(), preset);
                                     }
                                 });
@@ -641,17 +616,14 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
             }
         }
 
-        for (NPCInfo n : npcList)
-        {
-            if (n.getNpc() == npc)
-            {
+        for (NPCInfo n : npcList) {
+            if (n.getNpc() == npc) {
                 submenu.createMenuEntry(0)
                         .setOption("Reset color")
                         .setType(MenuAction.RUNELITE)
                         .onClick(e ->
                         {
-                            if (npc.getName() != null)
-                            {
+                            if (npc.getName() != null) {
                                 addStyleToNpc(npc, getTagStyleFromConfig(), 0);
                             }
                         });
@@ -731,9 +703,6 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
         panel.triggerDataChanged();
     }
 
-    /**
-     * Check if an NPC should be highlighted (simplified version)
-     */
     public NPCInfo checkValidNPC(NPC npc) {
         if (panel == null) return null;
 
@@ -840,11 +809,9 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
 
     @VisibleForTesting
     boolean shouldDraw(Renderable renderable, boolean drawingUI) {
-        if (!config.entityHiderToggle())
-        {
+        if (!config.entityHiderToggle()) {
             return true;
-        }
-        else if (renderable instanceof NPC) {
+        } else if (renderable instanceof NPC) {
             NPC npc = (NPC) renderable;
             for (NPCInfo npcInfo : npcList) {
                 if (npcInfo.getNpc().getIndex() == npc.getIndex() && npcInfo.isHideNpc()) {
@@ -1204,7 +1171,7 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
             }
         }
 
-        // If not found and we are adding a tag, create a new card
+        // If not found and adding a tag, create a new card
         if (add) {
             panel.addCardFromCommand(card -> {
                 card.setNameText(npcIdentifier);
@@ -1261,29 +1228,46 @@ public class BetterNpcHighlightPlugin extends Plugin implements KeyListener, Bet
     private Color getDefaultOutlineColor(TagStyle style) {
         if (style == null) return null;
         switch (style) {
-            case TILE: return config.tileColor();
-            case TRUE_TILE: return config.trueTileColor();
-            case SW_TILE: return config.swTileColor();
-            case SW_TRUE_TILE: return config.swTrueTileColor();
-            case HULL: return config.hullColor();
-            case AREA: return config.areaColor();
-            case OUTLINE: return config.outlineColor();
-            case CLICKBOX: return config.clickboxColor();
-            default: return null;
+            case TILE:
+                return config.tileColor();
+            case TRUE_TILE:
+                return config.trueTileColor();
+            case SW_TILE:
+                return config.swTileColor();
+            case SW_TRUE_TILE:
+                return config.swTrueTileColor();
+            case HULL:
+                return config.hullColor();
+            case AREA:
+                return config.areaColor();
+            case OUTLINE:
+                return config.outlineColor();
+            case CLICKBOX:
+                return config.clickboxColor();
+            default:
+                return null;
         }
     }
 
     private Color getDefaultFillColor(TagStyle style) {
         if (style == null) return null;
         switch (style) {
-            case TILE: return config.tileFillColor();
-            case TRUE_TILE: return config.trueTileFillColor();
-            case SW_TILE: return config.swTileFillColor();
-            case SW_TRUE_TILE: return config.swTrueTileFillColor();
-            case HULL: return config.hullFillColor();
-            case AREA: return config.areaColor();
-            case CLICKBOX: return config.clickboxFillColor();
-            default: return null;
+            case TILE:
+                return config.tileFillColor();
+            case TRUE_TILE:
+                return config.trueTileFillColor();
+            case SW_TILE:
+                return config.swTileFillColor();
+            case SW_TRUE_TILE:
+                return config.swTrueTileFillColor();
+            case HULL:
+                return config.hullFillColor();
+            case AREA:
+                return config.areaColor();
+            case CLICKBOX:
+                return config.clickboxFillColor();
+            default:
+                return null;
         }
     }
 

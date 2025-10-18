@@ -1,10 +1,10 @@
 package com.betternpchighlight.ui;
 
 import com.betternpchighlight.BetterNpcHighlightPlugin;
-
 import com.betternpchighlight.TagStyle;
 import com.betternpchighlight.data.NpcHighlightEntry;
 import com.betternpchighlight.ui.dropdownbutton.DropDownButtonFactory;
+import com.betternpchighlight.util.IconSet;
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.client.ui.ColorScheme;
@@ -47,6 +47,8 @@ public class NpcCard extends JPanel {
     private JButton saveButton;
     private JButton cancelButton;
     private String originalNameText;
+    public static final IconSet CARD_MENU_VERTICAL_ICONS = IconSet.loadIconSet("/card_menu_vertical.png");
+    public static final IconSet ADD_STYLE_ICONS = IconSet.loadIconSet("/add_style.png");
 
     // UI Components - Menu
     private JCheckBoxMenuItem drawUnderItem;
@@ -208,19 +210,18 @@ public class NpcCard extends JPanel {
 
     private JButton createAddStyleButton() {
         JPopupMenu addStyleMenu = new JPopupMenu();
-        JButton button = DropDownButtonFactory.createDropDownButton(StyleRow.ADD_STYLE_ICONS.getOn(), addStyleMenu);
+        JButton button = DropDownButtonFactory.createDropDownButton(ADD_STYLE_ICONS.getOn(), addStyleMenu);
         button.setMinimumSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         button.setMaximumSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         button.setPreferredSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
-        button.setRolloverIcon(StyleRow.ADD_STYLE_ICONS.getOnHover());
+        button.setRolloverIcon(ADD_STYLE_ICONS.getOnHover());
         button.setToolTipText("Add a new highlight style");
         BetterNpcHighlightPanel.styleButton(button);
 
         // Add a placeholder item to make the DropDownButtonFactory happy.
         addStyleMenu.add(new JMenuItem("Loading..."));
 
-        // Rebuild the menu each time it's opened to reflect the current state of the card.
-        // This is the correct pattern for DropDownButtonFactory with dynamic content.
+        // Rebuild the menu each time it's opened
         addStyleMenu.addPopupMenuListener(new PopupMenuListener() {
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
@@ -264,15 +265,14 @@ public class NpcCard extends JPanel {
     private JButton createMenuButton() {
         JPopupMenu menu = createContextMenu();
 
-        menuButton = DropDownButtonFactory.createDropDownButton(BetterNpcHighlightPanel.CARD_MENU_VERTICAL_ICONS.getOn(), menu);
-        menuButton.setRolloverIcon(BetterNpcHighlightPanel.CARD_MENU_VERTICAL_ICONS.getOnHover());
+        menuButton = DropDownButtonFactory.createDropDownButton(CARD_MENU_VERTICAL_ICONS.getOn(), menu);
+        menuButton.setRolloverIcon(CARD_MENU_VERTICAL_ICONS.getOnHover());
         menuButton.setPreferredSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         menuButton.setMinimumSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         menuButton.setMaximumSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         menuButton.setToolTipText("More options");
         BetterNpcHighlightPanel.styleButton(menuButton);
 
-        // Simple action listener using the proven approach
         menuButton.addActionListener(e -> {
             if (menu.isVisible()) {
                 menu.setVisible(false);
@@ -300,7 +300,6 @@ public class NpcCard extends JPanel {
         JMenu moveToGroupMenu = new JMenu("Move to group");
         menu.add(moveToGroupMenu);
 
-        //  Repopulate just before menu shows
         menu.addPopupMenuListener(new PopupMenuListener() {
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
@@ -449,7 +448,7 @@ public class NpcCard extends JPanel {
         // Restore original text
         setNameText(originalNameText);
 
-        // Restore label UI
+        // Restore label
         replaceEditorWithNameLabel();
         nameEditor = null;
         saveButton.setVisible(false);
@@ -485,7 +484,7 @@ public class NpcCard extends JPanel {
         // Prevent duplicate names
         if (!newName.isEmpty() && isDuplicateName(newName)) {
             JOptionPane.showMessageDialog(this, "A card with the name '" + newName + "' already exists.", "Error", JOptionPane.ERROR_MESSAGE);
-            cancelEditingName(); // Revert to the original name
+            cancelEditingName();
             return;
         }
 
@@ -619,14 +618,13 @@ public class NpcCard extends JPanel {
         styleRowsPanel.repaint();
     }
 
-    // Data Management Methods
     public List<NpcHighlightEntry> getAllEntries() {
         String npcNameOrId = getNameText().trim();
         if (npcNameOrId.isEmpty()) {
             return new ArrayList<>();
         }
 
-        // If there are no style rows, create a single "base" entry that only contains the card's toggle settings
+        // If there are no style rows, create a single "base" entry that only contains the card's "toggle" settings
         if (styleRows.isEmpty()) {
             return List.of(createBaseEntry(npcNameOrId));
         }
@@ -675,7 +673,7 @@ public class NpcCard extends JPanel {
                 isOverrideDisplayNameColor() ? getDisplayNameColor() : null,
                 isOverrideDisplayNameColor(),
                 isHighlightDead(),
-                false, false, 0, null, 0, false, 0 // Default style values
+                false, false, 0, null, 0, false, 0
         );
     }
 
@@ -683,7 +681,6 @@ public class NpcCard extends JPanel {
         panel.triggerDataChanged();
     }
 
-    // Getters and Setters
     public BetterNpcHighlightPlugin getPlugin() {
         return panel.getPlugin();
     }
@@ -840,7 +837,6 @@ public class NpcCard extends JPanel {
         return new Dimension(Integer.MAX_VALUE, prefSize.height);
     }
 
-    // Inner Classes for Event Handling
     private class NameLabelMouseListener extends MouseAdapter {
         @Override
         public void mouseClicked(MouseEvent e) {

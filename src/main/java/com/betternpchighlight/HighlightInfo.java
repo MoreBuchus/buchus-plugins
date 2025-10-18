@@ -1,9 +1,9 @@
 package com.betternpchighlight;
 
-import java.awt.Color;
-
 import lombok.Getter;
 import lombok.Setter;
+
+import java.awt.*;
 
 @Getter
 @Setter

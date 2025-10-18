@@ -17,6 +17,10 @@ public final class IconSet {
     private final ImageIcon onHover;
     private final ImageIcon offHover;
 
+    private static final int offLuminance = -150;
+    private static final int offHoverLuminance = -130;
+    private static final int hoverLuminance = -50;
+
     private IconSet(ImageIcon on, ImageIcon off, ImageIcon onHover, ImageIcon offHover) {
         this.on = on;
         this.off = off;
@@ -24,17 +28,7 @@ public final class IconSet {
         this.offHover = offHover;
     }
 
-    /**
-     * Loads an IconSet from the specified resource path.
-     * Results are cached to prevent redundant image processing.
-     *
-     * @param resourcePath      Path to the base image resource.
-     * @param hoverLuminance    Luminance offset for the 'on hover' state.
-     * @param offLuminance      Luminance offset for the 'off' state.
-     * @param offHoverLuminance Luminance offset for the 'off hover' state.
-     * @return The cached or newly created IconSet.
-     */
-    public static IconSet loadIconSet(String resourcePath, int hoverLuminance, int offLuminance, int offHoverLuminance) {
+    public static IconSet loadIconSet(String resourcePath) {
         return CACHE.computeIfAbsent(resourcePath, path -> {
             BufferedImage base = ImageUtil.loadImageResource(IconSet.class, path);
             return new IconSet(

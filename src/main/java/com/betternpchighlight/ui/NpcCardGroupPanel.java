@@ -10,10 +10,11 @@ import net.runelite.client.ui.components.colorpicker.ColorPickerManager;
 import net.runelite.client.ui.components.colorpicker.RuneliteColorPicker;
 
 import javax.swing.*;
-import javax.swing.border.*;
-import java.awt.*;
+import javax.swing.border.CompoundBorder;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
+import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,6 +31,7 @@ public class NpcCardGroupPanel extends JPanel {
     private String groupName;
     @Getter
     private Color accentColor = ColorScheme.LIGHT_GRAY_COLOR;
+    private static final int COMPONENT_SIZE = 24;
     @Getter
     private boolean collapsed = false;
     @Getter
@@ -48,14 +50,13 @@ public class NpcCardGroupPanel extends JPanel {
     private final Color backgroundColor = new Color(25, 25, 25);
 
     // Icon Sets
-    private static final int luminanceOnHover = -50;
-    private static final int luminanceOffHover = -130;
-    private static final int luminanceOff = -150;
-    public static final IconSet EDIT_GROUPNAME_ICONS = IconSet.loadIconSet("/edit_groupname.png", luminanceOnHover, luminanceOff, luminanceOffHover);
-    public static final IconSet CANCEL_EDIT_GROUPNAME_ICONS = IconSet.loadIconSet("/cancel_edit_groupname.png", luminanceOnHover, luminanceOff, luminanceOffHover);
-    public static final IconSet SAVE_EDIT_GROUPNAME_ICONS = IconSet.loadIconSet("/save_edit_groupname.png", luminanceOnHover, luminanceOff, luminanceOffHover);
-    public static final IconSet EXPAND_GROUP_ICONS = IconSet.loadIconSet("/chevron_right.png", luminanceOnHover, luminanceOff, luminanceOffHover);
-    public static final IconSet COLLAPSE_GROUP_ICONS = IconSet.loadIconSet("/chevron_down.png", luminanceOnHover, luminanceOff, luminanceOffHover);
+    public static final IconSet ADD_CARD_ICONS = IconSet.loadIconSet("/add_card.png");
+    public static final IconSet GROUP_MENU_ICONS = IconSet.loadIconSet("/group_menu.png");
+    public static final IconSet EDIT_GROUPNAME_ICONS = IconSet.loadIconSet("/edit_groupname.png");
+    public static final IconSet CANCEL_EDIT_GROUPNAME_ICONS = IconSet.loadIconSet("/cancel_edit_groupname.png");
+    public static final IconSet SAVE_EDIT_GROUPNAME_ICONS = IconSet.loadIconSet("/save_edit_groupname.png");
+    public static final IconSet EXPAND_GROUP_ICONS = IconSet.loadIconSet("/chevron_right.png");
+    public static final IconSet COLLAPSE_GROUP_ICONS = IconSet.loadIconSet("/chevron_down.png");
 
     public NpcCardGroupPanel(String groupName, ColorPickerManager colorPickerManager, BetterNpcHighlightPanel panel) {
         this(UUID.randomUUID(), groupName, colorPickerManager, panel, false);
@@ -113,7 +114,7 @@ public class NpcCardGroupPanel extends JPanel {
 
     private JButton createCollapseButton() {
         JButton button = new JButton(isCollapsed() ? COLLAPSE_GROUP_ICONS.getOn() : EXPAND_GROUP_ICONS.getOn());
-        button.setPreferredSize(new Dimension(24, 24));
+        button.setPreferredSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         button.setContentAreaFilled(false);
         button.setBorder(new EmptyBorder(0, 4, 0, 4));
         return button;
@@ -126,7 +127,7 @@ public class NpcCardGroupPanel extends JPanel {
         field.setOpaque(false);
         field.setEditable(false);
         field.setFocusable(false);
-        field.setPreferredSize(new Dimension(Integer.MAX_VALUE, 24));
+        field.setPreferredSize(new Dimension(Integer.MAX_VALUE, COMPONENT_SIZE));
         field.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         field.setForeground(Color.WHITE);
         field.setSelectionColor(ColorScheme.BRAND_ORANGE_TRANSPARENT);
@@ -160,7 +161,7 @@ public class NpcCardGroupPanel extends JPanel {
         headerButtonPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 4));
         headerButtonPanel.setOpaque(false);
 
-        addCardButton = createIconButton(BetterNpcHighlightPanel.ADD_CARD_ICONS, "Add card to group", e -> panel.addCardToGroup(this));
+        addCardButton = createIconButton(ADD_CARD_ICONS, "Add card to group", e -> panel.addCardToGroup(this));
         JButton saveButton = createIconButton(SAVE_EDIT_GROUPNAME_ICONS, "Save", e -> finishNameEdit());
         JButton cancelButton = createIconButton(CANCEL_EDIT_GROUPNAME_ICONS, "Cancel", e -> cancelNameEdit());
 
@@ -183,11 +184,11 @@ public class NpcCardGroupPanel extends JPanel {
     private JButton createMenuButton() {
         JPopupMenu menu = createHeaderMenu();
 
-        menuButton = DropDownButtonFactory.createDropDownButton(BetterNpcHighlightPanel.GROUP_MENU_ICONS.getOn(), menu);
-        menuButton.setRolloverIcon(BetterNpcHighlightPanel.GROUP_MENU_ICONS.getOnHover());
+        menuButton = DropDownButtonFactory.createDropDownButton(GROUP_MENU_ICONS.getOn(), menu);
+        menuButton.setRolloverIcon(GROUP_MENU_ICONS.getOnHover());
         menuButton.setBackground(backgroundColor);
-        menuButton.setPreferredSize(new Dimension(24, 24));
-        menuButton.setMaximumSize(new Dimension(24, 24));
+        menuButton.setPreferredSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
+        menuButton.setMaximumSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         menuButton.setAlignmentY(0.5f);
         BetterNpcHighlightPanel.styleButton(menuButton);
         menuButton.setToolTipText("More options");
@@ -208,8 +209,8 @@ public class NpcCardGroupPanel extends JPanel {
         JButton button = new JButton(icons.getOn());
         button.setRolloverIcon(icons.getOnHover());
         button.setBackground(backgroundColor);
-        button.setPreferredSize(new Dimension(24, 24));
-        button.setMaximumSize(new Dimension(24, 24));
+        button.setPreferredSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
+        button.setMaximumSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         button.setAlignmentY(0.5f);
         BetterNpcHighlightPanel.styleButton(button);
         button.setToolTipText(tooltip);
@@ -272,8 +273,12 @@ public class NpcCardGroupPanel extends JPanel {
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
                 panel.updateMoveActionStates(NpcCardGroupPanel.this, moveUpItem, moveDownItem, moveToTopItem, moveToBottomItem);
             }
-            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {}
-            public void popupMenuCanceled(PopupMenuEvent e) {}
+
+            public void popupMenuWillBecomeInvisible(PopupMenuEvent e) {
+            }
+
+            public void popupMenuCanceled(PopupMenuEvent e) {
+            }
         });
 
         JMenuItem changeColorItem = new JMenuItem("Change accent color");
@@ -398,14 +403,13 @@ public class NpcCardGroupPanel extends JPanel {
             cards.add(card);
             cardsContainer.add(card);
         } else {
-            // Add at a specific position (usually 0 for the top)
+            // Add at a specific position
             cards.add(position, card);
             cardsContainer.add(card, position);
         }
         card.setParentGroup(this);
 
-        // If this is a new card being added by the user (not from loading),
-        // apply the default style from the config.
+        // If this is a new card being added by the user (not from loading), apply the default style from the config.
         if (isNew) {
             BetterNpcHighlightConfig.DefaultHighlightStyle defaultStyle = panel.getPlugin().getConfig().tagStyleMode();
             if (defaultStyle != BetterNpcHighlightConfig.DefaultHighlightStyle.NONE) {

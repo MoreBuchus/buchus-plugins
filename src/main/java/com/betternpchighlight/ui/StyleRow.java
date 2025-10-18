@@ -3,11 +3,10 @@ package com.betternpchighlight.ui;
 import com.betternpchighlight.HighlightInfo;
 import com.betternpchighlight.TagStyle;
 import com.betternpchighlight.data.NpcHighlightEntry;
-import com.betternpchighlight.ui.highlightpreviewpanel.HighlightPreviewPanel;
 import com.betternpchighlight.ui.dropdownbutton.DropDownButtonFactory;
+import com.betternpchighlight.ui.highlightpreviewpanel.HighlightPreviewPanel;
 import com.betternpchighlight.util.IconSet;
 import lombok.Getter;
-
 import net.runelite.client.ui.ColorScheme;
 import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.components.colorpicker.ColorPickerManager;
@@ -18,27 +17,17 @@ import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import java.awt.*;
 import java.text.DecimalFormat;
+import java.util.Objects;
+import java.util.function.Consumer;
 
-/**
- * A UI component representing a single highlighting style configuration row.
- * Each row contains a tag style selector, color preview, and add/remove buttons.
- */
 public class StyleRow extends JPanel {
-
     // Constants
     private static final int COMPONENT_SIZE = 24;
     private static final int TOP_PADDING = 4;
 
-    // Icon luminance values
-    private static final int LUMINANCE_ON_HOVER = -50;
-    private static final int LUMINANCE_OFF_HOVER = -130;
-    private static final int LUMINANCE_OFF = -150;
-
-    // Default colors
+    // Default values
     private static final Color DEFAULT_OUTLINE_COLOR = Color.CYAN;
     private static final Color DEFAULT_FILL_COLOR = new Color(0, 255, 255, 20);
-
-    // Default values for color preview button
     private static final boolean DEFAULT_RAVE_OUTLINE = false;
     private static final boolean DEFAULT_RAVE_FILL = false;
     private static final int DEFAULT_RAVE_SPEED = 6000;
@@ -48,25 +37,8 @@ public class StyleRow extends JPanel {
     private static final HighlightInfo.LineType DEFAULT_TILE_STYLE = HighlightInfo.LineType.REGULAR;
 
     // Icon sets
-    public static final IconSet ADD_STYLE_ICONS = IconSet.loadIconSet(
-            "/add_style.png",
-            LUMINANCE_ON_HOVER,
-            LUMINANCE_OFF,
-            LUMINANCE_OFF_HOVER
-    );
-
-    public static final IconSet REMOVE_STYLE_ICONS = IconSet.loadIconSet(
-            "/remove_style.png",
-            LUMINANCE_ON_HOVER,
-            LUMINANCE_OFF,
-            LUMINANCE_OFF_HOVER
-    );
-    public static final IconSet EDIT_STYLE_ICONS = IconSet.loadIconSet(
-            "/edit_style.png",
-            LUMINANCE_ON_HOVER,
-            LUMINANCE_OFF,
-            LUMINANCE_OFF_HOVER
-    );
+    public static final IconSet REMOVE_STYLE_ICONS = IconSet.loadIconSet("/remove_style.png");
+    public static final IconSet EDIT_STYLE_ICONS = IconSet.loadIconSet("/edit_style.png");
 
     // UI Components
     private JLabel tagStyleLabel;
@@ -95,7 +67,6 @@ public class StyleRow extends JPanel {
         }
 
         initializeRowLayout();
-
         createComponents(entry);
         layoutComponents();
         applyEntryData(entry);
@@ -124,12 +95,10 @@ public class StyleRow extends JPanel {
 
     private JPopupMenu createEditButtonMenu() {
         JPopupMenu menu = new JPopupMenu();
-
-        // Add listener to rebuild menu whenever it’s about to open
         menu.addPopupMenuListener(new PopupMenuListener() {
             @Override
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
-                menu.removeAll(); // clear old items
+                menu.removeAll();
                 rebuildEditButtonMenu(menu, tagStyle);
             }
 
@@ -141,7 +110,6 @@ public class StyleRow extends JPanel {
             public void popupMenuCanceled(PopupMenuEvent e) {
             }
         });
-
         return menu;
     }
 
@@ -270,7 +238,7 @@ public class StyleRow extends JPanel {
         }
     }
 
-    private JCheckBoxMenuItem createStyledCheckBox(String text, boolean isSelected, java.util.function.Consumer<Boolean> onToggle) {
+    private JCheckBoxMenuItem createStyledCheckBox(String text, boolean isSelected, Consumer<Boolean> onToggle) {
         JCheckBoxMenuItem item = new JCheckBoxMenuItem(text, isSelected);
         item.setHorizontalTextPosition(SwingConstants.LEFT);
         if (isSelected) {
@@ -417,19 +385,19 @@ public class StyleRow extends JPanel {
 
     private void styleHighlightPreviewPanel() {
         highlightPreviewPanel.setOpaque(false);
-        highlightPreviewPanel.setPreferredSize(new Dimension(24, 24));
-        highlightPreviewPanel.setMaximumSize(new Dimension(24, 24));
+        highlightPreviewPanel.setPreferredSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
+        highlightPreviewPanel.setMaximumSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
     }
 
     private void createActionButtons() {
         editButton = DropDownButtonFactory.createDropDownButton(EDIT_STYLE_ICONS.getOn(), editButtonMenu);
-        removeButton = createButton("Remove this highlight style", REMOVE_STYLE_ICONS, this::handleRemoveButtonClick);
+        removeButton = createRemoveButton();
     }
 
-    private JButton createButton(String tooltip, IconSet icons, Runnable onClick) {
+    private JButton createRemoveButton() {
         JButton button = new JButton();
-        styleActionButton(button, icons, tooltip);
-        button.addActionListener(e -> onClick.run());
+        styleActionButton(button, REMOVE_STYLE_ICONS, "Remove this highlight style");
+        button.addActionListener(e -> handleRemoveButtonClick());
         return button;
     }
 
@@ -444,23 +412,23 @@ public class StyleRow extends JPanel {
     }
 
     private void layoutComponents() {
-        // Left: Tag style combo box
+        // Style label
         add(tagStyleLabel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 1, 0));
         buttonPanel.setBackground(null);
 
-        // Center: Highlight preview panel
+        // Highlight preview panel
         highlightPreviewPanelWrapper = new JPanel(new BorderLayout());
         highlightPreviewPanelWrapper.setOpaque(false);
-        highlightPreviewPanelWrapper.setPreferredSize(new Dimension(24, 24));
-        highlightPreviewPanelWrapper.setMaximumSize(new Dimension(24, 24));
+        highlightPreviewPanelWrapper.setPreferredSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
+        highlightPreviewPanelWrapper.setMaximumSize(new Dimension(COMPONENT_SIZE, COMPONENT_SIZE));
         highlightPreviewPanelWrapper.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
         highlightPreviewPanelWrapper.add(highlightPreviewPanel);
 
         buttonPanel.add(highlightPreviewPanelWrapper, BorderLayout.CENTER);
 
-        // Right: Action buttons
+        // Button panel
         buttonPanel.add(editButton);
         buttonPanel.add(removeButton);
         add(buttonPanel, BorderLayout.EAST);
@@ -468,21 +436,16 @@ public class StyleRow extends JPanel {
 
     private void applyEntryData(NpcHighlightEntry entry) {
         if (entry != null && entry.tagStyle != null) {
-            setTagStyle(TagStyle.fromString(entry.tagStyle.toString()));
+            setTagStyle(Objects.requireNonNull(TagStyle.fromString(entry.tagStyle.toString())));
         }
         parentCard.updateStyleButtons();
     }
 
-    // Event Handlers
     private void handleRemoveButtonClick() {
         int index = getRowIndex();
         if (index != -1) {
             parentCard.removeStyleRowAt(index);
         }
-    }
-
-    private boolean canRemoveStyleRow() {
-        return true; // A row can always be removed.
     }
 
     private int getRowIndex() {
@@ -499,7 +462,6 @@ public class StyleRow extends JPanel {
         label.setBorder(BorderFactory.createEmptyBorder(0, 5, 0, 0));
     }
 
-    // Public API
     public void setTagStyle(TagStyle style) {
         this.tagStyle = style;
         this.tagStyleLabel.setText(style.getName());

@@ -1,15 +1,15 @@
 package com.betternpchighlight.data;
 
-import com.betternpchighlight.ui.NpcCard;
-import com.betternpchighlight.TagStyle;
-import com.betternpchighlight.ui.NpcCardGroupPanel;
-import com.betternpchighlight.ui.BetterNpcHighlightPanel;
 import com.betternpchighlight.HighlightInfo;
+import com.betternpchighlight.TagStyle;
+import com.betternpchighlight.ui.BetterNpcHighlightPanel;
+import com.betternpchighlight.ui.NpcCard;
+import com.betternpchighlight.ui.NpcCardGroupPanel;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import lombok.extern.slf4j.Slf4j;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.ui.ColorScheme;
-import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
 import java.lang.reflect.Type;
@@ -128,7 +128,7 @@ public final class DataManager {
         card.setHighlightDead(cardDto.highlightDead);
         card.setDisplayNameColor(new Color(cardDto.displayNameColor, true));
 
-        // Create entries only for styles, and apply general settings from the card DTO.
+        // Create entries only for styles, and apply "toggle" settings from the card DTO.
         if (cardDto.styles != null && !cardDto.styles.isEmpty()) {
             final List<NpcHighlightEntry> entries = cardDto.styles.stream()
                     .map(s -> {

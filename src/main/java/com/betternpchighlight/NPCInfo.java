@@ -1,12 +1,12 @@
 package com.betternpchighlight;
 
-import java.awt.Color;
-import java.util.EnumMap;
-import java.util.Map;
-
 import lombok.Getter;
 import lombok.Setter;
 import net.runelite.api.NPC;
+
+import java.awt.*;
+import java.util.EnumMap;
+import java.util.Map;
 
 @Getter
 @Setter

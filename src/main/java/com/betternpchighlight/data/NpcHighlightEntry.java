@@ -176,15 +176,13 @@ public class NpcHighlightEntry {
                     this.outlineFeather = 0;
                     break;
                 case TURBO:
-                    // Turbo mode gets its colors dynamically, but we can set a fallback.
                     this.outlineColor = Color.CYAN;
                     this.fillColor = new Color(0, 255, 255, 20);
                     this.raveOutline = true;
                     this.raveFill = true;
-                    this.raveSpeed = 100; // Fast by default
+                    this.raveSpeed = 6000;
                     break;
                 default:
-                    // Fallback for any other styles
                     this.outlineColor = Color.CYAN;
                     this.fillColor = new Color(0, 255, 255, 20);
             }

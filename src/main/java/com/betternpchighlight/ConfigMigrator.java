@@ -93,7 +93,6 @@ public final class ConfigMigrator {
         if (configString == null || configString.trim().isEmpty()) {
             return;
         }
-        // We don't need to parse highlights here, just get the names/IDs
         Arrays.stream(configString.toLowerCase().split(","))
                 .map(s -> s.split(":")[0].trim())
                 .forEach(set::add);
@@ -238,7 +237,8 @@ public final class ConfigMigrator {
         if (value != null) {
             try {
                 return Integer.parseInt(value);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
         return 0;
     }
@@ -248,7 +248,8 @@ public final class ConfigMigrator {
         if (value != null) {
             try {
                 return Double.parseDouble(value);
-            } catch (NumberFormatException ignored) {}
+            } catch (NumberFormatException ignored) {
+            }
         }
         return 0.0;
     }
@@ -262,7 +263,8 @@ public final class ConfigMigrator {
         if (value != null) {
             try {
                 return BetterNpcHighlightConfig.lineType.valueOf(value.toUpperCase());
-            } catch (IllegalArgumentException ignored) {}
+            } catch (IllegalArgumentException ignored) {
+            }
         }
         return BetterNpcHighlightConfig.lineType.REGULAR;
     }

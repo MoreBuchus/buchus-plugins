@@ -26,23 +26,25 @@
  */
 package com.betternpchighlight;
 
-import java.awt.geom.Point2D;
-import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import net.runelite.api.Point;
 import net.runelite.api.*;
+import net.runelite.api.Point;
 import net.runelite.api.coords.LocalPoint;
 import net.runelite.client.game.NpcUtil;
-import net.runelite.client.ui.overlay.*;
+import net.runelite.client.ui.overlay.Overlay;
+import net.runelite.client.ui.overlay.OverlayLayer;
+import net.runelite.client.ui.overlay.OverlayPosition;
+import net.runelite.client.ui.overlay.OverlayUtil;
 import net.runelite.client.ui.overlay.outline.ModelOutlineRenderer;
 import net.runelite.client.util.Text;
 
 import javax.inject.Inject;
 import java.awt.*;
+import java.awt.geom.Point2D;
 import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 public class BetterNpcHighlightOverlay extends Overlay {
     private final Client client;
@@ -64,22 +66,19 @@ public class BetterNpcHighlightOverlay extends Overlay {
     }
 
     public Dimension render(Graphics2D graphics) {
-        // Main render loop for all NPCs. This needs to happen first.
+        // Main render loop
         plugin.npcList.forEach(npcInfo -> renderSingleNpc(graphics, npcInfo));
 
-        // Collect NPCs for the "Draw Beneath" feature first.
+        // Collect NPCs for the "Draw Beneath" feature
         final List<NPCInfo> npcsToDrawBeneath = client.isGpu() && client.getLocalPlayer() != null
                 ? getNpcsToDrawBeneath()
                 : java.util.Collections.emptyList();
-
-        // This part makes the NPCs transparent, allowing the highlight drawn above to be seen.
         npcsToDrawBeneath.forEach(nInfo -> removeActor(graphics, nInfo.getNpc()));
 
-        // Debug and Respawn Timer rendering remains separate as they have different logic.
+        // Debug and Respawn Timer rendering
         if (plugin.isDebugModeEnabled()) {
             for (NPC npc : client.getTopLevelWorldView().npcs()) {
                 NPCComposition npcComposition = npc.getTransformedComposition();
-                //Do not show debug info for NPCs with invisible models
                 if (npcComposition != null && ((npc.getName() != null && !npc.getName().isEmpty() && !npc.getName().equals("null")) || !isInvisible(npc.getModel()))) {
                     LocalPoint lp = npc.getLocalLocation();
                     if (lp != null) {
@@ -110,7 +109,6 @@ public class BetterNpcHighlightOverlay extends Overlay {
                         Color raveColor = Color.WHITE;
                         int width = config.respawnTileWidth();
 
-                        // Fixed: Use proper method to get turbo index
                         int turboIndex = plugin.getTurboIndex(n.id, n.name != null ? n.name.toLowerCase() : null);
                         if (turboIndex != -1 && turboIndex < plugin.turboColors.size()) {
                             raveColor = plugin.turboColors.get(turboIndex);
@@ -188,7 +186,6 @@ public class BetterNpcHighlightOverlay extends Overlay {
             if (config.slayerHighlight() && npcInfo.isTask()) {
                 renderNpcOverlay(graphics, npcInfo, config.taskHighlightStyle().name());
             } else {
-                // This is more data-driven and avoids a long chain of if-statements.
                 npcInfo.getHighlights().forEach((style, highlight) -> {
                     if (highlight.isHighlight()) {
                         renderNpcOverlay(graphics, npcInfo, style.name());
@@ -245,7 +242,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
             Color raveRgb = plugin.getRaveColor(highlightInfo.getRaveSpeed());
             line = new Color(raveRgb.getRed(), raveRgb.getGreen(), raveRgb.getBlue(), line.getAlpha());
         }
-        
+
         Color fill = isTask
                 ? (config.slayerRave() ? plugin.getRaveColor(config.slayerRaveSpeed()) : config.taskFillColor())
                 : highlightInfo.getFill(); // Get base fill color
@@ -254,7 +251,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
             Color raveRgb = plugin.getRaveColor(highlightInfo.getRaveSpeed());
             fill = new Color(raveRgb.getRed(), raveRgb.getGreen(), raveRgb.getBlue(), fill.getAlpha());
         }
-        
+
         // Ensure colors are not null to prevent NullPointerException on .getAlpha()
         int lineAlpha = isTask ? config.taskColor().getAlpha() : (line != null ? line.getAlpha() : 255);
         int fillAlpha = isTask ? config.taskFillColor().getAlpha() : (fill != null ? fill.getAlpha() : 255);
@@ -283,7 +280,7 @@ public class BetterNpcHighlightOverlay extends Overlay {
             Polygon tilePoly;
             LocalPoint lp;
             RenderStyle renderStyle;
-            boolean isTask = npcInfo.isTask() && config.slayerHighlight(); // Keep for OUTLINE and AREA
+            boolean isTask = npcInfo.isTask() && config.slayerHighlight();
 
             switch (highlightStyleName.toUpperCase()) {
                 case "TILE":

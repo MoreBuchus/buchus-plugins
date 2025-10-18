@@ -29,7 +29,7 @@ public enum TagStyle {
                 return style;
             }
         }
-        return null; // Default or fallback
+        return null;
     }
 
     public static TagStyle fromAbbreviation(String abbr) {
