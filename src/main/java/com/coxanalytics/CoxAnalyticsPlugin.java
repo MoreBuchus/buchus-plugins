@@ -682,11 +682,11 @@ public class CoxAnalyticsPlugin extends Plugin
 		String fileName = "";
 		if (cm)
 		{
-			fileName = TIMES_DIR + "\\" + client.getLocalPlayer().getName() + "_CmTimes.txt";
+			fileName = TIMES_DIR + File.separator + client.getLocalPlayer().getName() + "_CmTimes.txt";
 		}
 		else
 		{
-			fileName = TIMES_DIR + "\\" + client.getLocalPlayer().getName() + "_CoxTimes.txt";
+			fileName = TIMES_DIR + File.separator + client.getLocalPlayer().getName() + "_CoxTimes.txt";
 		}
 		FileWriter writer = new FileWriter(fileName, true);
 		try
