@@ -255,7 +255,7 @@ public class NexSplitsPlugin extends Plugin
 		String text = e.getMessage();
 		String strippedText = Text.removeTags(e.getMessage());
 
-		if (e.getType() == ChatMessageType.GAMEMESSAGE)
+		if (e.getType() == ChatMessageType.GAMEMESSAGE || e.getType() == ChatMessageType.NPC_SAY)
 		{
 			if (strippedText.startsWith(KC_MESSAGE))
 			{
@@ -275,7 +275,7 @@ public class NexSplitsPlugin extends Plugin
 				}
 			}
 			//Nex chatting
-			else if (text.contains("Nex: <col=9090ff>") || text.contains("Nex: <col=0000ff>"))
+			else if (text.startsWith("Nex|"))
 			{
 				//Minion phases
 				if ((text.contains("Fumus") || text.contains("Umbra") || text.contains("Cruor") || text.contains("Glacies")) && text.contains(", don't fail me!"))
