@@ -24,7 +24,7 @@ dependencies {
 }
 
 group = 'com.tzhaarhptracker'
-version = '1.0.4'
+version = '1.0.5'
 
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'

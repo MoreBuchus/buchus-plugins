@@ -42,8 +42,6 @@ import net.runelite.api.HitsplatID;
 import net.runelite.api.MenuAction;
 import net.runelite.api.NPC;
 import net.runelite.api.Skill;
-import net.runelite.api.VarPlayer;
-import net.runelite.api.Varbits;
 import net.runelite.api.events.FakeXpDrop;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
@@ -52,8 +50,11 @@ import net.runelite.api.events.InteractingChanged;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.events.StatChanged;
 import net.runelite.api.events.VarbitChanged;
+import net.runelite.api.gameval.InterfaceID;
+import net.runelite.api.gameval.NpcID;
+import net.runelite.api.gameval.VarPlayerID;
+import net.runelite.api.gameval.VarbitID;
 import net.runelite.api.kit.KitType;
-import net.runelite.api.widgets.InterfaceID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetUtil;
 import net.runelite.client.callback.ClientThread;
@@ -71,7 +72,6 @@ import com.tzhaarhptracker.attackstyles.WeaponType;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.Text;
 import org.apache.commons.lang3.ObjectUtils;
-import static net.runelite.api.NpcID.*;
 
 @Slf4j
 public class DamageHandler extends InfoHandler
@@ -149,9 +149,9 @@ public class DamageHandler extends InfoHandler
 
 	private void initAttackStyles()
 	{
-		attackStyleVarbit = client.getVarpValue(VarPlayer.ATTACK_STYLE);
-		equippedWeaponTypeVarbit = client.getVarbitValue(Varbits.EQUIPPED_WEAPON_TYPE);
-		castingModeVarbit = client.getVarbitValue(Varbits.DEFENSIVE_CASTING_MODE);
+		attackStyleVarbit = client.getVarpValue(VarPlayerID.COM_MODE);
+		equippedWeaponTypeVarbit = client.getVarbitValue(VarbitID.COMBAT_WEAPON_CATEGORY);
+		castingModeVarbit = client.getVarbitValue(VarbitID.AUTOCAST_DEFMODE);
 		updateAttackStyle(equippedWeaponTypeVarbit, attackStyleVarbit, castingModeVarbit);
 	}
 
@@ -186,9 +186,9 @@ public class DamageHandler extends InfoHandler
 	{
 		if (plugin.isInAllowedCaves())
 		{
-			int currentAttackStyleVarbit = client.getVarpValue(VarPlayer.ATTACK_STYLE);
-			int currentEquippedWeaponTypeVarbit = client.getVarbitValue(Varbits.EQUIPPED_WEAPON_TYPE);
-			int currentCastingModeVarbit = client.getVarbitValue(Varbits.DEFENSIVE_CASTING_MODE);
+			int currentAttackStyleVarbit = client.getVarpValue(VarPlayerID.COM_MODE);
+			int currentEquippedWeaponTypeVarbit = client.getVarbitValue(VarbitID.COMBAT_WEAPON_CATEGORY);
+			int currentCastingModeVarbit = client.getVarbitValue(VarbitID.AUTOCAST_DEFMODE);
 
 			if (attackStyleVarbit != currentAttackStyleVarbit || equippedWeaponTypeVarbit != currentEquippedWeaponTypeVarbit || castingModeVarbit != currentCastingModeVarbit)
 			{
@@ -326,7 +326,7 @@ public class DamageHandler extends InfoHandler
 				{
 					int currentTick = client.getTickCount();
 					int spawnTick = n.getSpawnTick();
-					if (currentTick - spawnTick >= 100 && n.getNpc().getId() != ROCKY_SUPPORT)
+					if (currentTick - spawnTick >= 100 && n.getNpc().getId() != NpcID.INFERNO_INVISIBLE_3X3)
 					{
 						if (n.getHp() != n.getMaxHp())
 						{
@@ -414,9 +414,9 @@ public class DamageHandler extends InfoHandler
 				case NPC_FOURTH_OPTION:
 				case NPC_FIFTH_OPTION:
 					lastOpponent = e.getMenuEntry().getNpc();
-					if (e.getMenuAction() == MenuAction.WIDGET_TARGET_ON_NPC && WidgetUtil.componentToInterface(client.getSelectedWidget().getId()) == InterfaceID.SPELLBOOK)
+					if (e.getMenuAction() == MenuAction.WIDGET_TARGET_ON_NPC && WidgetUtil.componentToInterface(client.getSelectedWidget().getId()) == InterfaceID.MAGIC_SPELLBOOK)
 					{
-						attackStyle = (client.getVarbitValue(Varbits.DEFENSIVE_CASTING_MODE) == 1 || attackStyle == AttackStyle.DEFENSIVE_CASTING) ?
+						attackStyle = (client.getVarbitValue(VarbitID.AUTOCAST_DEFMODE) == 1 || attackStyle == AttackStyle.DEFENSIVE_CASTING) ?
 							AttackStyle.DEFENSIVE_CASTING : AttackStyle.CASTING;
 
 						String[] aoeSpells = {
@@ -673,7 +673,7 @@ public class DamageHandler extends InfoHandler
 		List<TzhaarNPC> clump = new ArrayList<>();
 		for (TzhaarNPC n : plugin.getNpcs())
 		{
-			if (!n.isDead() && n.getNpc().getId() != ROCKY_SUPPORT && n.getNpc().getWorldLocation().distanceTo(target.getNpc().getWorldLocation()) <= 1)
+			if (!n.isDead() && n.getNpc().getId() != NpcID.INFERNO_INVISIBLE_3X3 && n.getNpc().getWorldLocation().distanceTo(target.getNpc().getWorldLocation()) <= 1)
 			{
 				clump.add(n);
 			}
@@ -683,7 +683,7 @@ public class DamageHandler extends InfoHandler
 
 	private void handleTargetDeath(TzhaarNPC target, int damage, boolean isAoe, AttackStyle attackStyle, WeaponStyle style, List<TzhaarNPC> clump)
 	{
-		if (!isAoe || clump.size() == 1 || client.getVarbitValue(Varbits.MULTICOMBAT_AREA) == 0 || (style == WeaponStyle.SCYTHES && attackStyle != AttackStyle.CASTING))
+		if (!isAoe || clump.size() == 1 || client.getVarbitValue(VarbitID.MULTIWAY_INDICATOR) == 0 || (style == WeaponStyle.SCYTHES && attackStyle != AttackStyle.CASTING))
 		{
 			// Handle normally (clump size = 1) or single combat if AoE
 			target.setQueuedDamage(target.getQueuedDamage() + damage);
