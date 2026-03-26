@@ -705,7 +705,7 @@ public class WeaponMap
 		StyleMap.put(ItemID.BOW_OF_FAERDHINEN_C_25892, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.BOW_OF_FAERDHINEN_C_25894, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.BOW_OF_FAERDHINEN_C_25896, WeaponStyle.RANGE);
-		StyleMap.put(ItemID.BOW_OF_FAERDHINEN_27187, WeaponStyle.RANGE);
+		StyleMap.put(27187, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.COMP_OGRE_BOW, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.CORRUPTED_BOW_ATTUNED, WeaponStyle.RANGE);
 		StyleMap.put(ItemID.CORRUPTED_BOW_BASIC, WeaponStyle.RANGE);
