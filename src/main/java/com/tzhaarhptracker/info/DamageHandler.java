@@ -562,6 +562,19 @@ public class DamageHandler extends InfoHandler
 	}
 
 
+	static int hpXpToDamage(double xpDiff, double totalModifier)
+	{
+		//Damage is an integer and gives 4/3 hp xp, but the displayed drop can be off by <1 xp (xp is tracked in tenths).
+		//Return the smallest damage d with 4d/3 > x - 1 so we never overestimate and prematurely mark an npc dead.
+		double base = xpDiff / totalModifier;
+		double tolerance = 1.0D / totalModifier;
+		if (base <= 0)
+		{
+			return 0;
+		}
+		return Math.max(1, (int) Math.floor(0.75D * (base - tolerance) + 1e-9) + 1);
+	}
+
 	private int calculateHit(Skill skill, int xpDiff, AttackStyle attackStyle, WeaponStyle weaponStyle, double modifier, double configModifier)
 	{
 		double damage = 0;
@@ -606,8 +619,7 @@ public class DamageHandler extends InfoHandler
 			case HITPOINTS:
 				if (attackStyle == AttackStyle.CASTING)
 				{
-					damage = xpDiff / 1.33D;
-					break;
+					return hpXpToDamage(xpDiff, modifier * configModifier);
 				}
 				break;
 			case RANGED:
